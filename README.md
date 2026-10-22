@@ -1,45 +1,61 @@
-# SELF — Career Discovery & Learning (UI prototype)
+# SELF
 
-Clickable prototype of **SELF**, the career development and learning platform, and **CDL (AI Career Discovery)**.
-UI only: dummy data, no backend, no real AI, no auth, no payments. All state lives in the browser's `localStorage`.
+Mobile-first career discovery + learning platform. Learners chat with Meera (free), get a report, and buy self-paced courses. One Next.js app (pages + API), a background worker, and a Postgres database, all in this repo. "SELF" is a working name.
 
-## Run it
+> The original clickable UI prototype is kept at git tag `prototype-v0` (and live at cdl-prototype.vercel.app).
 
-Requires Node 22 (pinned in `.node-version`, picked up automatically by `fnm use` / `--use-on-cd`).
+## Run it locally
+
+Needs Node 22 (`nvm use` reads `.nvmrc`) and Docker.
 
 ```bash
-fnm use            # switches to Node 22
+nvm use
 npm install
-npm run dev        # http://localhost:3000
+cp .env.example .env        # fake values, safe for dev
+docker compose up -d --wait # Postgres 16 on localhost:5433
+npm run db:migrate
+npm run dev                 # http://localhost:3000
+npm run worker              # background jobs (separate terminal)
 ```
 
-Production build: `npm run build && npm start`.
+In dev every outside service (SMS, payments, video, AI, email, analytics) uses a **fake** adapter: OTP codes and emails are printed to the console. No keys needed.
 
-## The journey
+## Scripts
 
-| Route | What it shows |
-| --- | --- |
-| `/` | SELF landing: value prop, how it works, CDL spotlight, report preview, learning levels, courses, FAQ |
-| `/discover` | **One page** for the whole CDL flow: intro → chat with Sage → personality (RIASEC Likert) → aptitude quiz → work values → analysing → personalised report |
-| `/learn` | Level 1 catalogue: filters, search, sort, plus “Recommended for you” once the report exists |
-| `/learn/[slug]` | Course page: simulated video player, curriculum, resources. 2 free preview lessons; everything else unlocks after simulated checkout |
-| `/my-learning` | Purchased courses with progress |
+| Command | What it does |
+|---|---|
+| `npm run dev` / `build` / `start` | Next.js app |
+| `npm run lint` / `typecheck` / `format` / `format:check` | Code quality |
+| `npm run test` | Unit tests (Vitest) |
+| `npm run test:e2e` | Browser smoke tests (Playwright, 375px phone + desktop). Needs `npx playwright install chromium` once |
+| `npm run db:generate` / `db:migrate` / `db:seed` / `db:studio` | Drizzle migrations and data |
+| `npm run worker` | Background worker (pg-boss) |
+| `npm run build:worker` | Bundles the worker and migrate scripts to `dist/` for the container |
 
-Level 2 (live cohorts) and Level 3 (1:1 mentoring) appear only as “Phase 2” placeholders.
+## Docker image
 
-### Demo tips
+One image, three entrypoints:
 
-- On the `/discover` intro, **“Stakeholder demo: skip ahead with sample answers”** jumps straight to a full report.
-- Refreshing resumes exactly where you were.
-- **Reset demo data** (footer) clears answers, purchases and progress.
-- Checkout is simulated (card / UPI / net banking are all prefilled). The video player runs at an accelerated rate so lessons complete quickly.
+```bash
+docker build -t self-app .
+docker run -p 3000:3000 self-app                                   # web
+docker run self-app node /worker/dist/worker.js                    # worker
+docker run -w /worker self-app node dist/migrate.js                # migrations
+```
 
-## Where things live
+## Docs
 
-- `src/lib/data/` — all dummy content: discovery questions, careers, courses
-- `src/lib/scoring.ts` — turns answers into the report (RIASEC scores, archetype, aptitude, matches, learning path)
-- `src/lib/store.ts` — localStorage-backed state and actions (`useSyncExternalStore`, hydration-safe)
-- `src/components/discover/` — the single-page CDL flow, one component per stage
-- `src/components/learn/` — catalogue, course page, video player, checkout
+Start with `CLAUDE.md` (rules for working in this repo, including with Claude Code).
 
-Built with Next.js 16 (App Router, Cache Components), React 19, Tailwind CSS 4, Motion and Lucide icons.
+- [docs/decisions.md](docs/decisions.md): every decision (architecture doc `D*`, our interview `I-*`)
+- [docs/architecture/modules.md](docs/architecture/modules.md): the 9 modules and boundary rules
+- [docs/architecture/integrations.md](docs/architecture/integrations.md): third-party wrappers
+- [docs/design/design-system.md](docs/design/design-system.md): tokens, patterns, mobile rules
+- [docs/prototype/reuse-map.md](docs/prototype/reuse-map.md): what to keep from the prototype
+- [docs/requirements/](docs/requirements/): scope of work and architecture source docs
+- [docs/specs/_template.md](docs/specs/_template.md): write a spec before building a feature
+- [docs/open-questions.md](docs/open-questions.md): flags and client inputs
+
+## Working agreement
+
+Work on a branch, open a PR, merge to `main` only when CI is green. Write the spec first (`/feature-spec` in Claude Code), keep modules talking only through `service.ts`, and never put personal data in logs or analytics.
