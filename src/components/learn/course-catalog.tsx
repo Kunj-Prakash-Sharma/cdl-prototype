@@ -53,7 +53,8 @@ export function CourseCatalog() {
             <CirclePlay className="size-3.5 text-brand-600" aria-hidden /> Level 1 · Self-paced learning
           </Badge>
           <h1 className="mt-5 max-w-3xl text-4xl font-extrabold tracking-tight text-ink sm:text-6xl">
-            Learn the skills your <span className="font-serif font-normal italic text-gradient">future self</span> needs.
+            Learn the skills your <span className="text-gradient font-serif font-normal italic">future self</span>{" "}
+            needs.
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-slate-600">
             Expert-led video courses with hands-on projects and downloadable resources. Preview any course for free —
@@ -118,7 +119,7 @@ export function CourseCatalog() {
 
         {/* Filters */}
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="scrollbar-thin -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-wrap lg:px-0">
+          <div className="-mx-4 flex scrollbar-thin gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-wrap lg:px-0">
             {(["All", ...CATEGORIES] as const).map((c) => (
               <button
                 key={c}
@@ -126,7 +127,9 @@ export function CourseCatalog() {
                 onClick={() => setCategory(c)}
                 className={cn(
                   "shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition",
-                  category === c ? "bg-ink text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:text-ink hover:ring-slate-300",
+                  category === c
+                    ? "bg-ink text-white"
+                    : "bg-white text-slate-600 ring-1 ring-slate-200 hover:text-ink hover:ring-slate-300",
                 )}
               >
                 {c}
@@ -176,7 +179,14 @@ export function CourseCatalog() {
         {courses.length === 0 && (
           <div className="rounded-3xl border border-dashed border-slate-300 py-16 text-center">
             <p className="font-semibold text-ink">No courses match “{query}”</p>
-            <button type="button" onClick={() => { setQuery(""); setCategory("All"); }} className="mt-2 text-sm font-semibold text-brand-700">
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setCategory("All");
+              }}
+              className="mt-2 text-sm font-semibold text-brand-700"
+            >
               Clear filters
             </button>
           </div>
@@ -185,10 +195,23 @@ export function CourseCatalog() {
         {/* Phase 2 teaser */}
         <section className="mt-20 grid gap-4 md:grid-cols-2">
           {[
-            { icon: Users, level: "Level 2", title: "Live cohort learning", body: "Instructor-led cohorts with peers, projects and feedback." },
-            { icon: Target, level: "Level 3", title: "One-to-one mentoring", body: "Personal sessions with industry mentors." },
+            {
+              icon: Users,
+              level: "Level 2",
+              title: "Live cohort learning",
+              body: "Instructor-led cohorts with peers, projects and feedback.",
+            },
+            {
+              icon: Target,
+              level: "Level 3",
+              title: "One-to-one mentoring",
+              body: "Personal sessions with industry mentors.",
+            },
           ].map((l) => (
-            <div key={l.level} className="flex items-center gap-4 rounded-3xl border border-dashed border-slate-300 p-5">
+            <div
+              key={l.level}
+              className="flex items-center gap-4 rounded-3xl border border-dashed border-slate-300 p-5"
+            >
               <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-slate-100 text-slate-400">
                 <l.icon className="size-5" aria-hidden />
               </span>

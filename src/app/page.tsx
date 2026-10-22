@@ -103,15 +103,15 @@ export default function HomePage() {
         <div className="bg-grid absolute inset-0 [mask-image:radial-gradient(ellipse_at_top,black_30%,transparent_75%)]" />
         <div className="absolute -top-40 left-1/2 h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-linear-to-r from-brand-200/60 via-fuchsia-200/40 to-sun-200/50 blur-3xl" />
 
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 pb-20 pt-12 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:gap-8 lg:px-8 lg:pb-28 lg:pt-20">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 pt-12 pb-20 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:gap-8 lg:px-8 lg:pt-20 lg:pb-28">
           <div className="max-w-2xl">
             <Badge tone="white" className="shadow-soft">
               <Sparkles className="size-3.5 text-brand-600" aria-hidden />
               New · CDL AI Career Discovery
             </Badge>
-            <h1 className="mt-6 text-[44px] font-extrabold leading-[1.02] tracking-[-0.035em] text-ink sm:text-6xl lg:text-[72px]">
+            <h1 className="mt-6 text-[44px] leading-[1.02] font-extrabold tracking-[-0.035em] text-ink sm:text-6xl lg:text-[72px]">
               Discover who you&apos;re{" "}
-              <span className="font-serif font-normal italic tracking-normal text-gradient">meant to become.</span>
+              <span className="text-gradient font-serif font-normal tracking-normal italic">meant to become.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-600">
               SELF is the complete career development and learning platform. Start with a 12-minute AI-guided
@@ -172,15 +172,15 @@ export default function HomePage() {
           </Reveal>
 
           <div className="relative mt-16 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-            <div className="absolute left-[12%] right-[12%] top-[38px] hidden h-px bg-linear-to-r from-brand-200 via-brand-400 to-sun-300 lg:block" />
+            <div className="absolute top-[38px] right-[12%] left-[12%] hidden h-px bg-linear-to-r from-brand-200 via-brand-400 to-sun-300 lg:block" />
             {STEPS.map((step, i) => (
               <Reveal key={step.title} delay={i * 0.08}>
-                <div className="relative h-full rounded-3xl bg-white p-6 ring-1 ring-slate-200/80 shadow-soft">
+                <div className="relative h-full rounded-3xl bg-white p-6 shadow-soft ring-1 ring-slate-200/80">
                   <div className="flex items-center justify-between">
                     <span className="relative grid size-[52px] place-items-center rounded-2xl bg-linear-to-br from-brand-500 to-brand-800 text-white shadow-glow">
                       <step.icon className="size-6" aria-hidden />
                     </span>
-                    <span className="font-serif text-4xl italic text-slate-200">0{i + 1}</span>
+                    <span className="font-serif text-4xl text-slate-200 italic">0{i + 1}</span>
                   </div>
                   <h3 className="mt-6 text-lg font-bold text-ink">{step.title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-slate-500">{step.body}</p>
@@ -195,13 +195,13 @@ export default function HomePage() {
       {/* ---------------- CDL spotlight ---------------- */}
       <section className="relative overflow-hidden bg-ink py-24 text-white">
         <div className="bg-grid-dark absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_70%)]" />
-        <div className="absolute -left-40 top-10 size-[480px] rounded-full bg-brand-600/30 blur-3xl" />
+        <div className="absolute top-10 -left-40 size-[480px] rounded-full bg-brand-600/30 blur-3xl" />
         <div className="absolute -right-40 bottom-0 size-[420px] rounded-full bg-sun-500/15 blur-3xl" />
         <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
           <Reveal>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-300">CDL · AI Career Discovery</p>
+            <p className="text-xs font-bold tracking-[0.18em] text-brand-300 uppercase">CDL · AI Career Discovery</p>
             <h2 className="mt-3 text-4xl font-extrabold tracking-tight sm:text-5xl">
-              A career guide that <span className="font-serif font-normal italic text-sun-300">listens first.</span>
+              A career guide that <span className="font-serif font-normal text-sun-300 italic">listens first.</span>
             </h2>
             <p className="mt-5 max-w-lg text-lg leading-relaxed text-white/70">
               Sage gets to know you through conversation, then guides you through assessments designed by career
@@ -291,11 +291,14 @@ export default function HomePage() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <Eyebrow>Career profile</Eyebrow>
-                  <p className="mt-1 font-serif text-3xl italic text-ink">The Creative Analyst</p>
+                  <p className="mt-1 font-serif text-3xl text-ink italic">The Creative Analyst</p>
                 </div>
                 <div className="flex gap-1.5">
                   {["I", "A", "S"].map((d) => (
-                    <span key={d} className="grid size-8 place-items-center rounded-lg bg-brand-50 text-sm font-bold text-brand-700">
+                    <span
+                      key={d}
+                      className="grid size-8 place-items-center rounded-lg bg-brand-50 text-sm font-bold text-brand-700"
+                    >
                       {d}
                     </span>
                   ))}
@@ -327,8 +330,8 @@ export default function HomePage() {
               A report that explains <span className="font-serif font-normal italic">you</span> — not just a label.
             </h2>
             <p className="mt-5 text-lg leading-relaxed text-slate-600">
-              See your interest profile, aptitude scores and what drives you. Understand your strengths and the
-              areas worth developing, then explore careers matched to you with clear reasons why.
+              See your interest profile, aptitude scores and what drives you. Understand your strengths and the areas
+              worth developing, then explore careers matched to you with clear reasons why.
             </p>
             <ul className="mt-6 space-y-3 text-slate-700">
               {[
@@ -356,23 +359,26 @@ export default function HomePage() {
             <Eyebrow>Learning levels</Eyebrow>
             <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">Grow at your own pace</h2>
             <p className="mt-4 text-lg text-slate-600">
-              Your report leads straight into learning. Start self-paced today — live cohorts and mentoring are on
-              the way.
+              Your report leads straight into learning. Start self-paced today — live cohorts and mentoring are on the
+              way.
             </p>
           </Reveal>
           <div className="mt-14 grid gap-5 lg:grid-cols-3">
             <Reveal>
               <div className="relative h-full overflow-hidden rounded-3xl bg-linear-to-br from-brand-600 to-brand-900 p-8 text-white shadow-glow">
-                <div className="absolute -right-16 -top-16 size-48 rounded-full bg-white/10 blur-2xl" />
+                <div className="absolute -top-16 -right-16 size-48 rounded-full bg-white/10 blur-2xl" />
                 <Badge tone="white">Available now</Badge>
                 <p className="mt-6 text-sm font-semibold text-brand-200">Level 1</p>
                 <h3 className="mt-1 text-2xl font-bold">Self-paced learning</h3>
                 <p className="mt-3 text-sm leading-relaxed text-white/75">
-                  Expert-led video courses, downloadable resources and hands-on projects matched to your career
-                  path.
+                  Expert-led video courses, downloadable resources and hands-on projects matched to your career path.
                 </p>
                 <ul className="mt-6 space-y-2.5 text-sm text-white/85">
-                  {["Free preview lessons on every course", "Templates, datasets & worksheets", "Certificate of completion"].map((x) => (
+                  {[
+                    "Free preview lessons on every course",
+                    "Templates, datasets & worksheets",
+                    "Certificate of completion",
+                  ].map((x) => (
                     <li key={x} className="flex items-center gap-2">
                       <CirclePlay className="size-4 text-sun-300" aria-hidden /> {x}
                     </li>
@@ -384,8 +390,18 @@ export default function HomePage() {
               </div>
             </Reveal>
             {[
-              { level: "Level 2", title: "Live cohort learning", icon: Users, body: "Learn alongside peers in instructor-led live cohorts with projects and feedback." },
-              { level: "Level 3", title: "One-to-one mentoring", icon: Target, body: "Personal guidance from industry mentors to accelerate your next career move." },
+              {
+                level: "Level 2",
+                title: "Live cohort learning",
+                icon: Users,
+                body: "Learn alongside peers in instructor-led live cohorts with projects and feedback.",
+              },
+              {
+                level: "Level 3",
+                title: "One-to-one mentoring",
+                icon: Target,
+                body: "Personal guidance from industry mentors to accelerate your next career move.",
+              },
             ].map((l, i) => (
               <Reveal key={l.level} delay={(i + 1) * 0.08}>
                 <div className="relative h-full rounded-3xl border border-dashed border-slate-300 bg-paper p-8">
@@ -440,7 +456,9 @@ export default function HomePage() {
               <Reveal key={t.name} delay={i * 0.08}>
                 <figure className="flex h-full flex-col rounded-3xl bg-paper p-7 ring-1 ring-slate-200/70">
                   <Quote className="size-8 text-brand-300" aria-hidden />
-                  <blockquote className="mt-4 flex-1 text-[15px] leading-relaxed text-slate-700">“{t.quote}”</blockquote>
+                  <blockquote className="mt-4 flex-1 text-[15px] leading-relaxed text-slate-700">
+                    “{t.quote}”
+                  </blockquote>
                   <figcaption className="mt-6 border-t border-slate-200 pt-4">
                     <p className="font-semibold text-ink">{t.name}</p>
                     <p className="text-sm text-slate-500">{t.role}</p>
@@ -460,12 +478,15 @@ export default function HomePage() {
             <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-ink">Questions, answered</h2>
             <p className="mt-4 text-slate-600">Everything you need to know before you begin.</p>
           </div>
-          <div className="divide-y divide-slate-200 rounded-3xl bg-white px-6 ring-1 ring-slate-200/70 shadow-soft">
+          <div className="divide-y divide-slate-200 rounded-3xl bg-white px-6 shadow-soft ring-1 ring-slate-200/70">
             {FAQ.map((f) => (
               <details key={f.q} className="group py-5 [&_summary::-webkit-details-marker]:hidden">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink">
                   {f.q}
-                  <ChevronDown className="size-5 shrink-0 text-slate-400 transition-transform group-open:rotate-180" aria-hidden />
+                  <ChevronDown
+                    className="size-5 shrink-0 text-slate-400 transition-transform group-open:rotate-180"
+                    aria-hidden
+                  />
                 </summary>
                 <p className="mt-3 pr-8 text-[15px] leading-relaxed text-slate-600">{f.a}</p>
               </details>
@@ -482,9 +503,12 @@ export default function HomePage() {
           <div className="relative mx-auto max-w-2xl">
             <SageAvatar size="lg" className="mx-auto" />
             <h2 className="mt-6 text-4xl font-extrabold tracking-tight sm:text-5xl">
-              Your career story starts with a <span className="font-serif font-normal italic text-sun-300">12-minute</span> conversation.
+              Your career story starts with a{" "}
+              <span className="font-serif font-normal text-sun-300 italic">12-minute</span> conversation.
             </h2>
-            <p className="mt-4 text-lg text-white/70">Free, private and surprisingly fun. No sign-up needed for this prototype.</p>
+            <p className="mt-4 text-lg text-white/70">
+              Free, private and surprisingly fun. No sign-up needed for this prototype.
+            </p>
             <ButtonLink href="/discover" variant="light" size="lg" className="mt-8">
               Start career discovery <ArrowRight className="size-4" aria-hidden />
             </ButtonLink>

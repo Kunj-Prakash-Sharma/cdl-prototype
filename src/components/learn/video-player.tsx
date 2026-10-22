@@ -22,7 +22,17 @@ type Props = {
   onPreview: () => void;
 };
 
-export function VideoPlayer({ course, lesson, label, locked, hasNext, onComplete, onNext, onUnlock, onPreview }: Props) {
+export function VideoPlayer({
+  course,
+  lesson,
+  label,
+  locked,
+  hasNext,
+  onComplete,
+  onNext,
+  onUnlock,
+  onPreview,
+}: Props) {
   const duration = lesson.minutes * 60;
   const [t, setT] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -74,16 +84,19 @@ export function VideoPlayer({ course, lesson, label, locked, hasNext, onComplete
           toggle();
         }
       }}
-      className="group relative isolate aspect-video w-full overflow-hidden rounded-3xl bg-ink text-white shadow-lift outline-none ring-1 ring-black/5 focus-visible:ring-4 focus-visible:ring-brand-300"
+      className="group relative isolate aspect-video w-full overflow-hidden rounded-3xl bg-ink text-white shadow-lift ring-1 ring-black/5 outline-none focus-visible:ring-4 focus-visible:ring-brand-300"
     >
       {/* "Footage" */}
-      <div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(135deg, ${course.theme.from}, ${course.theme.to})` }} />
+      <div
+        className="absolute inset-0"
+        style={{ backgroundImage: `linear-gradient(135deg, ${course.theme.from}, ${course.theme.to})` }}
+      />
       <div className="absolute inset-0 bg-ink/55" />
       <div className="bg-grid-dark absolute inset-0 opacity-50" />
       <div className={cn("absolute inset-0 transition duration-500", locked && "scale-105 blur-md")}>
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
           <div className="relative">
-            {isPlaying && <span className="animate-pulse-ring absolute inset-0 rounded-full bg-white/30" />}
+            {isPlaying && <span className="absolute inset-0 animate-pulse-ring rounded-full bg-white/30" />}
             <span className="relative grid size-16 place-items-center rounded-full bg-white/15 text-xl font-bold ring-2 ring-white/30 backdrop-blur sm:size-24 sm:text-3xl">
               {course.instructor.initials}
             </span>
@@ -92,7 +105,10 @@ export function VideoPlayer({ course, lesson, label, locked, hasNext, onComplete
             {Array.from({ length: 14 }).map((_, i) => (
               <span
                 key={i}
-                className={cn("w-1 origin-bottom rounded-full bg-white/70", isPlaying ? "animate-wave" : "scale-y-[0.3]")}
+                className={cn(
+                  "w-1 origin-bottom rounded-full bg-white/70",
+                  isPlaying ? "animate-wave" : "scale-y-[0.3]",
+                )}
                 style={{ height: 24, animationDelay: `${(i % 7) * 0.12}s` }}
               />
             ))}
@@ -104,13 +120,15 @@ export function VideoPlayer({ course, lesson, label, locked, hasNext, onComplete
             cc && isPlaying && "opacity-0",
           )}
         >
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-white/60 sm:text-xs">{label}</p>
-          <p className="mt-1 text-base font-bold leading-tight sm:text-2xl">{lesson.title}</p>
+          <p className="text-[11px] font-semibold tracking-wider text-white/60 uppercase sm:text-xs">{label}</p>
+          <p className="mt-1 text-base leading-tight font-bold sm:text-2xl">{lesson.title}</p>
         </div>
       </div>
 
-      <div className="absolute left-4 top-4 flex gap-1.5">
-        <span className="rounded-full bg-black/30 px-2.5 py-1 text-[11px] font-semibold backdrop-blur">Simulated video</span>
+      <div className="absolute top-4 left-4 flex gap-1.5">
+        <span className="rounded-full bg-black/30 px-2.5 py-1 text-[11px] font-semibold backdrop-blur">
+          Simulated video
+        </span>
         {lesson.preview && !locked && (
           <span className="rounded-full bg-emerald-500/90 px-2.5 py-1 text-[11px] font-semibold">Free preview</span>
         )}
@@ -118,7 +136,12 @@ export function VideoPlayer({ course, lesson, label, locked, hasNext, onComplete
 
       {/* Big play */}
       {!locked && !isPlaying && !ended && (
-        <button type="button" onClick={toggle} aria-label="Play lesson" className="absolute inset-0 grid place-items-center">
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label="Play lesson"
+          className="absolute inset-0 grid place-items-center"
+        >
           <span className="grid size-16 place-items-center rounded-full bg-white text-ink shadow-lift transition group-hover:scale-110 sm:size-20">
             <Play className="ml-1 size-7 fill-current sm:size-8" />
           </span>
@@ -134,11 +157,11 @@ export function VideoPlayer({ course, lesson, label, locked, hasNext, onComplete
 
       {/* Controls */}
       {!locked && (
-        <div className="absolute inset-x-0 bottom-0 flex items-center gap-3 bg-linear-to-t from-black/75 to-transparent px-4 pb-3 pt-8 sm:gap-4 sm:px-5">
+        <div className="absolute inset-x-0 bottom-0 flex items-center gap-3 bg-linear-to-t from-black/75 to-transparent px-4 pt-8 pb-3 sm:gap-4 sm:px-5">
           <button type="button" onClick={toggle} aria-label={isPlaying ? "Pause" : "Play"} className="shrink-0">
             {isPlaying ? <Pause className="size-5 fill-current" /> : <Play className="size-5 fill-current" />}
           </button>
-          <span className="shrink-0 text-xs tabular-nums text-white/80">
+          <span className="shrink-0 text-xs text-white/80 tabular-nums">
             {formatClock(t)} / {formatClock(duration)}
           </span>
           <button
@@ -151,8 +174,14 @@ export function VideoPlayer({ course, lesson, label, locked, hasNext, onComplete
             }}
           >
             <span className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-white/25" />
-            <span className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-white" style={{ width: `${(t / duration) * 100}%` }} />
-            <span className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow" style={{ left: `${(t / duration) * 100}%` }} />
+            <span
+              className="absolute top-1/2 left-0 h-1 -translate-y-1/2 rounded-full bg-white"
+              style={{ width: `${(t / duration) * 100}%` }}
+            />
+            <span
+              className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow"
+              style={{ left: `${(t / duration) * 100}%` }}
+            />
           </button>
           <button
             type="button"
@@ -162,10 +191,21 @@ export function VideoPlayer({ course, lesson, label, locked, hasNext, onComplete
           >
             {speed}×
           </button>
-          <button type="button" onClick={() => setCc((c) => !c)} aria-label="Toggle captions" aria-pressed={cc} className={cn("shrink-0", !cc && "opacity-50")}>
+          <button
+            type="button"
+            onClick={() => setCc((c) => !c)}
+            aria-label="Toggle captions"
+            aria-pressed={cc}
+            className={cn("shrink-0", !cc && "opacity-50")}
+          >
             <Captions className="size-5" />
           </button>
-          <button type="button" onClick={() => boxRef.current?.requestFullscreen?.()} aria-label="Fullscreen" className="hidden shrink-0 sm:block">
+          <button
+            type="button"
+            onClick={() => boxRef.current?.requestFullscreen?.()}
+            aria-label="Fullscreen"
+            className="hidden shrink-0 sm:block"
+          >
             <Maximize className="size-5" />
           </button>
         </div>
@@ -184,11 +224,19 @@ export function VideoPlayer({ course, lesson, label, locked, hasNext, onComplete
             </span>
             <p className="text-lg font-bold sm:text-xl">Lesson complete</p>
             <div className="mt-1 flex gap-2">
-              <button type="button" onClick={toggle} className="inline-flex h-10 items-center gap-2 rounded-full bg-white/15 px-4 text-sm font-semibold hover:bg-white/25">
+              <button
+                type="button"
+                onClick={toggle}
+                className="inline-flex h-10 items-center gap-2 rounded-full bg-white/15 px-4 text-sm font-semibold hover:bg-white/25"
+              >
                 <RotateCcw className="size-4" /> Replay
               </button>
               {hasNext && (
-                <button type="button" onClick={onNext} className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-semibold text-ink hover:bg-brand-50">
+                <button
+                  type="button"
+                  onClick={onNext}
+                  className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-semibold text-ink hover:bg-brand-50"
+                >
                   Next lesson <SkipForward className="size-4" />
                 </button>
               )}
@@ -208,10 +256,18 @@ export function VideoPlayer({ course, lesson, label, locked, hasNext, onComplete
             Enrol to unlock every video, downloadable resource, the capstone project and your certificate.
           </p>
           <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-            <button type="button" onClick={onUnlock} className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-ink shadow-lift hover:bg-brand-50">
+            <button
+              type="button"
+              onClick={onUnlock}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-ink shadow-lift hover:bg-brand-50"
+            >
               <Lock className="size-4" /> Unlock full course · {formatPrice(course.price)}
             </button>
-            <button type="button" onClick={onPreview} className="inline-flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold text-white ring-1 ring-white/30 hover:bg-white/10">
+            <button
+              type="button"
+              onClick={onPreview}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold text-white ring-1 ring-white/30 hover:bg-white/10"
+            >
               <CirclePlay className="size-4" /> Watch a free preview
             </button>
           </div>

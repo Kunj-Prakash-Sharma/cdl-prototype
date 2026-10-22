@@ -3,7 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, CreditCard, Info, Landmark, LoaderCircle, Lock, PartyPopper, ShieldCheck, Smartphone } from "lucide-react";
+import {
+  ArrowRight,
+  CreditCard,
+  Info,
+  Landmark,
+  LoaderCircle,
+  Lock,
+  PartyPopper,
+  ShieldCheck,
+  Smartphone,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { bundlePrice, getCourse, lessonCount, type Course } from "@/lib/data/courses";
@@ -73,10 +83,16 @@ function CheckoutBody({ slugs, onClose }: { slugs: string[]; onClose: () => void
         <div className="mx-auto mt-6 max-w-md space-y-2 text-left">
           {paidCourses.map((c) => (
             <div key={c.slug} className="flex items-center gap-3 rounded-2xl bg-paper p-3 ring-1 ring-slate-200/70">
-              <CourseThumb slug={c.slug} className="size-12 shrink-0 rounded-xl" iconClassName="size-6 bottom-2 right-2" />
+              <CourseThumb
+                slug={c.slug}
+                className="size-12 shrink-0 rounded-xl"
+                iconClassName="size-6 bottom-2 right-2"
+              />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-ink">{c.title}</p>
-                <p className="text-xs text-slate-500">{lessonCount(c)} lessons · {c.resources.length} resources unlocked</p>
+                <p className="text-xs text-slate-500">
+                  {lessonCount(c)} lessons · {c.resources.length} resources unlocked
+                </p>
               </div>
             </div>
           ))}
@@ -106,7 +122,9 @@ function CheckoutBody({ slugs, onClose }: { slugs: string[]; onClose: () => void
   if (courses.length === 0) {
     return (
       <div className="px-6 py-14 text-center">
-        <h2 className="text-2xl font-bold text-ink">You already own {slugs.length > 1 ? "these courses" : "this course"}</h2>
+        <h2 className="text-2xl font-bold text-ink">
+          You already own {slugs.length > 1 ? "these courses" : "this course"}
+        </h2>
         <Link href="/my-learning" onClick={onClose} className="mt-4 inline-block font-semibold text-brand-700">
           Go to My Learning →
         </Link>
@@ -118,16 +136,20 @@ function CheckoutBody({ slugs, onClose }: { slugs: string[]; onClose: () => void
     <div className="grid md:grid-cols-[1fr_1.1fr]">
       {/* Order summary */}
       <div className="bg-paper p-6 sm:p-8 md:rounded-l-3xl">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-600">
+        <p className="text-xs font-bold tracking-[0.16em] text-brand-600 uppercase">
           {isBundle ? "Your learning path" : "Level 1 · Self-paced"}
         </p>
         <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-ink">Order summary</h2>
         <div className="mt-5 space-y-3">
           {courses.map((c) => (
             <div key={c.slug} className="flex items-center gap-3">
-              <CourseThumb slug={c.slug} className="size-14 shrink-0 rounded-xl" iconClassName="size-7 bottom-2 right-2" />
+              <CourseThumb
+                slug={c.slug}
+                className="size-14 shrink-0 rounded-xl"
+                iconClassName="size-7 bottom-2 right-2"
+              />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold leading-snug text-ink">{c.title}</p>
+                <p className="text-sm leading-snug font-semibold text-ink">{c.title}</p>
                 <p className="text-xs text-slate-500">
                   {c.hours} hrs · {lessonCount(c)} lessons
                 </p>
@@ -197,7 +219,9 @@ function CheckoutBody({ slugs, onClose }: { slugs: string[]; onClose: () => void
               onClick={() => setMethod(m.id)}
               className={cn(
                 "flex flex-col items-center gap-1.5 rounded-2xl py-3 text-xs font-semibold ring-1 transition",
-                method === m.id ? "bg-brand-50 text-brand-700 ring-2 ring-brand-500" : "text-slate-500 ring-slate-200 hover:ring-slate-300",
+                method === m.id
+                  ? "bg-brand-50 text-brand-700 ring-2 ring-brand-500"
+                  : "text-slate-500 ring-slate-200 hover:ring-slate-300",
               )}
             >
               <m.icon className="size-5" aria-hidden />
@@ -247,7 +271,7 @@ function Field({ label, ...props }: { label: string } & React.ComponentProps<"in
       <span className="text-xs font-semibold text-slate-500">{label}</span>
       <input
         {...props}
-        className="mt-1 h-11 w-full rounded-xl bg-white px-3 text-sm text-ink ring-1 ring-slate-200 outline-none transition focus:ring-2 focus:ring-brand-400"
+        className="mt-1 h-11 w-full rounded-xl bg-white px-3 text-sm text-ink ring-1 ring-slate-200 transition outline-none focus:ring-2 focus:ring-brand-400"
       />
     </label>
   );

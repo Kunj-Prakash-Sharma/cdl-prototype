@@ -1,14 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import {
-  Award,
-  Compass,
-  HandHeart,
-  Palette,
-  Scale,
-  ShieldCheck,
-  Sprout,
-  Wallet,
-} from "lucide-react";
+import { Award, Compass, HandHeart, Palette, Scale, ShieldCheck, Sprout, Wallet } from "lucide-react";
 
 /** Holland (RIASEC) interest dimensions used by the psychometric assessment. */
 export type Dimension = "R" | "I" | "A" | "S" | "E" | "C";
@@ -238,7 +229,8 @@ export const APTITUDE_QUESTIONS: AptitudeQuestion[] = [
       "No engineers are designers",
     ],
     answer: 2,
-    explanation: "Every designer is creative, so at least some creative people are designers. The other options can't be proven.",
+    explanation:
+      "Every designer is creative, so at least some creative people are designers. The other options can't be proven.",
   },
   {
     id: "q2",

@@ -1,15 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import {
-  Brain,
-  ChartColumn,
-  Code,
-  Landmark,
-  Leaf,
-  Megaphone,
-  MessageCircle,
-  PenTool,
-  Rocket,
-} from "lucide-react";
+import { Brain, ChartColumn, Code, Landmark, Leaf, Megaphone, MessageCircle, PenTool, Rocket } from "lucide-react";
 
 export type Lesson = { id: string; title: string; minutes: number; preview: boolean };
 export type Module = { id: string; title: string; lessons: Lesson[] };
@@ -17,14 +7,7 @@ export type ResourceType = "PDF" | "Template" | "Dataset" | "Worksheet" | "Code"
 export type Resource = { id: string; title: string; type: ResourceType; size: string };
 
 export type CourseCategory =
-  | "Data"
-  | "Design"
-  | "Technology"
-  | "Business"
-  | "Marketing"
-  | "Finance"
-  | "Communication"
-  | "Sustainability";
+  "Data" | "Design" | "Technology" | "Business" | "Marketing" | "Finance" | "Communication" | "Sustainability";
 
 export type Course = {
   slug: string;
@@ -113,10 +96,38 @@ export const COURSES: Course[] = [
     skills: ["Excel", "SQL", "Data cleaning", "Dashboards", "Data storytelling"],
     careers: ["data-analyst", "financial-analyst", "business-ops", "health-data-specialist"],
     modules: curriculum([
-      ["Thinking like an analyst", [["What analysts actually do", 8], ["Asking the right business questions", 11], ["The analytics workflow, end to end", 14]]],
-      ["Spreadsheets that work for you", [["Cleaning messy data in Excel", 16], ["Formulas, lookups and pivot tables", 22], ["Building your first dashboard", 19]]],
-      ["SQL for analysis", [["SELECT, WHERE and ORDER BY", 18], ["Joins without the fear", 21], ["Aggregations and GROUP BY", 17]]],
-      ["Storytelling with data", [["Choosing the right chart", 13], ["Designing a one-page insight report", 15], ["Capstone: retail sales analysis", 28]]],
+      [
+        "Thinking like an analyst",
+        [
+          ["What analysts actually do", 8],
+          ["Asking the right business questions", 11],
+          ["The analytics workflow, end to end", 14],
+        ],
+      ],
+      [
+        "Spreadsheets that work for you",
+        [
+          ["Cleaning messy data in Excel", 16],
+          ["Formulas, lookups and pivot tables", 22],
+          ["Building your first dashboard", 19],
+        ],
+      ],
+      [
+        "SQL for analysis",
+        [
+          ["SELECT, WHERE and ORDER BY", 18],
+          ["Joins without the fear", 21],
+          ["Aggregations and GROUP BY", 17],
+        ],
+      ],
+      [
+        "Storytelling with data",
+        [
+          ["Choosing the right chart", 13],
+          ["Designing a one-page insight report", 15],
+          ["Capstone: retail sales analysis", 28],
+        ],
+      ],
     ]),
     resources: resources([
       ["SQL cheat sheet", "PDF", "1.2 MB"],
@@ -156,10 +167,38 @@ export const COURSES: Course[] = [
     skills: ["User research", "Wireframing", "Prototyping", "Usability testing", "Figma"],
     careers: ["ux-designer", "product-manager", "learning-designer", "content-strategist"],
     modules: curriculum([
-      ["Foundations of UX", [["What great UX feels like", 9], ["The design thinking process", 13], ["Mental models and usability heuristics", 16]]],
-      ["Understanding users", [["Planning user interviews", 15], ["Personas and journey maps", 18], ["Synthesising research insights", 17]]],
-      ["From sketch to prototype", [["Information architecture", 14], ["Wireframing fast", 19], ["Interactive prototypes in Figma", 24]]],
-      ["Testing & portfolio", [["Running usability tests", 16], ["Iterating on feedback", 12], ["Capstone: redesign a mobile app", 30]]],
+      [
+        "Foundations of UX",
+        [
+          ["What great UX feels like", 9],
+          ["The design thinking process", 13],
+          ["Mental models and usability heuristics", 16],
+        ],
+      ],
+      [
+        "Understanding users",
+        [
+          ["Planning user interviews", 15],
+          ["Personas and journey maps", 18],
+          ["Synthesising research insights", 17],
+        ],
+      ],
+      [
+        "From sketch to prototype",
+        [
+          ["Information architecture", 14],
+          ["Wireframing fast", 19],
+          ["Interactive prototypes in Figma", 24],
+        ],
+      ],
+      [
+        "Testing & portfolio",
+        [
+          ["Running usability tests", 16],
+          ["Iterating on feedback", 12],
+          ["Capstone: redesign a mobile app", 30],
+        ],
+      ],
     ]),
     resources: resources([
       ["Interview script template", "Template", "380 KB"],
@@ -199,10 +238,38 @@ export const COURSES: Course[] = [
     skills: ["Python", "Problem solving", "Data structures", "APIs", "Debugging"],
     careers: ["software-developer", "ai-ml-engineer", "data-analyst", "health-data-specialist"],
     modules: curriculum([
-      ["Getting started", [["Why Python, and how to set it up", 10], ["Variables, types and your first script", 15], ["Making decisions with if/else", 14]]],
-      ["Core building blocks", [["Loops that do the heavy lifting", 17], ["Lists, dictionaries and sets", 20], ["Writing reusable functions", 18]]],
-      ["Working with real data", [["Reading and writing files", 16], ["Handling errors gracefully", 13], ["Using libraries and APIs", 21]]],
-      ["Build projects", [["Project: expense tracker", 26], ["Project: weather dashboard", 28], ["Next steps in your coding journey", 9]]],
+      [
+        "Getting started",
+        [
+          ["Why Python, and how to set it up", 10],
+          ["Variables, types and your first script", 15],
+          ["Making decisions with if/else", 14],
+        ],
+      ],
+      [
+        "Core building blocks",
+        [
+          ["Loops that do the heavy lifting", 17],
+          ["Lists, dictionaries and sets", 20],
+          ["Writing reusable functions", 18],
+        ],
+      ],
+      [
+        "Working with real data",
+        [
+          ["Reading and writing files", 16],
+          ["Handling errors gracefully", 13],
+          ["Using libraries and APIs", 21],
+        ],
+      ],
+      [
+        "Build projects",
+        [
+          ["Project: expense tracker", 26],
+          ["Project: weather dashboard", 28],
+          ["Next steps in your coding journey", 9],
+        ],
+      ],
     ]),
     resources: resources([
       ["Python syntax cheat sheet", "PDF", "900 KB"],
@@ -242,10 +309,38 @@ export const COURSES: Course[] = [
     skills: ["Product discovery", "Prioritization", "Roadmapping", "Product metrics", "Stakeholder communication"],
     careers: ["product-manager", "entrepreneur", "business-ops", "ux-designer"],
     modules: curriculum([
-      ["The PM role", [["What product managers really do", 11], ["Working with design and engineering", 14], ["Product sense: spotting good problems", 16]]],
-      ["Discovery", [["Customer discovery interviews", 15], ["Prioritisation frameworks", 18], ["Writing a crisp product spec", 17]]],
-      ["Delivery", [["Roadmaps that align teams", 14], ["Agile rituals that actually help", 13], ["Metrics and north stars", 16]]],
-      ["Launch & grow", [["Go-to-market basics", 15], ["Learning from launch data", 12], ["Capstone: pitch your product", 25]]],
+      [
+        "The PM role",
+        [
+          ["What product managers really do", 11],
+          ["Working with design and engineering", 14],
+          ["Product sense: spotting good problems", 16],
+        ],
+      ],
+      [
+        "Discovery",
+        [
+          ["Customer discovery interviews", 15],
+          ["Prioritisation frameworks", 18],
+          ["Writing a crisp product spec", 17],
+        ],
+      ],
+      [
+        "Delivery",
+        [
+          ["Roadmaps that align teams", 14],
+          ["Agile rituals that actually help", 13],
+          ["Metrics and north stars", 16],
+        ],
+      ],
+      [
+        "Launch & grow",
+        [
+          ["Go-to-market basics", 15],
+          ["Learning from launch data", 12],
+          ["Capstone: pitch your product", 25],
+        ],
+      ],
     ]),
     resources: resources([
       ["Product spec (PRD) template", "Template", "450 KB"],
@@ -285,10 +380,38 @@ export const COURSES: Course[] = [
     skills: ["Content strategy", "SEO", "Paid ads", "Social media", "Marketing analytics"],
     careers: ["marketing-strategist", "content-strategist", "entrepreneur"],
     modules: curriculum([
-      ["Marketing foundations", [["How modern marketing works", 10], ["Know your audience", 14], ["Positioning and messaging", 16]]],
-      ["Content & social", [["Content that people share", 17], ["Building a social media calendar", 15], ["Short-form video basics", 18]]],
-      ["Search & performance", [["SEO fundamentals", 19], ["Running your first ad campaign", 22], ["Email marketing that converts", 14]]],
-      ["Measure & optimise", [["Analytics for marketers", 16], ["A/B testing", 13], ["Capstone: launch a campaign", 27]]],
+      [
+        "Marketing foundations",
+        [
+          ["How modern marketing works", 10],
+          ["Know your audience", 14],
+          ["Positioning and messaging", 16],
+        ],
+      ],
+      [
+        "Content & social",
+        [
+          ["Content that people share", 17],
+          ["Building a social media calendar", 15],
+          ["Short-form video basics", 18],
+        ],
+      ],
+      [
+        "Search & performance",
+        [
+          ["SEO fundamentals", 19],
+          ["Running your first ad campaign", 22],
+          ["Email marketing that converts", 14],
+        ],
+      ],
+      [
+        "Measure & optimise",
+        [
+          ["Analytics for marketers", 16],
+          ["A/B testing", 13],
+          ["Capstone: launch a campaign", 27],
+        ],
+      ],
     ]),
     resources: resources([
       ["Content calendar template", "Template", "520 KB"],
@@ -328,10 +451,38 @@ export const COURSES: Course[] = [
     skills: ["Financial statements", "Excel modeling", "Valuation", "Forecasting", "Unit economics"],
     careers: ["financial-analyst", "business-ops", "entrepreneur"],
     modules: curriculum([
-      ["Money basics", [["How businesses make money", 12], ["Reading a P&L statement", 18], ["Balance sheets and cash flow", 19]]],
-      ["Analysis toolkit", [["Financial ratios that matter", 17], ["Unit economics", 15], ["Benchmarking competitors", 14]]],
-      ["Modeling", [["Building a three-statement model", 26], ["Forecasting revenue", 20], ["Scenario and sensitivity analysis", 18]]],
-      ["Applying it", [["Valuation basics", 21], ["Communicating financial insights", 13], ["Capstone: model a startup", 29]]],
+      [
+        "Money basics",
+        [
+          ["How businesses make money", 12],
+          ["Reading a P&L statement", 18],
+          ["Balance sheets and cash flow", 19],
+        ],
+      ],
+      [
+        "Analysis toolkit",
+        [
+          ["Financial ratios that matter", 17],
+          ["Unit economics", 15],
+          ["Benchmarking competitors", 14],
+        ],
+      ],
+      [
+        "Modeling",
+        [
+          ["Building a three-statement model", 26],
+          ["Forecasting revenue", 20],
+          ["Scenario and sensitivity analysis", 18],
+        ],
+      ],
+      [
+        "Applying it",
+        [
+          ["Valuation basics", 21],
+          ["Communicating financial insights", 13],
+          ["Capstone: model a startup", 29],
+        ],
+      ],
     ]),
     resources: resources([
       ["Three-statement model template", "Template", "1.8 MB"],
@@ -369,12 +520,46 @@ export const COURSES: Course[] = [
       "Give and receive feedback constructively",
     ],
     skills: ["Public speaking", "Business writing", "Storytelling", "Feedback", "Facilitation"],
-    careers: ["hr-people-partner", "learning-designer", "content-strategist", "marketing-strategist", "product-manager"],
+    careers: [
+      "hr-people-partner",
+      "learning-designer",
+      "content-strategist",
+      "marketing-strategist",
+      "product-manager",
+    ],
     modules: curriculum([
-      ["Foundations", [["Why communication multiplies your career", 8], ["Knowing your audience", 11], ["Structuring any message", 13]]],
-      ["Writing", [["Emails people actually read", 12], ["Writing for clarity", 14], ["Documents that drive decisions", 15]]],
-      ["Speaking", [["Presenting with confidence", 16], ["Storytelling frameworks", 14], ["Handling tough questions", 12]]],
-      ["Influence", [["Giving and receiving feedback", 13], ["Facilitating great meetings", 11], ["Capstone: your 3-minute pitch", 20]]],
+      [
+        "Foundations",
+        [
+          ["Why communication multiplies your career", 8],
+          ["Knowing your audience", 11],
+          ["Structuring any message", 13],
+        ],
+      ],
+      [
+        "Writing",
+        [
+          ["Emails people actually read", 12],
+          ["Writing for clarity", 14],
+          ["Documents that drive decisions", 15],
+        ],
+      ],
+      [
+        "Speaking",
+        [
+          ["Presenting with confidence", 16],
+          ["Storytelling frameworks", 14],
+          ["Handling tough questions", 12],
+        ],
+      ],
+      [
+        "Influence",
+        [
+          ["Giving and receiving feedback", 13],
+          ["Facilitating great meetings", 11],
+          ["Capstone: your 3-minute pitch", 20],
+        ],
+      ],
     ]),
     resources: resources([
       ["Message structure canvas", "Template", "280 KB"],
@@ -414,10 +599,38 @@ export const COURSES: Course[] = [
     skills: ["Machine learning", "Python", "Model evaluation", "Generative AI", "Responsible AI"],
     careers: ["ai-ml-engineer", "software-developer", "data-analyst", "health-data-specialist"],
     modules: curriculum([
-      ["The AI landscape", [["What AI can and can't do", 12], ["How machines learn from data", 16], ["The ML project lifecycle", 14]]],
-      ["Core techniques", [["Regression and classification", 22], ["Decision trees and ensembles", 20], ["Evaluating model performance", 18]]],
-      ["Deep learning & GenAI", [["Neural networks, intuitively", 21], ["How large language models work", 19], ["Building with AI APIs", 23]]],
-      ["Responsible AI", [["Bias, fairness and ethics", 14], ["Deploying a model", 17], ["Capstone: build a predictor", 30]]],
+      [
+        "The AI landscape",
+        [
+          ["What AI can and can't do", 12],
+          ["How machines learn from data", 16],
+          ["The ML project lifecycle", 14],
+        ],
+      ],
+      [
+        "Core techniques",
+        [
+          ["Regression and classification", 22],
+          ["Decision trees and ensembles", 20],
+          ["Evaluating model performance", 18],
+        ],
+      ],
+      [
+        "Deep learning & GenAI",
+        [
+          ["Neural networks, intuitively", 21],
+          ["How large language models work", 19],
+          ["Building with AI APIs", 23],
+        ],
+      ],
+      [
+        "Responsible AI",
+        [
+          ["Bias, fairness and ethics", 14],
+          ["Deploying a model", 17],
+          ["Capstone: build a predictor", 30],
+        ],
+      ],
     ]),
     resources: resources([
       ["ML algorithms cheat sheet", "PDF", "1.3 MB"],
@@ -454,13 +667,47 @@ export const COURSES: Course[] = [
       "Navigate ESG frameworks and reporting",
       "Design a sustainability strategy for an organisation",
     ],
-    skills: ["ESG reporting", "Carbon accounting", "Sustainability strategy", "Stakeholder engagement", "Impact measurement"],
+    skills: [
+      "ESG reporting",
+      "Carbon accounting",
+      "Sustainability strategy",
+      "Stakeholder engagement",
+      "Impact measurement",
+    ],
     careers: ["sustainability-consultant", "business-ops", "entrepreneur"],
     modules: curriculum([
-      ["Why sustainability", [["The business case for sustainability", 11], ["Climate science essentials", 15], ["Key frameworks and standards", 14]]],
-      ["Measuring impact", [["Carbon footprinting basics", 18], ["ESG metrics and reporting", 17], ["Life-cycle thinking", 13]]],
-      ["Driving change", [["Designing a sustainable strategy", 16], ["Engaging stakeholders", 12], ["Green innovation case studies", 15]]],
-      ["Your green career", [["Roles in the sustainability space", 10], ["Building your impact portfolio", 12], ["Capstone: ESG audit", 24]]],
+      [
+        "Why sustainability",
+        [
+          ["The business case for sustainability", 11],
+          ["Climate science essentials", 15],
+          ["Key frameworks and standards", 14],
+        ],
+      ],
+      [
+        "Measuring impact",
+        [
+          ["Carbon footprinting basics", 18],
+          ["ESG metrics and reporting", 17],
+          ["Life-cycle thinking", 13],
+        ],
+      ],
+      [
+        "Driving change",
+        [
+          ["Designing a sustainable strategy", 16],
+          ["Engaging stakeholders", 12],
+          ["Green innovation case studies", 15],
+        ],
+      ],
+      [
+        "Your green career",
+        [
+          ["Roles in the sustainability space", 10],
+          ["Building your impact portfolio", 12],
+          ["Capstone: ESG audit", 24],
+        ],
+      ],
     ]),
     resources: resources([
       ["ESG reporting template", "Template", "720 KB"],

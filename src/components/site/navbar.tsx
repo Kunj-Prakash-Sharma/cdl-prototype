@@ -16,7 +16,15 @@ const LINKS = [
   { href: "/my-learning", label: "My Learning", count: true },
 ];
 
-function NavLinks({ pathname, onNavigate, vertical }: { pathname?: string; onNavigate?: () => void; vertical?: boolean }) {
+function NavLinks({
+  pathname,
+  onNavigate,
+  vertical,
+}: {
+  pathname?: string;
+  onNavigate?: () => void;
+  vertical?: boolean;
+}) {
   const { purchases } = useAppState();
   return (
     <>
@@ -30,13 +38,13 @@ function NavLinks({ pathname, onNavigate, vertical }: { pathname?: string; onNav
             className={cn(
               "relative inline-flex items-center gap-1.5 rounded-full font-medium transition-colors",
               vertical ? "px-4 py-3 text-base" : "px-3.5 py-2 text-sm",
-              active ? "bg-brand-50 text-brand-700" : "text-slate-600 hover:text-ink hover:bg-slate-900/[0.04]",
+              active ? "bg-brand-50 text-brand-700" : "text-slate-600 hover:bg-slate-900/[0.04] hover:text-ink",
             )}
           >
             {link.ai && <Sparkles className="size-3.5 text-brand-500" aria-hidden />}
             {link.label}
             {link.count && purchases.length > 0 && (
-              <span className="grid min-w-5 place-items-center rounded-full bg-brand-600 px-1.5 text-[11px] font-bold leading-5 text-white">
+              <span className="grid min-w-5 place-items-center rounded-full bg-brand-600 px-1.5 text-[11px] leading-5 font-bold text-white">
                 {purchases.length}
               </span>
             )}
@@ -64,16 +72,23 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const cta = completedAt ? { href: "/discover", label: "View my report" } : { href: "/discover", label: "Start free discovery" };
+  const cta = completedAt
+    ? { href: "/discover", label: "View my report" }
+    : { href: "/discover", label: "Start free discovery" };
 
   return (
     <header
       className={cn(
         "sticky top-0 z-50 transition-all duration-300",
-        scrolled ? "border-b border-slate-200/70 bg-white/80 backdrop-blur-xl" : "border-b border-transparent bg-transparent",
+        scrolled
+          ? "border-b border-slate-200/70 bg-white/80 backdrop-blur-xl"
+          : "border-b border-transparent bg-transparent",
       )}
     >
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8" aria-label="Main">
+      <nav
+        className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8"
+        aria-label="Main"
+      >
         <Link href="/" aria-label="SELF home" className="shrink-0">
           <Logo />
         </Link>

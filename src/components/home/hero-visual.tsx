@@ -12,7 +12,7 @@ export function HeroVisual() {
       <div className="absolute inset-8 rounded-full bg-linear-to-br from-brand-300/50 via-fuchsia-300/30 to-sun-300/40 blur-3xl" />
 
       {/* Chat snapshot */}
-      <div className="animate-float absolute left-0 top-2 w-[80%] rounded-3xl bg-white/95 p-4 shadow-lift ring-1 ring-slate-200/70 backdrop-blur sm:w-[72%] sm:p-5">
+      <div className="absolute top-2 left-0 w-[80%] animate-float rounded-3xl bg-white/95 p-4 shadow-lift ring-1 ring-slate-200/70 backdrop-blur sm:w-[72%] sm:p-5">
         <div className="flex items-center gap-2.5">
           <SageAvatar size="sm" />
           <div>
@@ -42,13 +42,16 @@ export function HeroVisual() {
       </div>
 
       {/* Profile snapshot */}
-      <div className="animate-float-slow absolute right-0 top-[30%] w-[58%] rounded-3xl bg-white p-4 shadow-lift ring-1 ring-slate-200/70 sm:w-[50%]">
-        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-600">Your career profile</p>
-        <p className="mt-1 font-serif text-xl italic leading-tight text-ink sm:text-2xl">The Creative Analyst</p>
+      <div className="absolute top-[30%] right-0 w-[58%] animate-float-slow rounded-3xl bg-white p-4 shadow-lift ring-1 ring-slate-200/70 sm:w-[50%]">
+        <p className="text-[10px] font-bold tracking-[0.16em] text-brand-600 uppercase">Your career profile</p>
+        <p className="mt-1 font-serif text-xl leading-tight text-ink italic sm:text-2xl">The Creative Analyst</p>
         <RadarChart scores={DEMO_SCORES} showLabels={false} interactive={false} size={180} className="mt-1" />
         <div className="flex justify-center gap-1.5">
           {["I", "A", "S"].map((d) => (
-            <span key={d} className="grid size-6 place-items-center rounded-md bg-brand-50 text-[11px] font-bold text-brand-700">
+            <span
+              key={d}
+              className="grid size-6 place-items-center rounded-md bg-brand-50 text-[11px] font-bold text-brand-700"
+            >
               {d}
             </span>
           ))}
@@ -56,7 +59,7 @@ export function HeroVisual() {
       </div>
 
       {/* Match pill */}
-      <div className="animate-float absolute left-[4%] top-[47%] hidden items-center gap-3 rounded-2xl bg-ink px-4 py-3 text-white shadow-lift sm:flex [animation-delay:-2s]">
+      <div className="absolute top-[47%] left-[4%] hidden animate-float items-center gap-3 rounded-2xl bg-ink px-4 py-3 text-white shadow-lift [animation-delay:-2s] sm:flex">
         <span className="grid size-9 place-items-center rounded-xl bg-white/10">
           <Sparkles className="size-4 text-sun-300" aria-hidden />
         </span>
@@ -69,7 +72,7 @@ export function HeroVisual() {
       {/* Course snapshot */}
       <div className="absolute bottom-0 left-[6%] w-[66%] overflow-hidden rounded-3xl bg-white shadow-lift ring-1 ring-slate-200/70 sm:w-[56%]">
         <CourseThumb slug="data-analytics-foundations" className="h-24" iconClassName="size-10 bottom-3 right-3">
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/25 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur">
+          <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-black/25 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur">
             <CirclePlay className="size-3" aria-hidden /> Level 1 · Self-paced
           </span>
         </CourseThumb>

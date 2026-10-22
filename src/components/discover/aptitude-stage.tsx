@@ -23,7 +23,12 @@ export function AptitudeStage() {
 
   if (finished) {
     return (
-      <StageShell icon={Puzzle} part="Assessment 2 of 3" title="Aptitude quiz" subtitle="Quick puzzles across reasoning, numbers, words and patterns.">
+      <StageShell
+        icon={Puzzle}
+        part="Assessment 2 of 3"
+        title="Aptitude quiz"
+        subtitle="Quick puzzles across reasoning, numbers, words and patterns."
+      >
         <SectionComplete
           title={`You scored ${score} out of ${APTITUDE_QUESTIONS.length}`}
           body="Nicely done! One last step — tell us what matters most to you in your work."
@@ -40,7 +45,10 @@ export function AptitudeStage() {
                 <span
                   key={q.id}
                   title={APTITUDE_SKILL_LABEL[q.skill]}
-                  className={cn("grid size-9 place-items-center rounded-xl", ok ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500")}
+                  className={cn(
+                    "grid size-9 place-items-center rounded-xl",
+                    ok ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500",
+                  )}
                 >
                   {ok ? <Check className="size-4" strokeWidth={3} /> : <X className="size-4" strokeWidth={3} />}
                 </span>
@@ -79,7 +87,13 @@ export function AptitudeStage() {
               key={x.id}
               className={cn(
                 "h-1.5 flex-1 rounded-full transition-colors duration-300",
-                i === index ? "bg-brand-600" : a === undefined ? "bg-slate-200" : a === x.answer ? "bg-emerald-400" : "bg-rose-300",
+                i === index
+                  ? "bg-brand-600"
+                  : a === undefined
+                    ? "bg-slate-200"
+                    : a === x.answer
+                      ? "bg-emerald-400"
+                      : "bg-rose-300",
               )}
             />
           );
@@ -93,7 +107,7 @@ export function AptitudeStage() {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -40 }}
           transition={{ duration: 0.28 }}
-          className="rounded-3xl bg-white p-5 ring-1 ring-slate-200/80 shadow-soft sm:p-8"
+          className="rounded-3xl bg-white p-5 shadow-soft ring-1 ring-slate-200/80 sm:p-8"
         >
           <div className="flex items-center justify-between">
             <Badge tone="slate">{APTITUDE_SKILL_LABEL[q.skill]}</Badge>
@@ -101,7 +115,7 @@ export function AptitudeStage() {
               Question {index + 1} of {APTITUDE_QUESTIONS.length}
             </span>
           </div>
-          <h2 className="mt-5 text-xl font-bold leading-snug tracking-tight text-ink sm:text-2xl">{q.prompt}</h2>
+          <h2 className="mt-5 text-xl leading-snug font-bold tracking-tight text-ink sm:text-2xl">{q.prompt}</h2>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2">
             {q.options.map((opt, i) => {
@@ -115,7 +129,8 @@ export function AptitudeStage() {
                   onClick={() => actions.answerAptitude(q.id, i)}
                   className={cn(
                     "group flex items-center gap-3 rounded-2xl p-4 text-left text-[15px] font-medium ring-1 transition-all duration-200",
-                    !revealed && "bg-white text-slate-700 ring-slate-200 hover:-translate-y-0.5 hover:bg-brand-50/50 hover:ring-brand-300",
+                    !revealed &&
+                      "bg-white text-slate-700 ring-slate-200 hover:-translate-y-0.5 hover:bg-brand-50/50 hover:ring-brand-300",
                     revealed && correct && "bg-emerald-50 text-emerald-800 ring-2 ring-emerald-400",
                     revealed && picked && !correct && "bg-rose-50 text-rose-800 ring-2 ring-rose-300",
                     revealed && !picked && !correct && "bg-white text-slate-400 ring-slate-200",
@@ -130,7 +145,13 @@ export function AptitudeStage() {
                       revealed && !picked && !correct && "bg-slate-100 text-slate-400",
                     )}
                   >
-                    {revealed && correct ? <Check className="size-4" strokeWidth={3} /> : revealed && picked ? <X className="size-4" strokeWidth={3} /> : LETTERS[i]}
+                    {revealed && correct ? (
+                      <Check className="size-4" strokeWidth={3} />
+                    ) : revealed && picked ? (
+                      <X className="size-4" strokeWidth={3} />
+                    ) : (
+                      LETTERS[i]
+                    )}
                   </span>
                   {opt}
                 </button>

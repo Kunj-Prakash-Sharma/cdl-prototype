@@ -40,8 +40,8 @@ export function ValuesStage() {
               className={cn(
                 "relative flex flex-col items-start rounded-2xl p-4 text-left ring-1 transition-all duration-200 sm:p-5",
                 on
-                  ? "bg-brand-600 text-white ring-brand-600 shadow-glow"
-                  : "bg-white ring-slate-200/80 shadow-soft hover:-translate-y-0.5 hover:ring-brand-300 disabled:opacity-40 disabled:hover:translate-y-0",
+                  ? "bg-brand-600 text-white shadow-glow ring-brand-600"
+                  : "bg-white shadow-soft ring-slate-200/80 hover:-translate-y-0.5 hover:ring-brand-300 disabled:opacity-40 disabled:hover:translate-y-0",
               )}
             >
               <span
@@ -53,12 +53,14 @@ export function ValuesStage() {
                 <v.icon className="size-5" aria-hidden />
               </span>
               <span className={cn("mt-4 font-bold", on ? "text-white" : "text-ink")}>{v.label}</span>
-              <span className={cn("mt-1 text-xs leading-relaxed", on ? "text-white/75" : "text-slate-500")}>{v.detail}</span>
+              <span className={cn("mt-1 text-xs leading-relaxed", on ? "text-white/75" : "text-slate-500")}>
+                {v.detail}
+              </span>
               {on && (
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="absolute right-3 top-3 grid size-7 place-items-center rounded-full bg-white text-sm font-extrabold text-brand-700"
+                  className="absolute top-3 right-3 grid size-7 place-items-center rounded-full bg-white text-sm font-extrabold text-brand-700"
                 >
                   {rank + 1}
                 </motion.span>
@@ -68,7 +70,7 @@ export function ValuesStage() {
         })}
       </div>
 
-      <div className="mt-8 rounded-3xl bg-white p-5 ring-1 ring-slate-200/80 shadow-soft sm:p-6">
+      <div className="mt-8 rounded-3xl bg-white p-5 shadow-soft ring-1 ring-slate-200/80 sm:p-6">
         <p className="text-sm font-bold text-ink">Your top {VALUES_TO_PICK}</p>
         <div className="mt-3 grid gap-2 sm:grid-cols-3">
           {Array.from({ length: VALUES_TO_PICK }).map((_, i) => {
@@ -81,7 +83,12 @@ export function ValuesStage() {
                   v ? "bg-brand-50 text-brand-800" : "border border-dashed border-slate-300 text-slate-400",
                 )}
               >
-                <span className={cn("grid size-6 place-items-center rounded-full text-xs", v ? "bg-brand-600 text-white" : "bg-slate-100")}>
+                <span
+                  className={cn(
+                    "grid size-6 place-items-center rounded-full text-xs",
+                    v ? "bg-brand-600 text-white" : "bg-slate-100",
+                  )}
+                >
                   {i + 1}
                 </span>
                 {v ? v.label : "Choose a value"}
@@ -91,7 +98,9 @@ export function ValuesStage() {
         </div>
         <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-slate-100 pt-5 sm:flex-row">
           <p className="text-sm text-slate-500">
-            {full ? "Perfect — you're ready for your report." : `Select ${VALUES_TO_PICK - values.length} more to continue.`}
+            {full
+              ? "Perfect — you're ready for your report."
+              : `Select ${VALUES_TO_PICK - values.length} more to continue.`}
           </p>
           <Button disabled={!full} onClick={() => actions.setStage("analyzing")}>
             <Sparkles className="size-4" aria-hidden /> Generate my career report

@@ -87,7 +87,10 @@ export function computeResults(s: AppState): Results {
     counts[item.dim] += 1;
   }
   const boost = zeroDims();
-  for (const opt of [...INTERESTS.filter((o) => interests.includes(o.id)), ...STRENGTHS.filter((o) => strengths.includes(o.id))]) {
+  for (const opt of [
+    ...INTERESTS.filter((o) => interests.includes(o.id)),
+    ...STRENGTHS.filter((o) => strengths.includes(o.id)),
+  ]) {
     for (const [d, w] of Object.entries(opt.dims ?? {})) boost[d as Dimension] += w;
   }
   const maxBoost = Math.max(1, ...Object.values(boost));
@@ -104,13 +107,27 @@ export function computeResults(s: AppState): Results {
   const bySkill: SkillScore[] = skills.map((skill) => {
     const qs = APTITUDE_QUESTIONS.filter((q) => q.skill === skill);
     const correct = qs.filter((q) => s.aptitude[q.id] === q.answer).length;
-    return { skill, label: APTITUDE_SKILL_LABEL[skill], correct, total: qs.length, pct: Math.round((correct / qs.length) * 100) };
+    return {
+      skill,
+      label: APTITUDE_SKILL_LABEL[skill],
+      correct,
+      total: qs.length,
+      pct: Math.round((correct / qs.length) * 100),
+    };
   });
   const correct = bySkill.reduce((n, x) => n + x.correct, 0);
   const total = APTITUDE_QUESTIONS.length;
   const ratio = correct / total;
   const percentile =
-    ratio === 1 ? "Top 5%" : ratio >= 0.83 ? "Top 15%" : ratio >= 0.66 ? "Top 30%" : ratio >= 0.5 ? "Top 50%" : "Building up";
+    ratio === 1
+      ? "Top 5%"
+      : ratio >= 0.83
+        ? "Top 15%"
+        : ratio >= 0.66
+          ? "Top 30%"
+          : ratio >= 0.5
+            ? "Top 50%"
+            : "Building up";
 
   // 3. Values
   const values = s.values.map((id) => WORK_VALUES.find((v) => v.id === id)).filter((v): v is WorkValue => !!v);
@@ -161,9 +178,16 @@ export function computeResults(s: AppState): Results {
 
     const reasons: string[] = [];
     const dimHit = ranked.slice(0, 3).find((d) => career.dims[d] >= 0.7);
-    if (dimHit) reasons.push(`Suits your ${DIMENSION_INFO[dimHit].adjective.toLowerCase()} side (${DIMENSION_INFO[dimHit].name})`);
-    if (interestHits[0]) reasons.push(`Builds on your interest in ${INTERESTS.find((o) => o.id === interestHits[0])?.label.toLowerCase()}`);
-    if (valueHits[0]) reasons.push(`Offers the ${WORK_VALUES.find((v) => v.id === valueHits[0])?.label.toLowerCase()} you value most`);
+    if (dimHit)
+      reasons.push(
+        `Suits your ${DIMENSION_INFO[dimHit].adjective.toLowerCase()} side (${DIMENSION_INFO[dimHit].name})`,
+      );
+    if (interestHits[0])
+      reasons.push(
+        `Builds on your interest in ${INTERESTS.find((o) => o.id === interestHits[0])?.label.toLowerCase()}`,
+      );
+    if (valueHits[0])
+      reasons.push(`Offers the ${WORK_VALUES.find((v) => v.id === valueHits[0])?.label.toLowerCase()} you value most`);
     if (strengthHits[0] && reasons.length < 3)
       reasons.push(`Uses your strength in ${STRENGTHS.find((o) => o.id === strengthHits[0])?.label.toLowerCase()}`);
     if (reasons.length === 0) reasons.push(career.blurb);

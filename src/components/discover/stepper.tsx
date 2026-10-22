@@ -19,12 +19,15 @@ export function Stepper({ state }: { state: AppState }) {
     { id: "results", label: "Your report", icon: ChartColumn, progress: state.completedAt && complete ? 1 : 0 },
   ];
   const current = state.stage === "analyzing" ? "results" : state.stage;
-  const currentIndex = Math.max(0, steps.findIndex((s) => s.id === current));
+  const currentIndex = Math.max(
+    0,
+    steps.findIndex((s) => s.id === current),
+  );
   const minutesLeft = Math.max(1, Math.round((1 - p.overall) * TOTAL_MINUTES));
   const locked = state.stage === "analyzing";
 
   return (
-    <div className="sticky top-16 z-40 border-b print:hidden border-slate-200/70 bg-white/85 backdrop-blur-xl">
+    <div className="sticky top-16 z-40 border-b border-slate-200/70 bg-white/85 backdrop-blur-xl print:hidden">
       <div className="mx-auto max-w-6xl px-4 py-3 sm:px-6">
         {/* Compact (mobile) */}
         <div className="flex items-center justify-between gap-4 md:hidden">
@@ -41,7 +44,11 @@ export function Stepper({ state }: { state: AppState }) {
             {steps.map((step, i) => {
               const done = step.progress >= 1;
               const active = i === currentIndex;
-              const reachable = !locked && (done || active || (step.id === "results" ? complete && !!state.completedAt : steps[i - 1]?.progress >= 1));
+              const reachable =
+                !locked &&
+                (done ||
+                  active ||
+                  (step.id === "results" ? complete && !!state.completedAt : steps[i - 1]?.progress >= 1));
               return (
                 <li key={step.id} className={cn("flex items-center", i < steps.length - 1 && "flex-1")}>
                   <button
@@ -49,7 +56,7 @@ export function Stepper({ state }: { state: AppState }) {
                     disabled={!reachable}
                     onClick={() => actions.setStage(step.id)}
                     className={cn(
-                      "group flex items-center gap-2.5 rounded-full py-1 pl-1 pr-3 transition",
+                      "group flex items-center gap-2.5 rounded-full py-1 pr-3 pl-1 transition",
                       reachable && !active && "hover:bg-slate-900/[0.04]",
                       !reachable && "cursor-default",
                     )}
@@ -63,11 +70,15 @@ export function Stepper({ state }: { state: AppState }) {
                         !done && !active && "bg-slate-100 text-slate-400",
                       )}
                     >
-                      {done && !active ? <Check className="size-4" strokeWidth={3} /> : <step.icon className="size-4" />}
+                      {done && !active ? (
+                        <Check className="size-4" strokeWidth={3} />
+                      ) : (
+                        <step.icon className="size-4" />
+                      )}
                     </span>
                     <span
                       className={cn(
-                        "whitespace-nowrap text-sm font-semibold",
+                        "text-sm font-semibold whitespace-nowrap",
                         active ? "text-ink" : done ? "text-slate-600" : "text-slate-400",
                       )}
                     >

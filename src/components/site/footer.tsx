@@ -49,8 +49,7 @@ export function Footer() {
         <div className="rounded-2xl bg-paper p-5 ring-1 ring-slate-200/70">
           <p className="text-sm font-semibold text-ink">Prototype mode</p>
           <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
-            UI prototype with dummy data. No real AI, accounts or payments. Your progress is saved in this browser
-            only.
+            UI prototype with dummy data. No real AI, accounts or payments. Your progress is saved in this browser only.
           </p>
           <ResetDemoButton className="mt-3" />
         </div>

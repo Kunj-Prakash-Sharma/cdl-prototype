@@ -22,10 +22,10 @@ export function CourseThumb({
       style={{ backgroundImage: `linear-gradient(135deg, ${course.theme.from}, ${course.theme.to})` }}
     >
       <div className="bg-grid-dark absolute inset-0 opacity-60" />
-      <div className="absolute -bottom-16 -right-10 size-48 rounded-full bg-white/15 blur-2xl" />
-      <div className="absolute -left-8 -top-10 size-32 rounded-full bg-black/10 blur-xl" />
+      <div className="absolute -right-10 -bottom-16 size-48 rounded-full bg-white/15 blur-2xl" />
+      <div className="absolute -top-10 -left-8 size-32 rounded-full bg-black/10 blur-xl" />
       <Icon
-        className={cn("absolute bottom-4 right-4 size-16 text-white/85 drop-shadow-lg", iconClassName)}
+        className={cn("absolute right-4 bottom-4 size-16 text-white/85 drop-shadow-lg", iconClassName)}
         strokeWidth={1.4}
         aria-hidden
       />
