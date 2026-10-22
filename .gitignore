@@ -39,3 +39,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# env example is committed
+!.env.example
+
+# claude personal config
+CLAUDE.local.md
+.claude/settings.local.json
+
+# test output
+/playwright-report/
+/test-results/
+
+# worker bundle
+/dist/
