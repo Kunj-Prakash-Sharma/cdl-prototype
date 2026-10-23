@@ -12,7 +12,7 @@ const schema = z.object({
   APP_URL: z.url().default("http://localhost:3000"),
   DATABASE_URL: z.string().min(1),
 
-  // Chat: inactivity before a session counts as lost (decision I-18)
+  // Chat: inactivity before a session counts as lost (decision D58)
   CHAT_INACTIVITY_MINUTES: z.coerce.number().int().positive().default(30),
 
   // Integration adapters (src/integrations). Add vendor names as adapters land.

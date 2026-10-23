@@ -1,6 +1,6 @@
 ---
 name: feature-spec
-description: Interview the user about a feature, then write docs/specs/<feature>.md from the template. Use before writing any feature code.
+description: Interview the user about a feature, then write docs/specs/<feature>.md from the template. Use before building a big feature (auth, payments, video, chat). Small features do not need a spec.
 ---
 
 # feature-spec

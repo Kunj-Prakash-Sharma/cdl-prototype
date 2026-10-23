@@ -9,9 +9,11 @@ Update the status and date as items close. When an item closes, record the outco
 | SMS provider choice and DLT registration under the client's legal entity (sender name + approved templates) | Client + lead | Start week 1 | open |
 | Day-1 AWS checks in Mumbai: MediaConvert, ECS Express Mode, Bedrock Haiku (direct vs APAC cross-region routing) | Developers | Day 1 | open |
 | Repo `Kunj-Prakash-Sharma/cdl-prototype` is **public**: recommend making it private before production code lands (no branch protection; team follows branch + PR + green CI) | Kunj | Before real code is pushed | open |
+| How code reaches AWS: CI only checks and builds the image, there is no deploy step. CI runs on PRs into `dev` and pushes to `dev` only; add `main` when there is a release flow | Lead architect | Before first deploy | open |
 | AWS account owner and credits (client's account, or ours with a later handover) | Lead + client | Day 1 | open |
 | Database upgrade trigger (single zone → second zone) | CTO / tech lead | Before launch | open |
 | Video quality ladder and default quality (from the week-1 spike) | Developers | End of week 1 | open |
+| Confirm the vendors and AWS products we assumed but the docs never named: Sentry (error tracking), ECR (image registry), Secrets Manager, CloudWatch, GitHub Actions. See `architecture/integrations.md` | Lead architect | Week 1 | open |
 
 ## Client inputs
 From the Scope of Work. Dates are "to give" unless stated.
@@ -30,4 +32,4 @@ From the Scope of Work. Dates are "to give" unless stated.
 | Legal review: no age gate with many users under 18 (DPDP Act) | client | open |
 
 ## Chat inactivity timeout
-Config `CHAT_INACTIVITY_MINUTES`, default 30. Client may tune it. (Decision I-18.)
+Config `CHAT_INACTIVITY_MINUTES`, default 30. Client may tune it. (Decision D58.)

@@ -4,6 +4,8 @@ The prototype (`prototype-v0`) is about 5,950 lines in 45 files: learner-facing 
 
 **Verdicts:** Keep = as is · Adapt = markup stays, data source or copy changes · Rewrite = logic replaced, salvage layout · Delete.
 
+> **Moved (cleanup, Oct 2026):** `lib/scoring.ts` → `modules/chat/scoring.ts`; `lib/data/discovery.ts` → `modules/chat/questions.ts`; `lib/data/careers.ts` → `modules/chat/careers.ts`; `lib/data/courses.ts` → `modules/catalog/courses.ts`. Routes: `/my-learning` → `/my-self`, pages now sit in `app/(public)` and `app/(learner)`. Deleted: `reset-demo-button.tsx`, salary and outlook fields. Still in place until the port replaces them: `lib/store.ts`, aptitude and values stages (the whole demo UI reads them).
+
 ## Size
 - Keep ≈ 9% · Adapt ≈ 49% · Rewrite ≈ 25% · Delete ≈ 17% of existing lines.
 - A **medium** restructure. The prototype is roughly 25–30% of Phase 1 effort; backend, admin, integrations and infra are the other 70–75%.
@@ -32,7 +34,7 @@ The prototype (`prototype-v0`) is about 5,950 lines in 45 files: learner-facing 
 | `discover/discovery-flow.tsx` | Adapt | Stage machine stays; stages: about → OCEAN → RIASEC → report; server-backed |
 | `discover/stage-shell.tsx`, `stepper.tsx` | Adapt | Steps and progress source change; compact mobile stepper |
 | `discover/intro-stage.tsx` | Adapt | Meera copy; remove "stakeholder demo" skip; OTP before start |
-| `discover/chat-stage.tsx` | Adapt (heavy) | Keep bubbles, typing indicator, chips. Steps and acknowledgement copy move to config. Only the name is typed (I-6). Side panel becomes bottom sheet |
+| `discover/chat-stage.tsx` | Adapt (heavy) | Keep bubbles, typing indicator, chips. Steps and acknowledgement copy move to config. Only the name is typed (D46). Side panel becomes bottom sheet |
 | `discover/personality-stage.tsx` | Adapt | Likert UI reused for OCEAN and RIASEC items from config |
 | `discover/analyzing-stage.tsx` | Adapt | Loader while the server scores |
 | `discover/aptitude-stage.tsx` | Delete | Not in spec |
@@ -41,7 +43,7 @@ The prototype (`prototype-v0`) is about 5,950 lines in 45 files: learner-facing 
 | `home/hero-visual.tsx` | Adapt | Rename; static demo scores are fine for marketing |
 | `lib/data/discovery.ts` | Rewrite | Becomes versioned question-set config with fixed IDs; RIASEC items and `DIMENSION_INFO` copy partly salvageable; add OCEAN |
 | `lib/scoring.ts` | Rewrite | Pure server-side module; keep the cosine/clamp pattern idea; new OCEAN + RIASEC rules; unit-tested |
-| `lib/data/careers.ts` | Reduce | Interest/career families only; no salary, outlook or % fit (I-7) |
+| `lib/data/careers.ts` | Reduce | Interest/career families only; no salary, outlook or % fit (D47) |
 
 ## Learning (Level 1)
 | File | Verdict | Note |

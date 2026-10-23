@@ -3,15 +3,15 @@
 Phase 1 of SELF: a mobile-first career-discovery + learning site (Meera chat → report → paid courses), built as a **modular monolith** (one Next.js app = pages + API, plus a worker, one repo). "SELF" is a working name: never hardcode it (use `src/config/brand.ts`).
 
 @AGENTS.md
-@docs/architecture/integrations.md
 
 ## Read before feature work
-- `docs/decisions.md` — every decision (D* from the architecture doc, I-* from our interview). Newest wins.
-- `docs/architecture/modules.md` — 9 modules, folder layout, boundary rules.
+- `docs/decisions.md` — every decision, one numbered list (D1–D61). Higher number wins on conflict.
+- `docs/architecture/modules.md` — 5 modules, folder layout, boundary rules.
+- `docs/architecture/integrations.md` — wrapper rules, third-party services, AWS resources, npm dependencies. Update part 2 when you add a vendor, AWS resource or key package.
 - `docs/design/design-system.md` — tokens, patterns, mobile rules.
 - `docs/prototype/reuse-map.md` — what to keep/adapt/rewrite from the prototype (tag `prototype-v0`).
 - `docs/requirements/` — scope and architecture source docs. `docs/open-questions.md` — flags.
-- `docs/specs/<feature>.md` — the spec for the feature you are building. **No spec, no feature code:** run `/feature-spec` first.
+- `docs/specs/<feature>.md` — the spec, if the feature has one. **Big features need a spec first** (auth, payments, video, chat): run `/feature-spec`. Small features go straight to a PR.
 
 ## Commands
 Run `nvm use` first (Node 22; the shell may default to 23).
@@ -25,7 +25,7 @@ Run `nvm use` first (Node 22; the shell may default to 23).
 - Modules talk to each other **only through `service.ts`**. Never import another module's `repo`, `schema` or `actions`.
 - Handlers and server actions stay thin: zod-validate input → check session/role → call a service → return.
 - Server actions for our own screens; REST route handlers only for webhooks, uploads and the worker.
-- Modules import `@/integrations/<name>` only, never a vendor SDK. Interfaces are in our terms.
+- Modules import `@/integrations/<name>` only, never a vendor SDK. Interfaces are in our terms. No new wrapper without a reason (see `integrations.md`).
 - Auth: only `modules/auth` touches Better Auth; others use `requireUser()` / `requireAdmin()` / `getSession()`.
 - Public pages are server-rendered; interactive bits are small client islands (`"use client"` only where needed).
 - Next 16 has breaking changes: read `node_modules/next/dist/docs/` before writing Next code.
@@ -48,11 +48,11 @@ Run `nvm use` first (Node 22; the shell may default to 23).
 - Out of Phase 1: certificates, share links, ratings, learner counts, salary/% fit, aptitude/values quizzes.
 
 ## Workflow
-1. `/feature-spec` → write `docs/specs/<x>.md` (interview first).
-2. Fresh session, plan mode, implement against the spec; write tests; run lint + typecheck + test.
-3. Before merge: `/code-review`, and "review the diff against `docs/specs/<x>.md` with a subagent" (correctness gaps only). Use `/security-review` for auth, payments and webhooks.
-4. Work on a branch, open a PR, CI green before merging to `main`. **Never commit or push unless the user asks.**
+1. Big feature (auth, payments, video, chat): `/feature-spec` → `docs/specs/<x>.md`, then implement in a fresh session in plan mode. Small feature: just build it.
+2. Write tests; run lint + typecheck + test.
+3. Before merge: `/code-review`. Use `/security-review` for auth, payments and webhooks.
+4. Work on a branch, open a PR into `dev`, CI green before merging. **Never commit or push unless the user asks.**
 5. `/clear` between unrelated tasks. Update the docs when a decision changes (docs first, then code).
 
 ## Compaction
-When compacting, always preserve: the list of modified files, the active spec path, and the test commands.
+When compacting, always preserve: the list of modified files, the active spec path (if any), and the test commands.

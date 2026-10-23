@@ -1,6 +1,6 @@
 # Spec: <feature name>
 
-> Copy this file to `docs/specs/<feature>.md`. Write the spec **before** the code. Keep it self-contained: a fresh session should be able to implement it from this file alone.
+> Copy this file to `docs/specs/<feature>.md`. Write the spec **before** the code, for big features only (auth, payments, video, chat). Keep it self-contained: a fresh session should be able to implement it from this file alone.
 
 - **Status:** draft | approved | implemented
 - **Owner:** <name>

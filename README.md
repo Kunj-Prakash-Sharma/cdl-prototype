@@ -47,9 +47,9 @@ docker run -w /worker self-app node dist/migrate.js                # migrations
 
 Start with `CLAUDE.md` (rules for working in this repo, including with Claude Code).
 
-- [docs/decisions.md](docs/decisions.md): every decision (architecture doc `D*`, our interview `I-*`)
-- [docs/architecture/modules.md](docs/architecture/modules.md): the 9 modules and boundary rules
-- [docs/architecture/integrations.md](docs/architecture/integrations.md): third-party wrappers
+- [docs/decisions.md](docs/decisions.md): every decision, one numbered list (`D1`–`D61`)
+- [docs/architecture/modules.md](docs/architecture/modules.md): the 5 modules and boundary rules
+- [docs/architecture/integrations.md](docs/architecture/integrations.md): third-party services, wrappers, AWS resources and dependencies
 - [docs/design/design-system.md](docs/design/design-system.md): tokens, patterns, mobile rules
 - [docs/prototype/reuse-map.md](docs/prototype/reuse-map.md): what to keep from the prototype
 - [docs/requirements/](docs/requirements/): scope of work and architecture source docs
@@ -58,4 +58,4 @@ Start with `CLAUDE.md` (rules for working in this repo, including with Claude Co
 
 ## Working agreement
 
-Work on a branch, open a PR, merge to `main` only when CI is green. Write the spec first (`/feature-spec` in Claude Code), keep modules talking only through `service.ts`, and never put personal data in logs or analytics.
+Work on a branch, open a PR into `dev`, merge only when CI is green. Write the spec first (`/feature-spec` in Claude Code), keep modules talking only through `service.ts`, and never put personal data in logs or analytics.

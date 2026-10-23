@@ -1,6 +1,6 @@
 # Modules and boundaries
 
-One Next.js app serves the pages **and** the API (monolith, one repo). A worker process runs from the same codebase and image. Nine modules, each owning its data.
+One Next.js app serves the pages **and** the API (monolith, one repo). A worker process runs from the same codebase and image. 
 
 ## Folder layout
 ```
@@ -8,7 +8,7 @@ src/
   app/
     (public)/   home, /learn, /learn/[slug], legal pages   server-rendered, cached
     (learner)/  /discover, /my-self/*                      session required
-    (admin)/    /admin/*                                   admin role
+    (admin)/    /admin/*                                   admin role (added with the admin feature)
     api/        REST handlers: webhooks, uploads, worker callbacks
   modules/<name>/
     service.ts   public interface; the ONLY thing other modules may import
@@ -16,28 +16,31 @@ src/
     schema.ts    Drizzle tables
     actions.ts   server actions for our own screens (thin; call service.ts)
     *.test.ts
+    (create each file when the feature needs it, not before)
   integrations/<name>/   types.ts · fake.ts · <vendor>.ts · index.ts   (see integrations.md)
   components/    ui/ kit + feature folders
-  config/        brand.ts, question-sets/v1/*.json, scoring rules
-  lib/           env, db, logger, session helpers, format
+  config/        brand.ts
+  lib/           env, db, logger, session helpers, format (generic helpers only)
   db/schema.ts   re-exports every module schema for drizzle-kit
 worker/          pg-boss consumer (video status, emails)
 drizzle/         generated migrations
 docs/            this folder
 ```
 
+Modules are created when their first feature lands. Chat data (question sets, scoring rules) lives inside `modules/chat`, not in `lib/` or `config/`.
+
 ## Modules
+Five modules, each owning its data. Admin and analytics are not modules: admin is pages under `app/(admin)/` that call the other modules' services, and analytics is the `track()` call on the analytics integration.
+
 | Module | Owns | Outside dependency (via wrapper) |
 |---|---|---|
 | `auth` | OTP login, sessions, learner profile (name, number, optional email), roles | `sms` |
 | `chat` | Meera flow, OCEAN and RIASEC question sets as versioned config, answers, scoring rules, report | `ai` (wording only) |
-| `catalog` | Courses, lessons, videos, PDFs, quiz questions, prices, bundles, publish state | `storage` |
+| `catalog` | Courses, lessons, quiz questions, prices, bundles, publish state. Inside it: `video/` (upload, encoding jobs, status, thumbnails) and `learning/` (playback authorisation, progress and resume, quiz marking) | `video`, `storage`, `queue` |
 | `commerce` | Products, orders, payments, entitlements, receipts, manual access grant | `payments`, `email` |
-| `learning` | Playback authorisation, progress and resume, quiz marking | `video` (signed access) |
-| `video` | Upload, encoding jobs, status and retries, thumbnails | `video`, `storage`, `queue` |
 | `leads` | Callback requests, consent flag, instant email alert, Excel export, webhook | `email` |
-| `admin` | Course management, users and purchases, leads list, audit log | none (uses other services) |
-| `analytics` | Funnel events for each step | `analytics` |
+
+Split a file when it passes about 300 lines; do not pre-split.
 
 ## Boundary rules
 1. Modules talk to each other **only through `service.ts`**. Never import another module's `repo`, `schema` or `actions`.

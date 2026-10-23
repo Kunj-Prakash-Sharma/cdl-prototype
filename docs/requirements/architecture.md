@@ -1,6 +1,6 @@
 # SELF Phase 1 – Architecture and Technical Decisions
 
-Source: "SELF Phase 1 – Architecture and Technical Decisions.pdf", Oct 21, 2026, Kunj Sharma. Converted to markdown for repo use. Our own interview decisions that refine this doc are in [../decisions.md](../decisions.md) (I-1…I-20). Where they differ, `decisions.md` wins.
+Source: "SELF Phase 1 – Architecture and Technical Decisions.pdf", Oct 21, 2026, Kunj Sharma. Converted to markdown for repo use. Our own interview decisions that refine this doc are in [../decisions.md](../decisions.md) (D41…D60). Where they differ, `decisions.md` wins.
 
 ## Summary
 Phase 1 is one modular web application on AWS (India region), with managed services for video, payments, SMS and AI. It goes to invited users around 22 November 2026, and that date can move by one to two weeks. It covers Level 0 (the free guided career chat with Meera) and Level 1 (self-paced courses), plus a learner dashboard and an admin panel. Live sessions (Level 2) follow around 6 December.
@@ -44,7 +44,7 @@ Browsers reach the app through CloudFront. The app calls the outside services, a
 | D19 | Payment gateway behind an interface. Onboard Razorpay and Cashfree, default Razorpay | Decided |
 | D20 | Video on AWS (S3, MediaConvert, CloudFront) behind a video interface. Fall back to a managed platform if no test video plays end to end by the end of week 1 | Decided |
 | D21 | Leads table with consent flag, admin list with Excel export, instant email alert, webhook for a later CRM | Decided |
-| D22 | One AI provider behind an interface, chosen after a short comparison | Decided, provider open (now: Bedrock Haiku, I-16) |
+| D22 | One AI provider behind an interface, chosen after a short comparison | Decided, provider open (now: Bedrock Haiku, D56) |
 | D23 | AWS India region, app on ECS Express Mode, managed database | Decided, pending confirmation |
 | D24 | Dev and production only. Dev doubles as staging, with guardrails | Decided |
 | D25 | Lean autoscaling with caps, rate limits and spend limits | Decided |
@@ -121,7 +121,7 @@ Every outside service sits behind our own interface, so a provider can change wi
 | AI wording | One hosted AI API, to choose | One provider-agnostic interface. Fixed question IDs. Contract must exclude training on our data | Short comparison on wording quality, cost, data terms and data location |
 | Email | Transactional email provider, to choose | Templates for receipts and callback alerts | Sender domain setup needs the final domain, which is not decided yet |
 | Analytics | Mixpanel-style tool, to choose | One event wrapper. No personal data in events. No ad pixels | Low |
-| PDF report | Server-side PDF rendering | Same report template as the web page | Extra build time. First item to move to Phase 2 if the date slips. **(Superseded: browser print, I-8)** |
+| PDF report | Server-side PDF rendering | Same report template as the web page | Extra build time. First item to move to Phase 2 if the date slips. **(Superseded: browser print, D48)** |
 
 ## Infrastructure and environments
 Everything runs in one AWS account in an India region, using managed services only and no Kubernetes. The app runs on Amazon ECS Express Mode because AWS App Runner is closed to new customers, and AWS recommends Express Mode as the replacement.
@@ -133,7 +133,7 @@ Everything runs in one AWS account in an India region, using managed services on
 | Database | Managed PostgreSQL, single zone at first, with point-in-time recovery | A single zone accepts a short outage if that data center fails. Revisit when revenue starts |
 | Storage | S3 private buckets for originals, encoded video, reports and PDFs, with versioning on | Originals are kept so we can re-encode later |
 | Delivery | CloudFront | Public pages cached. Signed, expiring access for video |
-| Jobs | Managed queue with a worker | Video jobs, PDF reports and emails. **(Now: pg-boss, I-4)** |
+| Jobs | Managed queue with a worker | Video jobs, PDF reports and emails. **(Now: pg-boss, D44)** |
 | Secrets | Managed secrets store | Separate keys per environment |
 | CI/CD | Build the image once. Deploy to dev on merge to main after tests pass | Production needs manual approval and has one-step rollback |
 | Environments | Dev and production. Dev doubles as staging | Dev uses test-mode payment keys, demo videos and dummy accounts, with no real personal data. Separate database, buckets and keys, ideally separate AWS accounts. Freeze deploys before client reviews |
@@ -179,7 +179,7 @@ Every funnel step sends one event under a pseudonymous session ID. Events carry 
 | checkout_started, payment_succeeded, payment_failed | Checkout steps | product id, amount, gateway result |
 | lesson_completed | Lesson finished | course id, lesson id |
 
-The inactivity timeout that counts a session as "lost" was still to be agreed. **(Now: config, default 30 min, I-18)**
+The inactivity timeout that counts a session as "lost" was still to be agreed. **(Now: config, default 30 min, D58)**
 
 ## Cost drivers and capacity
 Video delivery is the cost that grows with usage; storage is small. Figures are from AWS's published example in US East at default settings. India rates differ.
