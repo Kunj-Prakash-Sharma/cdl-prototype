@@ -13,7 +13,15 @@ const tones: Record<Tone, string> = {
   white: "bg-white/90 text-ink ring-white/60 backdrop-blur",
 };
 
-export function Badge({ tone = "brand", className, children }: { tone?: Tone; className?: string; children: ReactNode }) {
+export function Badge({
+  tone = "brand",
+  className,
+  children,
+}: {
+  tone?: Tone;
+  className?: string;
+  children: ReactNode;
+}) {
   return (
     <span
       className={cn(
@@ -28,17 +36,15 @@ export function Badge({ tone = "brand", className, children }: { tone?: Tone; cl
 }
 
 export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <p className={cn("text-xs font-bold uppercase tracking-[0.18em] text-brand-600", className)}>{children}</p>
-  );
+  return <p className={cn("text-xs font-bold tracking-[0.18em] text-brand-600 uppercase", className)}>{children}</p>;
 }
 
 export function Logo({ className, inverted = false }: { className?: string; inverted?: boolean }) {
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
       <span className="relative grid size-8 place-items-center overflow-hidden rounded-xl bg-linear-to-br from-brand-500 via-brand-700 to-brand-950 shadow-glow">
-        <span className="absolute -right-2 -top-2 size-5 rounded-full bg-sun-400/90 blur-[2px]" />
-        <span className="relative font-serif text-[19px] italic leading-none text-white">s</span>
+        <span className="absolute -top-2 -right-2 size-5 rounded-full bg-sun-400/90 blur-[2px]" />
+        <span className="relative font-serif text-[19px] leading-none text-white italic">s</span>
       </span>
       <span className={cn("text-[19px] font-extrabold tracking-tight", inverted ? "text-white" : "text-ink")}>
         SELF

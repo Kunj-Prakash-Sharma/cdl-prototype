@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { DIMENSIONS, DIMENSION_INFO, type Dimension } from "@/lib/data/discovery";
+import { DIMENSIONS, DIMENSION_INFO, type Dimension } from "@/modules/chat/questions";
 import { cn } from "@/lib/format";
 
 const SERIES = "#5a45f2"; // brand-600
@@ -45,7 +45,12 @@ export function RadarChart({
 
   return (
     <div className={cn("relative mx-auto w-full", className)} style={{ maxWidth: size }}>
-      <svg viewBox={`0 0 ${size} ${size}`} className="h-auto w-full overflow-visible" role="img" aria-label="Interest profile radar chart">
+      <svg
+        viewBox={`0 0 ${size} ${size}`}
+        className="h-auto w-full overflow-visible"
+        role="img"
+        aria-label="Interest profile radar chart"
+      >
         {[25, 50, 75, 100].map((v) => (
           <polygon key={v} points={ring(v)} fill="none" stroke={GRID} strokeWidth={1} />
         ))}
@@ -89,9 +94,7 @@ export function RadarChart({
             const dy = p.y < c - 4 ? -6 : p.y > c + 4 ? 14 : 4;
             return (
               <text key={d} x={lx} y={ly + dy} textAnchor={anchor} className="select-none">
-                <tspan
-                  className={cn("text-[12px] font-semibold", active === d ? "fill-ink" : "fill-slate-600")}
-                >
+                <tspan className={cn("text-[12px] font-semibold", active === d ? "fill-ink" : "fill-slate-600")}>
                   {DIMENSION_INFO[d].name}
                 </tspan>
                 <tspan x={lx} dy={14} className="fill-slate-400 text-[11px]">
@@ -131,10 +134,10 @@ export function RadarChart({
             top: `${(shape[DIMENSIONS.indexOf(hover)].y / size) * 100}%`,
           }}
         >
-          <p className="whitespace-nowrap text-xs font-semibold">
+          <p className="text-xs font-semibold whitespace-nowrap">
             {DIMENSION_INFO[hover].name} · {DIMENSION_INFO[hover].alias}
           </p>
-          <p className="mt-0.5 text-lg font-bold leading-none">
+          <p className="mt-0.5 text-lg leading-none font-bold">
             {scores[hover]}
             <span className="text-xs font-medium text-white/60"> / 100</span>
           </p>

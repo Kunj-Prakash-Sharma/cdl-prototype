@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { CirclePlay, Clock, Layers, Sparkles } from "lucide-react";
 import { Badge, ProgressBar, Rating } from "@/components/ui/misc";
-import { getCourse, lessonCount } from "@/lib/data/courses";
+import { getCourse, lessonCount } from "@/modules/catalog/courses";
 import { cn, formatPrice } from "@/lib/format";
 import { useAppState } from "@/lib/store";
 import { CourseThumb } from "./course-thumb";
@@ -30,12 +30,16 @@ export function CourseCard({
     <Link
       href={`/learn/${slug}`}
       className={cn(
-        "group flex flex-col overflow-hidden rounded-3xl bg-white ring-1 ring-slate-200/80 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-lift hover:ring-brand-200",
+        "group flex flex-col overflow-hidden rounded-3xl bg-white shadow-soft ring-1 ring-slate-200/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-lift hover:ring-brand-200",
         className,
       )}
     >
-      <CourseThumb slug={slug} className="aspect-[16/9]" iconClassName="transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6">
-        <div className="absolute left-4 top-4 flex flex-wrap gap-1.5">
+      <CourseThumb
+        slug={slug}
+        className="aspect-[16/9]"
+        iconClassName="transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6"
+      >
+        <div className="absolute top-4 left-4 flex flex-wrap gap-1.5">
           <Badge tone="dark">{course.category}</Badge>
           {match !== undefined && (
             <Badge tone="white">
@@ -53,7 +57,7 @@ export function CourseCard({
 
       <div className="flex flex-1 flex-col p-5">
         {reason && <p className="mb-2 text-xs font-semibold text-brand-700">{reason}</p>}
-        <h3 className="text-lg font-bold leading-snug tracking-tight text-ink group-hover:text-brand-700">
+        <h3 className="text-lg leading-snug font-bold tracking-tight text-ink group-hover:text-brand-700">
           {course.title}
         </h3>
         <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-slate-500">{course.tagline}</p>

@@ -32,8 +32,8 @@ export function AnalyzingStage() {
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center px-4 py-20 text-center sm:py-28">
       <div className="relative grid size-40 place-items-center">
-        <span className="animate-pulse-ring absolute inset-6 rounded-full bg-brand-400/40" />
-        <span className="animate-pulse-ring absolute inset-6 rounded-full bg-fuchsia-400/30 [animation-delay:0.7s]" />
+        <span className="absolute inset-6 animate-pulse-ring rounded-full bg-brand-400/40" />
+        <span className="absolute inset-6 animate-pulse-ring rounded-full bg-fuchsia-400/30 [animation-delay:0.7s]" />
         <motion.span
           animate={{ rotate: 360 }}
           transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
@@ -56,17 +56,27 @@ export function AnalyzingStage() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: i <= step ? 1 : 0.4, y: 0 }}
               transition={{ delay: i * 0.08 }}
-              className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-200/80 shadow-soft"
+              className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-soft ring-1 ring-slate-200/80"
             >
               <span
                 className={cn(
                   "grid size-7 shrink-0 place-items-center rounded-full",
-                  done ? "bg-emerald-500 text-white" : active ? "bg-brand-50 text-brand-600" : "bg-slate-100 text-slate-300",
+                  done
+                    ? "bg-emerald-500 text-white"
+                    : active
+                      ? "bg-brand-50 text-brand-600"
+                      : "bg-slate-100 text-slate-300",
                 )}
               >
-                {done ? <Check className="size-4" strokeWidth={3} /> : active ? <LoaderCircle className="size-4 animate-spin" /> : null}
+                {done ? (
+                  <Check className="size-4" strokeWidth={3} />
+                ) : active ? (
+                  <LoaderCircle className="size-4 animate-spin" />
+                ) : null}
               </span>
-              <span className={cn("text-sm font-semibold", done || active ? "text-ink" : "text-slate-400")}>{label}</span>
+              <span className={cn("text-sm font-semibold", done || active ? "text-ink" : "text-slate-400")}>
+                {label}
+              </span>
             </motion.li>
           );
         })}
