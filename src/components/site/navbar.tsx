@@ -13,7 +13,7 @@ import { useAppState } from "@/lib/store";
 const LINKS = [
   { href: "/discover", label: "Career Discovery", ai: true },
   { href: "/learn", label: "Level 1 Learning" },
-  { href: "/my-learning", label: "My Learning", count: true },
+  { href: "/my-self", label: "My Learning", count: true },
 ];
 
 function NavLinks({

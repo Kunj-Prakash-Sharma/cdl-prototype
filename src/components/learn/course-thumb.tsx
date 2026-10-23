@@ -1,4 +1,4 @@
-import { getCourse } from "@/lib/data/courses";
+import { getCourse } from "@/modules/catalog/courses";
 import { cn } from "@/lib/format";
 
 /** Generated cover art for a course — gradient, grid and icon, no image assets needed. */

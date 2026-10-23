@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, ArrowRight, Check, Lightbulb, Puzzle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/misc";
-import { APTITUDE_QUESTIONS, APTITUDE_SKILL_LABEL } from "@/lib/data/discovery";
+import { APTITUDE_QUESTIONS, APTITUDE_SKILL_LABEL } from "@/modules/chat/questions";
 import { cn } from "@/lib/format";
 import { actions, useAppState } from "@/lib/store";
 import { SectionComplete, StageShell } from "./stage-shell";

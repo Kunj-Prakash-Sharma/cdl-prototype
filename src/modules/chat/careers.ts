@@ -1,4 +1,4 @@
-import type { Dimension } from "./discovery";
+import type { Dimension } from "./questions";
 
 export type Career = {
   id: string;
@@ -9,8 +9,6 @@ export type Career = {
   interests: string[];
   values: string[];
   strengths: string[];
-  salary: string;
-  outlook: string;
   skills: string[];
   courses: string[];
 };
@@ -25,8 +23,6 @@ export const CAREERS: Career[] = [
     interests: ["data", "tech", "finance", "business"],
     values: ["growth", "stability", "income"],
     strengths: ["problem", "numbers", "organize"],
-    salary: "₹5–12 LPA",
-    outlook: "Very high demand",
     skills: ["SQL", "Excel", "Python", "Data storytelling"],
     courses: ["data-analytics-foundations", "python-for-beginners", "communication-storytelling"],
   },
@@ -39,8 +35,6 @@ export const CAREERS: Career[] = [
     interests: ["design", "tech", "psychology", "writing"],
     values: ["creativity", "impact", "autonomy"],
     strengths: ["creative", "empathy", "problem"],
-    salary: "₹6–15 LPA",
-    outlook: "High demand",
     skills: ["User research", "Wireframing", "Prototyping", "Figma"],
     courses: ["ux-design-essentials", "communication-storytelling", "product-management-101"],
   },
@@ -53,8 +47,6 @@ export const CAREERS: Career[] = [
     interests: ["tech", "engineering", "data"],
     values: ["growth", "income", "autonomy"],
     strengths: ["problem", "hands", "numbers"],
-    salary: "₹6–18 LPA",
-    outlook: "Very high demand",
     skills: ["Python", "JavaScript", "Problem solving", "Git"],
     courses: ["python-for-beginners", "ai-ml-foundations", "data-analytics-foundations"],
   },
@@ -67,8 +59,6 @@ export const CAREERS: Career[] = [
     interests: ["business", "tech", "design", "psychology"],
     values: ["impact", "growth", "recognition"],
     strengths: ["lead", "problem", "explain"],
-    salary: "₹10–25 LPA",
-    outlook: "High demand",
     skills: ["Product discovery", "Prioritization", "Roadmapping", "Metrics"],
     courses: ["product-management-101", "ux-design-essentials", "communication-storytelling"],
   },
@@ -81,8 +71,6 @@ export const CAREERS: Career[] = [
     interests: ["marketing", "writing", "business", "design"],
     values: ["creativity", "recognition", "growth"],
     strengths: ["creative", "explain", "lead"],
-    salary: "₹4–12 LPA",
-    outlook: "High demand",
     skills: ["SEO", "Content", "Paid ads", "Analytics"],
     courses: ["digital-marketing-masterclass", "communication-storytelling", "data-analytics-foundations"],
   },
@@ -95,8 +83,6 @@ export const CAREERS: Career[] = [
     interests: ["finance", "data", "business"],
     values: ["income", "stability", "recognition"],
     strengths: ["numbers", "organize", "problem"],
-    salary: "₹6–16 LPA",
-    outlook: "Steady demand",
     skills: ["Financial modeling", "Excel", "Valuation", "Reporting"],
     courses: ["finance-fundamentals", "data-analytics-foundations", "communication-storytelling"],
   },
@@ -109,8 +95,6 @@ export const CAREERS: Career[] = [
     interests: ["psychology", "teaching", "business"],
     values: ["impact", "balance", "stability"],
     strengths: ["empathy", "explain", "organize"],
-    salary: "₹5–14 LPA",
-    outlook: "Steady demand",
     skills: ["Talent strategy", "Coaching", "Employee experience", "Communication"],
     courses: ["communication-storytelling", "data-analytics-foundations"],
   },
@@ -123,8 +107,6 @@ export const CAREERS: Career[] = [
     interests: ["writing", "marketing", "design"],
     values: ["creativity", "autonomy", "impact"],
     strengths: ["creative", "explain"],
-    salary: "₹4–11 LPA",
-    outlook: "Growing demand",
     skills: ["Writing", "Content strategy", "SEO", "Storytelling"],
     courses: ["communication-storytelling", "digital-marketing-masterclass", "ux-design-essentials"],
   },
@@ -137,8 +119,6 @@ export const CAREERS: Career[] = [
     interests: ["business", "tech", "marketing", "finance"],
     values: ["autonomy", "impact", "income"],
     strengths: ["lead", "creative", "problem"],
-    salary: "Variable",
-    outlook: "High upside",
     skills: ["Product thinking", "Fundraising", "Sales", "Leadership"],
     courses: ["product-management-101", "finance-fundamentals", "digital-marketing-masterclass"],
   },
@@ -151,8 +131,6 @@ export const CAREERS: Career[] = [
     interests: ["environment", "business", "data"],
     values: ["impact", "growth", "balance"],
     strengths: ["problem", "explain", "organize"],
-    salary: "₹6–15 LPA",
-    outlook: "Fast-growing",
     skills: ["ESG reporting", "Carbon accounting", "Strategy", "Stakeholder engagement"],
     courses: ["sustainability-esg", "data-analytics-foundations", "communication-storytelling"],
   },
@@ -165,8 +143,6 @@ export const CAREERS: Career[] = [
     interests: ["teaching", "design", "psychology", "writing"],
     values: ["impact", "creativity", "balance"],
     strengths: ["explain", "empathy", "creative"],
-    salary: "₹5–13 LPA",
-    outlook: "Growing demand",
     skills: ["Curriculum design", "Storytelling", "UX", "eLearning tools"],
     courses: ["communication-storytelling", "ux-design-essentials"],
   },
@@ -179,8 +155,6 @@ export const CAREERS: Career[] = [
     interests: ["health", "data", "tech"],
     values: ["impact", "stability", "growth"],
     strengths: ["problem", "numbers", "organize"],
-    salary: "₹5–13 LPA",
-    outlook: "High demand",
     skills: ["Data analysis", "Python", "Health informatics", "Research"],
     courses: ["data-analytics-foundations", "python-for-beginners", "ai-ml-foundations"],
   },
@@ -193,8 +167,6 @@ export const CAREERS: Career[] = [
     interests: ["tech", "data", "engineering"],
     values: ["growth", "income", "impact"],
     strengths: ["problem", "numbers", "hands"],
-    salary: "₹10–30 LPA",
-    outlook: "Very high demand",
     skills: ["Python", "Machine learning", "Deep learning", "MLOps"],
     courses: ["ai-ml-foundations", "python-for-beginners", "data-analytics-foundations"],
   },
@@ -207,8 +179,6 @@ export const CAREERS: Career[] = [
     interests: ["business", "data", "finance"],
     values: ["stability", "growth", "recognition"],
     strengths: ["organize", "numbers", "lead"],
-    salary: "₹6–14 LPA",
-    outlook: "Steady demand",
     skills: ["Process design", "Excel", "Analytics", "Project management"],
     courses: ["data-analytics-foundations", "product-management-101", "finance-fundamentals"],
   },

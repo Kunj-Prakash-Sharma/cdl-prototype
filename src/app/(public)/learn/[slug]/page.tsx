@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CourseExperience } from "@/components/learn/course-experience";
-import { COURSES, getCourse } from "@/lib/data/courses";
+import { COURSES, getCourse } from "@/modules/catalog/courses";
 
 export function generateStaticParams() {
   return COURSES.map((c) => ({ slug: c.slug }));

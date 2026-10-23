@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { DIMENSIONS, DIMENSION_INFO, type Dimension } from "@/lib/data/discovery";
+import { DIMENSIONS, DIMENSION_INFO, type Dimension } from "@/modules/chat/questions";
 import { cn } from "@/lib/format";
 
 const SERIES = "#5a45f2"; // brand-600

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { bundlePrice, getCourse, lessonCount, type Course } from "@/lib/data/courses";
+import { bundlePrice, getCourse, lessonCount, type Course } from "@/modules/catalog/courses";
 import { cn, formatPrice } from "@/lib/format";
 import { actions, useAppState } from "@/lib/store";
 import { CourseThumb } from "./course-thumb";
@@ -108,7 +108,7 @@ function CheckoutBody({ slugs, onClose }: { slugs: string[]; onClose: () => void
             </Link>
           )}
           <Link
-            href="/my-learning"
+            href="/my-self"
             onClick={onClose}
             className="inline-flex h-11 items-center justify-center rounded-full bg-white px-6 text-[15px] font-semibold text-ink ring-1 ring-slate-200 transition hover:ring-slate-300"
           >
@@ -125,7 +125,7 @@ function CheckoutBody({ slugs, onClose }: { slugs: string[]; onClose: () => void
         <h2 className="text-2xl font-bold text-ink">
           You already own {slugs.length > 1 ? "these courses" : "this course"}
         </h2>
-        <Link href="/my-learning" onClick={onClose} className="mt-4 inline-block font-semibold text-brand-700">
+        <Link href="/my-self" onClick={onClose} className="mt-4 inline-block font-semibold text-brand-700">
           Go to My Learning →
         </Link>
       </div>

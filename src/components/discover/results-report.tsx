@@ -18,7 +18,6 @@ import {
   TrendingUp,
   Trophy,
   Users,
-  Wallet,
   Zap,
 } from "lucide-react";
 import { RadarChart } from "@/components/charts/radar-chart";
@@ -27,10 +26,10 @@ import { CourseCard } from "@/components/learn/course-card";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Badge, Eyebrow } from "@/components/ui/misc";
 import { useToast } from "@/components/ui/toast";
-import { bundlePrice, lessonCount } from "@/lib/data/courses";
-import { DIMENSION_INFO, GOALS, optionLabel } from "@/lib/data/discovery";
+import { bundlePrice, lessonCount } from "@/modules/catalog/courses";
+import { DIMENSION_INFO, GOALS, optionLabel } from "@/modules/chat/questions";
 import { cn, formatPrice } from "@/lib/format";
-import { computeResults } from "@/lib/scoring";
+import { computeResults } from "@/modules/chat/scoring";
 import { actions, useAppState } from "@/lib/store";
 
 const fade = (delay = 0) => ({
@@ -289,20 +288,6 @@ export function ResultsReport() {
                   </span>
                 ))}
               </div>
-              <div className="mt-auto grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 text-xs">
-                <div className="mt-1">
-                  <p className="flex items-center gap-1 text-slate-400">
-                    <Wallet className="size-3.5" aria-hidden /> Typical salary
-                  </p>
-                  <p className="mt-0.5 font-semibold text-ink">{m.career.salary}</p>
-                </div>
-                <div className="mt-1">
-                  <p className="flex items-center gap-1 text-slate-400">
-                    <TrendingUp className="size-3.5" aria-hidden /> Outlook
-                  </p>
-                  <p className="mt-0.5 font-semibold text-ink">{m.career.outlook}</p>
-                </div>
-              </div>
             </article>
           ))}
         </div>
@@ -361,7 +346,7 @@ export function ResultsReport() {
                   <p className="mt-3 text-sm text-slate-600">
                     You own every course on this path. Keep the momentum going!
                   </p>
-                  <ButtonLink href="/my-learning" className="mt-4 w-full">
+                  <ButtonLink href="/my-self" className="mt-4 w-full">
                     Continue learning <ArrowRight className="size-4" aria-hidden />
                   </ButtonLink>
                 </>

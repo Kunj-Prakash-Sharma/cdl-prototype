@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Captions, Check, CirclePlay, Lock, Maximize, Pause, Play, RotateCcw, SkipForward } from "lucide-react";
-import type { Course, Lesson } from "@/lib/data/courses";
+import type { Course, Lesson } from "@/modules/catalog/courses";
 import { cn, formatClock, formatPrice } from "@/lib/format";
 
 /** Simulated seconds of video per real second at 1× — keeps demos snappy. */

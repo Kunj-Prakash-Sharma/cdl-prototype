@@ -3,7 +3,7 @@
 import { Brain, ChartColumn, Check, Compass, MessageCircle, Puzzle } from "lucide-react";
 import { ProgressBar } from "@/components/ui/misc";
 import { cn } from "@/lib/format";
-import { discoveryProgress, isDiscoveryComplete } from "@/lib/scoring";
+import { discoveryProgress, isDiscoveryComplete } from "@/modules/chat/scoring";
 import { actions, type AppState, type Stage } from "@/lib/store";
 
 const TOTAL_MINUTES = 12;

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { CirclePlay, Clock, Layers, Sparkles } from "lucide-react";
 import { Badge, ProgressBar, Rating } from "@/components/ui/misc";
-import { getCourse, lessonCount } from "@/lib/data/courses";
+import { getCourse, lessonCount } from "@/modules/catalog/courses";
 import { cn, formatPrice } from "@/lib/format";
 import { useAppState } from "@/lib/store";
 import { CourseThumb } from "./course-thumb";

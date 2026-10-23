@@ -5,9 +5,9 @@ import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight, CirclePlay, Lock, Search, Sparkles, Target, Users } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge, Eyebrow, SageAvatar } from "@/components/ui/misc";
-import { CATEGORIES, COURSES, type CourseCategory } from "@/lib/data/courses";
+import { CATEGORIES, COURSES, type CourseCategory } from "@/modules/catalog/courses";
 import { cn } from "@/lib/format";
-import { computeResults, isDiscoveryComplete } from "@/lib/scoring";
+import { computeResults, isDiscoveryComplete } from "@/modules/chat/scoring";
 import { useAppState, useHydrated } from "@/lib/store";
 import { CourseCard } from "./course-card";
 

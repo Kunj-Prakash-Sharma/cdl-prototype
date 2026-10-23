@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/misc";
-import { ResetDemoButton } from "./reset-demo-button";
 
 const COLUMNS = [
   {
@@ -8,7 +7,7 @@ const COLUMNS = [
     links: [
       { href: "/discover", label: "AI Career Discovery" },
       { href: "/learn", label: "Level 1 · Self-paced" },
-      { href: "/my-learning", label: "My Learning" },
+      { href: "/my-self", label: "My Learning" },
     ],
   },
   {
@@ -46,13 +45,6 @@ export function Footer() {
             </ul>
           </div>
         ))}
-        <div className="rounded-2xl bg-paper p-5 ring-1 ring-slate-200/70">
-          <p className="text-sm font-semibold text-ink">Prototype mode</p>
-          <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
-            UI prototype with dummy data. No real AI, accounts or payments. Your progress is saved in this browser only.
-          </p>
-          <ResetDemoButton className="mt-3" />
-        </div>
       </div>
       <div className="border-t border-slate-200/70">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-xs text-slate-400 sm:flex-row sm:justify-between sm:px-6 lg:px-8">

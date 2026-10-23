@@ -1,5 +1,5 @@
-import { CAREERS, type Career } from "./data/careers";
-import { COURSES, type Course } from "./data/courses";
+import { CAREERS, type Career } from "./careers";
+import { COURSES, type Course } from "@/modules/catalog/courses";
 import {
   APTITUDE_QUESTIONS,
   APTITUDE_SKILL_LABEL,
@@ -13,8 +13,8 @@ import {
   type AptitudeSkill,
   type Dimension,
   type WorkValue,
-} from "./data/discovery";
-import type { AppState } from "./store";
+} from "./questions";
+import type { AppState } from "@/lib/store";
 
 export type CareerMatch = { career: Career; fit: number; reasons: string[] };
 export type Insight = { title: string; detail: string; source?: string };
