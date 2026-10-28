@@ -7,7 +7,7 @@ Update the status and date as items close. When an item closes, record the outco
 |---|---|---|---|
 | Mixpanel plans, pricing and free-tier limits; request India data residency (region is fixed per project, so ask before creating it) | Lead architect | Week 1 | open |
 | SMS provider choice and DLT registration under the client's legal entity (sender name + approved templates) | Client + lead | Start week 1 | open |
-| Day-1 AWS checks in Mumbai: MediaConvert, ECS Express Mode, Bedrock Haiku (direct vs APAC cross-region routing) | Developers | Day 1 | open |
+| Day-1 AWS checks in Mumbai: MediaConvert, ECS Express Mode (Bedrock check dropped, D62) | Developers | Day 1 | open |
 | Repo `Kunj-Prakash-Sharma/cdl-prototype` is **public**: recommend making it private before production code lands (no branch protection; team follows branch + PR + green CI) | Kunj | Before real code is pushed | open |
 | How code reaches AWS: CI only checks and builds the image, there is no deploy step. CI runs on PRs into `dev` and pushes to `dev` only; add `main` when there is a release flow | Lead architect | Before first deploy | open |
 | AWS account owner and credits (client's account, or ours with a later handover) | Lead + client | Day 1 | open |
@@ -23,7 +23,8 @@ From the Scope of Work. Dates are "to give" unless stated.
 | Brand name, logo, colours, website address, name shown in login SMS | to give date | open |
 | Payment account in the client's business name (KYC; GST status) | to give date | open |
 | Privacy, terms and refund pages | to give date | open |
-| Approval of question wording (OCEAN, RIASEC) and report wording | to give date | open |
+| Approval of question wording **and variants** (OCEAN, RIASEC; drafts in [requirements/assessment.md](requirements/assessment.md)), scoring thresholds and report wording | to give date | open |
+| Helpline link and wording, plus the blocked-word list for the name check (chat spec) | to give date | open |
 | Final prices, bundles, maximum discounts, refund policy | to give date | open |
 | One team email address for callback alerts | to give date | open |
 | Helpline link and wording for the self-harm stop message | to give date | open |

@@ -12,7 +12,7 @@ One place for **what we depend on**: how outside services are wrapped in code (p
 - Store vendor references as `provider` + `provider_ref` columns, never vendor-specific columns.
 - Do not build a second real adapter until a client actually switches vendor.
 - Keep vendor calls in one place. If a service is not in the table below, do not build a wrapper for it until there is a reason; a plain function in `src/integrations/` that holds all calls to that vendor is enough.
-- Priority wrappers (likely to swap or risky): `sms`, `payments`, `video`, `ai`. The others (`storage`, `email`, `analytics`, `queue`) stay small. No extra fakes, tests or docs for them.
+- Priority wrappers (likely to swap or risky): `sms`, `payments`, `video`. The others (`storage`, `email`, `analytics`, `queue`) stay small. No extra fakes, tests or docs for them.
 - Wrappers make the **code** vendor-independent. They do not carry over client paperwork: DLT templates, payment KYC and domain verification must be redone with a new vendor.
 
 ## Layout
@@ -31,10 +31,12 @@ src/integrations/<name>/
 | `payments` | server: `createOrder`, `parseWebhook` → `PaymentEvent`, `getStatus`, `refund`; client: `openCheckout` | Razorpay | Cashfree |
 | `video` | `createUpload`, `onEncodeEvent`, `getPlayback` (signed), `getStatus` | S3 + MediaConvert + CloudFront | Mux, VdoCipher, DRM platform |
 | `storage` | `uploadUrl`, `downloadUrl` (signed), `remove` | S3 | R2 |
-| `ai` | `rewordQuestion(input)` → text; falls back to the original wording on error, cap or timeout | Bedrock (Claude Haiku) | OpenAI, Gemini |
 | `email` | `send(template, to, data)`; templates are ours | SES | Mailgun, Resend |
 | `analytics` | `track(event, props)`, typed event list, no PII | Mixpanel | PostHog |
 | `queue` | `enqueue(job, payload)`, `register(job, handler)` | pg-boss | SQS |
+
+## Dropped
+- **`ai` (question rewording, Bedrock):** dropped by [D62](../decisions.md). The quiz uses pre-approved wording variants instead ([../requirements/assessment.md](../requirements/assessment.md)). The prototype folder `src/integrations/ai/` and the `AI_PROVIDER` env switch are unused; remove them in the chat feature.
 
 ## Thin facades (not full wrappers)
 - **Auth:** `requireUser()`, `requireAdmin()`, `getSession()` in `modules/auth`. The rest of the app never imports Better Auth directly.
@@ -44,12 +46,11 @@ src/integrations/<name>/
 - Drizzle: the module `repo.ts` files are already the boundary.
 - Turnstile: the Better Auth captcha plugin switches provider by config.
 - PDF: browser print, no vendor (D48).
-- Excel export library, hls.js player: used in one place; that component is the boundary.
+- Excel export library, video.js player: used in one place; that component is the boundary.
 - CRM webhook: an outgoing generic webhook is already provider-neutral.
 
 ## Hard rules that apply to every wrapper
 - No personal data (phone, email, name, free text) in analytics events or logs.
-- The `ai` wrapper receives only the fixed question text and light context (first name); it never sees scores or answers, and never makes decisions.
 - `payments.parseWebhook` verifies the signature, and repeated webhooks must not create duplicate orders.
 
 # Part 2. Services, AWS and dependencies
@@ -61,7 +62,6 @@ Status values: `not started` · `in progress` · `ready` · `installed`. "Unrese
 |---|---|---|---|---|---|---|
 | SMS OTP | Login codes | India SMS provider, to choose (MSG91 likely) | `sms` | Client (DLT registration under the client's legal entity) | not started. DLT is the long pole | Per SMS |
 | Payments | Hosted checkout, signed webhooks, refunds | Razorpay (Cashfree as alternative) | `payments` | Client's business account | not started. Needs business details, GST status, legal pages | Per-transaction fee. Get written rates |
-| AI wording | Reword fixed questions only | Claude Haiku on AWS Bedrock | `ai` | Our AWS account | not started. Day-1 availability check in Mumbai | Per token. Capped per user per day, plus a total spend cutoff |
 | Email | Receipt and callback alert | Amazon SES | `email` | AWS account. Needs the final domain | not started. Domain verification and sandbox exit | Per 1,000 emails. Verify current AWS rates |
 | Analytics | Funnel events, no PII | Mixpanel, India data residency | `analytics` | Us. Request India access in week 1 | not started. **Pricing and plans unresearched** | Free tier and paid plans. Unresearched |
 | Video | Upload, encode, adaptive stream, signed playback | AWS S3 + MediaConvert + CloudFront | `video`, `storage` | AWS account | not started. Week-1 spike with managed-platform fallback | Usage based (see AWS below) |
@@ -82,12 +82,13 @@ All in the Mumbai region `ap-south-1` (D53). Account owner (client's or ours wit
 | MediaConvert | Video encoding to several qualities plus thumbnail | Day-1 check that it is available in Mumbai |
 | CloudFront | Cached public pages, signed expiring video links | Video delivery is the cost that grows with usage |
 | SES | Two transactional emails | Domain verification (DKIM/SPF) and sandbox exit needed |
-| Bedrock | Claude Haiku for question rewording | Day-1 check: served directly in Mumbai or via APAC routing |
 | Secrets Manager (**assumed** name) | Per-environment keys | The doc says "managed secrets store". Separate keys for dev and production |
 | CloudWatch Logs (**assumed**) and Budgets | Logs kept 14 to 30 days, no personal data. Budget alerts at 50%, 80%, 100% | The doc names the retention and alert levels, not the products |
 | IAM (**assumed**) | Roles for the app, worker and CI | Not mentioned in the docs |
 
 Cost reference (US East examples from the architecture doc, India rates differ): CloudFront about $0.085 per GB, S3 about $0.023 per GB, MediaConvert about $3.15 per 60-minute video. See [../requirements/architecture.md](../requirements/architecture.md#cost-drivers-and-capacity).
+
+> **Caution (CDN swap):** Cloudflare's terms do not allow video hosted outside Cloudflare (for example in S3) to be served through its Free, Pro or Business CDN, so putting Cloudflare in front of S3 risks a terms violation. If we ever switch to Cloudflare, move the video storage to R2 as well; Cloudflare's CDN may then serve it, and R2 has no egress fee. Re-check the current terms before deciding.
 
 ## 2.3 npm dependencies (from `package.json`)
 
@@ -113,7 +114,7 @@ Cost reference (US East examples from the architecture doc, India rates differ):
 | `tsx`, `esbuild` | Run the worker and scripts in dev; bundle them for the image |
 
 ### Planned (not installed yet)
-Added with the feature that needs them: `better-auth` (login and roles), AWS SDK clients (S3, MediaConvert, CloudFront signing, SES, Bedrock), `razorpay`, `mixpanel`, the Sentry SDK, `hls.js` (video player), an Excel export library (to choose), and the Turnstile browser script.
+Added with the feature that needs them: `better-auth` (login and roles), AWS SDK clients (S3, MediaConvert, CloudFront signing, SES), `razorpay`, `mixpanel`, the Sentry SDK, `video.js` (video player, HLS built in), an Excel export library (to choose), and the Turnstile browser script.
 
 ### Gotcha: worker dependencies
 The Docker image installs the worker's runtime packages separately (`pg`, `pg-boss`, `zod`, `drizzle-orm`, pinned to the lockfile versions). If worker or migrate code starts importing another package, add it to the list in the `Dockerfile`.
