@@ -11,6 +11,10 @@ describe("parseEnv", () => {
   it("fails fast with a readable message when required config is missing", () => {
     expect(() => parseEnv({})).toThrow(/DATABASE_URL/);
   });
+  it("needs auth keys in production only", () => {
+    expect(() => parseEnv({ DATABASE_URL: "x" })).not.toThrow();
+    expect(() => parseEnv({ DATABASE_URL: "x", NODE_ENV: "production" })).toThrow(/AUTH_SECRET/);
+  });
   it("rejects a non-numeric chat timeout", () => {
     expect(() => parseEnv({ DATABASE_URL: "x", CHAT_INACTIVITY_MINUTES: "soon" })).toThrow(/CHAT_INACTIVITY_MINUTES/);
   });

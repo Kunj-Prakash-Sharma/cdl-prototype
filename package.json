@@ -20,6 +20,7 @@
     "build:worker": "esbuild --bundle --platform=node --target=node22 --format=cjs --packages=external worker/index.ts --outfile=dist/worker.js && esbuild --bundle --platform=node --target=node22 --format=cjs --packages=external scripts/migrate.ts --outfile=dist/migrate.js"
   },
   "dependencies": {
+    "better-auth": "^1.7.14",
     "drizzle-orm": "^0.45.4",
     "lucide-react": "^1.57.0",
     "motion": "^14.3.0",
