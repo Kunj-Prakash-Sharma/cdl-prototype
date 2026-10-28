@@ -26,14 +26,22 @@ A learner logs in with a phone number and an SMS code. The client team logs in t
 - **Module:** `src/modules/auth/`
   - `schema.ts`: Better Auth tables (user, session, account, verification, rate limit if DB-backed) with PII columns commented.
   - `auth.ts` (private): Better Auth config: phone-number plugin (sends via `sms.sendOtp`), admin plugin, captcha plugin (Turnstile).
-  - `service.ts` (public): `getSession(): Promise<Session | null>`, `requireUser(): Promise<Session>`, `requireAdmin(): Promise<Session>`, `updateProfileName(userId, name): Promise<void>` (used by chat; validates with the chat name check rules, no auth tables touched by chat).
+  - `service.ts` (public): `getSession(): Promise<Session | null>`, `requireUser(): Promise<Session>`, `requireAdmin(): Promise<Session>`, `updateProfileName(userId, name): Promise<ActionResult>` (used by chat after its own name check, which owns the blocked-word list; auth only enforces 1 to 30 characters).
   - `actions.ts`: `sendOtp(phone, captchaToken)`, `verifyOtp(phone, code)`, `logout()`; zod-validated, thin.
 - **Integration used:** `src/integrations/sms` (`sendOtp(phone, code)`), `src/integrations/analytics` (`track`).
 - **Schema:** see above. PII: phone, name, email.
 - **Env:** `AUTH_SECRET`, `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` (added Oct 28; required in production). To add with this feature: `ADMIN_PHONES` (comma list of +91 numbers) and, for the temporary invite-code fallback, `INVITE_OTP_CODE` + `INVITE_PHONES`. `SMS_PROVIDER` stays `fake` locally.
-- **Routes:** `/login` (phone), `/login/verify` (code); route-group guards for `(learner)` and `(admin)`. If Better Auth needs a catch-all handler, `src/app/api/auth/[...all]/route.ts`.
+- **Routes:** `/login` (phone), `/login/verify` (code) are built by the UI team against the UI contract below. Guards: `src/proxy.ts` (optimistic cookie redirect for `/discover`, `/my-self`, `/admin`) plus `requireUser()` in `app/(learner)/layout.tsx` (real check). **No `/api/auth/*` catch-all is mounted**: all calls go through our actions, so Better Auth exposes no public HTTP surface.
 - **UI:** phone input + code input, mobile first, tokens only, 375px + desktop. Reuse `src/components/ui`.
 - **Read first:** Better Auth docs (phone-number, admin, captcha plugins) and `node_modules/next/dist/docs/` (Next 16.4 cookies/proxy). Do not write from memory.
+
+## How it is wired (decided while building, Oct 28)
+- Better Auth's captcha check and per-IP rate limit run **only in its HTTP router**, not on direct `auth.api.*` calls. So `sendOtp` calls `auth.handler(Request)` (bot check and IP limit apply); `verifyOtp` and `getSession` use `auth.api.*`.
+- Per-number rules (30 s cooldown, 5 per day, 15-minute lock) are ours: table `auth_otp_throttle`, keyed by an HMAC of the number. A read-only pre-check runs first (so a rejected resend never replaces the learner's current code); the authoritative check-and-record runs inside the send hook, after the bot check (so a bot without a valid token cannot burn a victim's daily cap).
+- Wrong codes: Better Auth allows 5 tries per code; we count them and lock the number for 15 minutes on the 5th wrong try.
+- The built-in `email` column holds a placeholder (`<phone>@phone.invalid`); the optional real email is `contactEmail`.
+- Per-IP limit is 10 per hour in production and 100 elsewhere (so dev and Playwright logins from one IP keep working).
+- **Deploy note:** behind the AWS load balancer, set `advanced.ipAddress.trustedProxies` so a client cannot spoof `x-forwarded-for` and dodge the IP limit.
 
 ## UI contract (so the frontend can change without backend rework)
 - Actions never throw for expected cases. They return `{ ok: true, ... }` or `{ ok: false, code, retryAfterSec? }`.
