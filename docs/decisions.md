@@ -1,10 +1,10 @@
 # Decisions log
 
-One numbered list, `D1`–`D63`. `D1`–`D40` come from the Architecture doc ([requirements/architecture.md](requirements/architecture.md)). `D41`–`D63` were made in our own interview (Oct 2026; they were numbered `I-1`–`I-20` and `D-0` before the cleanup). If two decisions conflict, the higher number wins.
+One numbered list, `D1`–`D64`. `D1`–`D40` come from the Architecture doc ([requirements/architecture.md](requirements/architecture.md)). `D41`–`D64` were made in our own interview (Oct 2026; they were numbered `I-1`–`I-20` and `D-0` before the cleanup). If two decisions conflict, the higher number wins.
 
 To change a decision: edit the row, add a dated note, and update any doc that depends on it.
 
-## Interview decisions (D41–D63)
+## Interview decisions (D41–D64)
 | # | Topic | Decision |
 |---|---|---|
 | D41 | Repo | Evolve `cdl-prototype` in place; tag `prototype-v0` marks the original demo; keep the current GitHub remote |
@@ -30,6 +30,7 @@ To change a decision: edit the row, add a dated note, and update any doc that de
 | D61 | Day 0 | Shared Claude config is committed; Docker Postgres locally; skeleton plus fake adapters on day 0; no branch protection (team follows branch + PR + green CI); repo visibility is Kunj's call (currently public) |
 | D62 | Assessment variants | No AI in the quiz. Each fixed question ID has 2 to 3 pre-approved variants (same meaning and polarity), picked per session by a deterministic hash. Answers are stored as question ID + variant ID + value; scoring ignores the variant. ~26 questions: 4 basics, 10 OCEAN (IPIP style, public domain), 12 RIASEC (our own items, not validated). Supersedes D45, D56 and the rewording part of D60. Details: [requirements/assessment.md](requirements/assessment.md) |
 | D63 | Chat flow | OTP before the quiz. Every start creates an attempt; all attempts kept, report shows the latest completed. Each tap saved by a server action (resume, exit point). Name lives in the auth profile; other basics are answers on the attempt. Callback request is a separate `leads` feature. Courses in the report come from `catalog.coursesForInterests`, using a `riasec_types` field on courses. Details: [specs/chat.md](specs/chat.md) |
+| D64 | Auth rules | India +91 only; login before chat, before buying and for any video, including the free first lesson (home and course pages open); 30-day session; returning users see the report and can retake; OTP 6 digits, 5 min, 5 tries, 15 min lock; limits 30 s resend, 5/number/day, 10/IP/hour; bot-check failure shows "Try again"; name editable, phone change needs a new OTP; admins by phone allow-list; terms tick once legal pages exist; temporary fixed code for allow-listed invited numbers if DLT is late; data deletion manual; actions return typed `{ok, code}` results, never throw for expected cases. Details: [specs/auth.md](specs/auth.md) |
 
 ## Architecture-doc decisions (D1–D40)
 See the table in [requirements/architecture.md](requirements/architecture.md#decisions-made). The ones that shape daily work:

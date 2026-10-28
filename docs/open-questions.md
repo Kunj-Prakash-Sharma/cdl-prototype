@@ -30,6 +30,8 @@ From the Scope of Work. Dates are "to give" unless stated.
 | Helpline link and wording for the self-harm stop message | to give date | open |
 | Confirmation: no raw chat text stored (D18) | to give date | open |
 | Final domain (needed for SES DKIM/SPF and sender name) | to give date | open |
+| Confirm: the first lesson is free of payment but needs login (so we can see where viewers stop). The Scope of Work says "free preview" | to give date | open |
+| Admin phone numbers: how many and which (expect 2 to 4); they get the admin role at login (D64) | to give date | open |
 | Legal review: no age gate with many users under 18 (DPDP Act) | client | open |
 
 ## Chat inactivity timeout
