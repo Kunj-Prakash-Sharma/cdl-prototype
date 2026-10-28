@@ -16,6 +16,8 @@ const schema = z.object({
   AUTH_SECRET: z.string().min(32).optional(),
   TURNSTILE_SITE_KEY: z.string().min(1).optional(),
   TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
+  // Comma-separated +91 numbers that get the admin role when they log in (D64 #9)
+  ADMIN_PHONES: z.string().optional(),
 
   // Chat: inactivity before a session counts as lost (decision D58)
   CHAT_INACTIVITY_MINUTES: z.coerce.number().int().positive().default(30),
