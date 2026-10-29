@@ -13,7 +13,9 @@ const { sentCodes } = vi.hoisted(() => {
 });
 
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ "x-forwarded-for": "203.0.113.9" }) }));
-vi.mock("@/integrations/sms", () => ({ sms: { sendOtp: vi.fn(async (_p: string, c: string) => void sentCodes.push(c)) } }));
+vi.mock("@/integrations/sms", () => ({
+  sms: { sendOtp: vi.fn(async (_p: string, c: string) => void sentCodes.push(c)) },
+}));
 
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
@@ -31,6 +33,8 @@ it("rejects a failed bot check, sends no SMS and does not burn the number's dail
   });
   expect(sentCodes).toHaveLength(0);
 
-  const [row] = await db.execute(sql`select count(*)::int as n from auth_otp_throttle where "sendCount" > 0`).then((r) => r.rows);
+  const [row] = await db
+    .execute(sql`select count(*)::int as n from auth_otp_throttle where "sendCount" > 0`)
+    .then((r) => r.rows);
   expect(row.n).toBe(0);
 });

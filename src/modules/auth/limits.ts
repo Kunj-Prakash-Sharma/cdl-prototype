@@ -20,8 +20,7 @@ export type Throttle = {
 export const emptyThrottle: Throttle = { lastSentAt: null, windowStart: null, sendCount: 0, lockedUntil: null };
 
 export type SendDecision =
-  | { ok: true; next: Throttle }
-  | { ok: false; code: "locked" | "cooldown" | "daily_limit"; retryAfterSec: number };
+  { ok: true; next: Throttle } | { ok: false; code: "locked" | "cooldown" | "daily_limit"; retryAfterSec: number };
 
 const secondsUntil = (target: Date, now: Date) => Math.max(1, Math.ceil((target.getTime() - now.getTime()) / 1000));
 

@@ -26,7 +26,9 @@ export function mapSendFailure(status: number, body: Body, retryAfterHeader?: st
   if (body?.code === "INVALID_PHONE_NUMBER") return { code: "invalid_phone" };
   if (status === 429) {
     const retryAfterSec = Number(retryAfterHeader);
-    return Number.isFinite(retryAfterSec) && retryAfterSec > 0 ? { code: "ip_limit", retryAfterSec } : { code: "ip_limit" };
+    return Number.isFinite(retryAfterSec) && retryAfterSec > 0
+      ? { code: "ip_limit", retryAfterSec }
+      : { code: "ip_limit" };
   }
   return { code: "unknown" };
 }

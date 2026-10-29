@@ -3,9 +3,18 @@ import { SEND_FAILED, THROTTLED, mapSendFailure, mapVerifyFailure } from "./erro
 
 describe("mapSendFailure", () => {
   it("decodes our throttle messages with the wait time", () => {
-    expect(mapSendFailure(429, { code: THROTTLED, message: "cooldown:23" })).toEqual({ code: "cooldown", retryAfterSec: 23 });
-    expect(mapSendFailure(429, { code: THROTTLED, message: "daily_limit:3600" })).toEqual({ code: "daily_limit", retryAfterSec: 3600 });
-    expect(mapSendFailure(429, { code: THROTTLED, message: "locked:900" })).toEqual({ code: "locked", retryAfterSec: 900 });
+    expect(mapSendFailure(429, { code: THROTTLED, message: "cooldown:23" })).toEqual({
+      code: "cooldown",
+      retryAfterSec: 23,
+    });
+    expect(mapSendFailure(429, { code: THROTTLED, message: "daily_limit:3600" })).toEqual({
+      code: "daily_limit",
+      retryAfterSec: 3600,
+    });
+    expect(mapSendFailure(429, { code: THROTTLED, message: "locked:900" })).toEqual({
+      code: "locked",
+      retryAfterSec: 900,
+    });
   });
   it("falls back to unknown for a garbled throttle message", () => {
     expect(mapSendFailure(429, { code: THROTTLED, message: "weird" })).toEqual({ code: "unknown" });
