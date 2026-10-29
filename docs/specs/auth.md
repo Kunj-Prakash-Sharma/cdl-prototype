@@ -31,7 +31,7 @@ A learner logs in with a phone number and an SMS code. The client team logs in t
 - **Integration used:** `src/integrations/sms` (`sendOtp(phone, code)`), `src/integrations/analytics` (`track`).
 - **Schema:** see above. PII: phone, name, email.
 - **Env:** `AUTH_SECRET`, `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` (added Oct 28; required in production). To add with this feature: `ADMIN_PHONES` (comma list of +91 numbers) and, for the temporary invite-code fallback, `INVITE_OTP_CODE` + `INVITE_PHONES`. `SMS_PROVIDER` stays `fake` locally.
-- **Routes:** `/login` (phone), `/login/verify` (code) are built by the UI team against the UI contract below. Guards: `src/proxy.ts` (optimistic cookie redirect for `/discover`, `/my-self`, `/admin`) plus `requireUser()` in `app/(learner)/layout.tsx` (real check). **No `/api/auth/*` catch-all is mounted**: all calls go through our actions, so Better Auth exposes no public HTTP surface.
+- **Routes:** `/login` (phone), `/login/verify` (code) are built by the UI team against the UI contract below. Guards: `src/proxy.ts` (optimistic cookie redirect for `/discover`, `/my-self`, `/admin`) plus `requireUser()` in `app/(learner)/layout.tsx` (real check). Admin: `requireAdmin()` in `app/(admin)/layout.tsx`, and again inside `listUsersForAdmin` (service) so the data call is guarded on its own. **No `/api/auth/*` catch-all is mounted**: all calls go through our actions, so Better Auth exposes no public HTTP surface.
 - **UI:** phone input + code input, mobile first, tokens only, 375px + desktop. Reuse `src/components/ui`.
 - **Read first:** Better Auth docs (phone-number, admin, captcha plugins) and `node_modules/next/dist/docs/` (Next 16.4 cookies/proxy). Do not write from memory.
 
@@ -84,7 +84,7 @@ A learner logs in with a phone number and an SMS code. The client team logs in t
 
 ## Verification (end to end)
 - Unit tests: guards (`requireUser`, `requireAdmin`), rate-limit and attempt-lock rules, phone validation.
-- Manual: `docker compose up -d`, `npm run db:migrate`, `npm run dev`. Send code (terminal shows masked number and code), verify, reach `/my-self`. Logout, reach `/my-self` again: redirected.
+- Manual: `docker compose up -d`, `npm run db:migrate`, `npm run dev`. Send code (terminal shows masked number and code), verify, land on `/discover` (the default after login; `?next=` overrides it). Logout, open `/my-self`: redirected to login.
 - Abuse: wrong code past limit locks; fast resend rejected; no Turnstile token rejected.
 - Playwright login path at 375px and desktop (`npm run test:e2e`).
 - `npm run lint && npm run typecheck && npm run test`, then `/code-review` and `/security-review`.

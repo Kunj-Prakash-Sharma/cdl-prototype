@@ -47,8 +47,15 @@ vi.mock("@/integrations/sms", () => ({
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { logout, sendOtp, verifyOtp } from "./actions";
-import { authOtpThrottle } from "./schema";
-import { getSession, requireAdmin, requireUser, updateProfileName } from "./service";
+import { authOtpThrottle, authUser } from "./schema";
+import {
+  getSession,
+  listUsersForAdmin,
+  parseUserFilters,
+  requireAdmin,
+  requireUser,
+  updateProfileName,
+} from "./service";
 
 const CAPTCHA = "XXXX.DUMMY.TOKEN.XXXX";
 const LEARNER = "9876543210";
@@ -154,7 +161,11 @@ describe("abuse", () => {
     for (let i = 0; i < 4; i++) {
       expect(await verifyOtp({ phone: LEARNER, code: bad })).toMatchObject({ ok: false, code: "bad_code" });
     }
-    expect(await verifyOtp({ phone: LEARNER, code: bad })).toMatchObject({ ok: false, code: "locked", retryAfterSec: 900 });
+    expect(await verifyOtp({ phone: LEARNER, code: bad })).toMatchObject({
+      ok: false,
+      code: "locked",
+      retryAfterSec: 900,
+    });
 
     // locked: even the right code is refused, and no new code can be sent
     expect(await verifyOtp({ phone: LEARNER, code: lastCode() })).toMatchObject({ ok: false, code: "locked" });
@@ -187,5 +198,81 @@ describe("guards", () => {
     await sendOtp({ phone: LEARNER, captchaToken: CAPTCHA });
     await verifyOtp({ phone: LEARNER, code: lastCode() });
     await expect(requireAdmin("/admin")).rejects.toMatchObject({ digest: expect.stringContaining(";/;") });
+  });
+});
+
+describe("admin users list", () => {
+  async function loginAs(phone: string) {
+    jar.clear();
+    await sendOtp({ phone, captchaToken: CAPTCHA });
+    await verifyOtp({ phone, code: lastCode() });
+  }
+  const filters = (params: Record<string, string> = {}) => parseUserFilters(params);
+
+  it("sends a logged-out visitor to /login and a learner home, before any query runs", async () => {
+    await expect(listUsersForAdmin(filters())).rejects.toMatchObject({
+      digest: expect.stringContaining("/login"),
+    });
+    await loginAs(LEARNER);
+    await expect(listUsersForAdmin(filters())).rejects.toMatchObject({ digest: expect.stringContaining(";/;") });
+  });
+
+  it("lists users newest first with masked phones and the stat numbers", async () => {
+    await loginAs("9876500001");
+    await loginAs(LEARNER);
+    const { userId } = (await getSession())!;
+    await updateProfileName(userId, "Asha");
+    await loginAs("9000000001"); // the admin, logged in last
+
+    const view = await listUsersForAdmin(filters());
+    expect(view.rows.map((r) => r.phoneMasked)).toEqual(["+91******0001", "+91******3210", "+91******0001"]);
+    expect(view.rows[0]).toMatchObject({ role: "admin" });
+    expect(view.stats).toEqual({ total: 3, admins: 1, named: 1, newThisWeek: 3 });
+    expect(view).toMatchObject({ total: 3, page: 1, pageCount: 1 });
+    // the raw numbers never leave the module
+    expect(JSON.stringify(view)).not.toMatch(/\+91(987|900)\d{7}/);
+    expect(JSON.stringify(view)).not.toContain("phone.invalid");
+  });
+
+  it("filters by search text and by role", async () => {
+    await loginAs(LEARNER);
+    await loginAs("9876500001");
+    await loginAs("9000000001");
+
+    expect((await listUsersForAdmin(filters({ q: "3210" }))).rows).toHaveLength(1);
+    expect((await listUsersForAdmin(filters({ role: "admin" }))).rows).toHaveLength(1);
+    expect((await listUsersForAdmin(filters({ role: "learner" }))).rows).toHaveLength(2);
+    expect((await listUsersForAdmin(filters({ q: "9999999" }))).rows).toHaveLength(0);
+  });
+
+  it("treats LIKE wildcards in the search text as plain characters", async () => {
+    await loginAs(LEARNER);
+    await loginAs("9000000001");
+    expect((await listUsersForAdmin(filters({ q: "%" }))).rows).toHaveLength(0);
+    expect((await listUsersForAdmin(filters({ q: "_" }))).rows).toHaveLength(0);
+  });
+
+  it("pages the list", async () => {
+    await loginAs("9000000001");
+    const base = new Date("2026-01-01T00:00:00Z");
+    await db.insert(authUser).values(
+      Array.from({ length: 24 }, (_, i) => ({
+        id: `seed-${i}`,
+        name: "",
+        email: `seed-${i}@phone.invalid`,
+        phoneNumber: `+9170000${String(i).padStart(5, "0")}`,
+        role: "learner",
+        createdAt: new Date(base.getTime() + i * 1000),
+      })),
+    );
+
+    const first = await listUsersForAdmin(filters());
+    expect(first).toMatchObject({ total: 25, page: 1, pageCount: 2 });
+    expect(first.rows).toHaveLength(20);
+    expect(first.rows[0]).toMatchObject({ role: "admin" }); // newest
+
+    const second = await listUsersForAdmin(filters({ page: "2" }));
+    expect(second.rows).toHaveLength(5);
+    expect((await listUsersForAdmin(filters({ page: "99" }))).rows).toHaveLength(0);
   });
 });

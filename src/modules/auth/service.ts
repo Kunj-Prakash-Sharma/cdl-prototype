@@ -4,10 +4,13 @@ import { redirect } from "next/navigation";
 import { auth } from "./auth";
 import { safeNextPath } from "./next-path";
 import { maskPhone } from "./phone";
-import { setUserName } from "./repo";
-import type { ActionResult, SessionView } from "./types";
+import { USERS_PAGE_SIZE, pageCount, type UserFilters } from "./admin-users";
+import { listUsers, setUserName, userCounts } from "./repo";
+import type { ActionResult, AdminUsersView, SessionView } from "./types";
 
-export type { ActionResult, AuthErrorCode, Role, SessionView } from "./types";
+export type { ActionResult, AdminUserRow, AdminUsersView, AuthErrorCode, Role, SessionView } from "./types";
+export type { RoleFilter, UserFilters } from "./admin-users";
+export { parseUserFilters } from "./admin-users";
 
 const MAX_NAME_LENGTH = 30;
 
@@ -53,4 +56,29 @@ export async function updateProfileName(userId: string, name: string): Promise<A
   if (trimmed.length < 1 || trimmed.length > MAX_NAME_LENGTH) return { ok: false, code: "invalid_input" };
   await setUserName(userId, trimmed);
   return { ok: true };
+}
+
+/**
+ * Admin users list: a page of users plus the stat numbers. Checks the admin role itself (the admin layout
+ * guard does not cover other callers). Phones are masked here, so callers never receive a raw number.
+ */
+export async function listUsersForAdmin(filters: UserFilters): Promise<AdminUsersView> {
+  await requireAdmin("/admin/users");
+  const [{ rows, total }, stats] = await Promise.all([
+    listUsers(filters, USERS_PAGE_SIZE, (filters.page - 1) * USERS_PAGE_SIZE),
+    userCounts(new Date()),
+  ]);
+  return {
+    rows: rows.map((row) => ({
+      id: row.id,
+      phoneMasked: row.phoneNumber ? maskPhone(row.phoneNumber) : "",
+      name: row.name,
+      role: row.role === "admin" ? "admin" : "learner",
+      joinedAt: row.createdAt.toISOString(),
+    })),
+    total,
+    page: filters.page,
+    pageCount: pageCount(total),
+    stats,
+  };
 }
