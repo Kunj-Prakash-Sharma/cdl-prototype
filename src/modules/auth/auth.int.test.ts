@@ -121,7 +121,7 @@ describe("verify and session", () => {
     await sendOtp({ phone: LEARNER, captchaToken: CAPTCHA });
     expect(await verifyOtp({ phone: LEARNER, code: lastCode(), next: "https://evil.example" })).toMatchObject({
       ok: true,
-      next: "/my-self",
+      next: "/discover",
     });
   });
 

@@ -5,10 +5,12 @@ import { usePathname } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Menu, Sparkles, X } from "lucide-react";
-import { ButtonLink } from "@/components/ui/button";
+import { UserMenu, useLogout } from "@/components/site/user-menu";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { Logo } from "@/components/ui/misc";
 import { cn } from "@/lib/format";
 import { useAppState } from "@/lib/store";
+import type { SessionView } from "@/modules/auth/types";
 
 const LINKS = [
   { href: "/discover", label: "Career Discovery", ai: true },
@@ -60,10 +62,11 @@ function ActiveNavLinks(props: { onNavigate?: () => void; vertical?: boolean }) 
   return <NavLinks pathname={pathname} {...props} />;
 }
 
-export function Navbar() {
+export function Navbar({ session }: { session: SessionView | null }) {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { completedAt } = useAppState();
+  const { run: runLogout, pending: loggingOut } = useLogout();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -100,6 +103,17 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
+          {session ? (
+            <span className="hidden md:block">
+              <UserMenu session={session} />
+            </span>
+          ) : (
+            <span className="hidden sm:block">
+              <ButtonLink href="/login" variant="ghost" size="sm">
+                Log in
+              </ButtonLink>
+            </span>
+          )}
           <span className="hidden sm:block">
             <ButtonLink href={cta.href} size="sm">
               {cta.label}
@@ -132,6 +146,26 @@ export function Navbar() {
               <ButtonLink href={cta.href} className="mt-3" onClick={() => setOpen(false)}>
                 {cta.label}
               </ButtonLink>
+              {session ? (
+                <div className="mt-2 rounded-2xl bg-slate-50 p-3">
+                  <p className="text-sm text-slate-600">
+                    Logged in as <span className="font-semibold text-ink">{session.name || session.phoneMasked}</span>
+                    {session.role === "admin" && " (admin)"}
+                  </p>
+                  {session.role === "admin" && (
+                    <ButtonLink href="/admin" variant="ghost" className="mt-1 w-full" onClick={() => setOpen(false)}>
+                      Admin
+                    </ButtonLink>
+                  )}
+                  <Button variant="secondary" className="mt-2 w-full" onClick={runLogout} disabled={loggingOut}>
+                    {loggingOut ? "Logging out…" : "Log out"}
+                  </Button>
+                </div>
+              ) : (
+                <ButtonLink href="/login" variant="secondary" className="mt-2" onClick={() => setOpen(false)}>
+                  Log in
+                </ButtonLink>
+              )}
             </div>
           </motion.div>
         )}
