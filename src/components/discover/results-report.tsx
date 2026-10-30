@@ -27,9 +27,9 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { Badge, Eyebrow } from "@/components/ui/misc";
 import { useToast } from "@/components/ui/toast";
 import { bundlePrice, lessonCount } from "@/modules/catalog/courses";
-import { DIMENSION_INFO, GOALS, optionLabel } from "@/modules/chat/questions";
+import { DIMENSION_INFO, GOALS, optionLabel } from "@/modules/chat/legacy/questions";
 import { cn, formatPrice } from "@/lib/format";
-import { computeResults } from "@/modules/chat/scoring";
+import { computeResults } from "@/modules/chat/legacy/scoring";
 import { actions, useAppState } from "@/lib/store";
 
 const fade = (delay = 0) => ({

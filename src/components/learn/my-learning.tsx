@@ -5,7 +5,7 @@ import { ArrowRight, BookOpen, Play, Sparkles } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge, Eyebrow, ProgressBar } from "@/components/ui/misc";
 import { allLessons, getCourse, type Course } from "@/modules/catalog/courses";
-import { isDiscoveryComplete } from "@/modules/chat/scoring";
+import { isDiscoveryComplete } from "@/modules/chat/legacy/scoring";
 import { useAppState, useHydrated } from "@/lib/store";
 import { CourseThumb } from "./course-thumb";
 

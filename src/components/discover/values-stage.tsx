@@ -3,7 +3,7 @@
 import { motion } from "motion/react";
 import { Compass, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { VALUES_TO_PICK, WORK_VALUES } from "@/modules/chat/questions";
+import { VALUES_TO_PICK, WORK_VALUES } from "@/modules/chat/legacy/questions";
 import { cn } from "@/lib/format";
 import { actions, useAppState } from "@/lib/store";
 import { StageShell } from "./stage-shell";

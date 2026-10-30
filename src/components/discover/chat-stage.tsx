@@ -13,7 +13,7 @@ import {
   STRENGTHS,
   optionLabel,
   type Option,
-} from "@/modules/chat/questions";
+} from "@/modules/chat/legacy/questions";
 import { cn } from "@/lib/format";
 import { actions, useAppState, type Profile } from "@/lib/store";
 

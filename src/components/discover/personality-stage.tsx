@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, ArrowRight, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { LIKERT_ITEMS, LIKERT_SCALE } from "@/modules/chat/questions";
+import { LIKERT_ITEMS, LIKERT_SCALE } from "@/modules/chat/legacy/questions";
 import { cn } from "@/lib/format";
 import { actions, useAppState } from "@/lib/store";
 import { SectionComplete, StageShell } from "./stage-shell";

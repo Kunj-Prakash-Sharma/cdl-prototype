@@ -7,7 +7,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Badge, Eyebrow, SageAvatar } from "@/components/ui/misc";
 import { CATEGORIES, COURSES, type CourseCategory } from "@/modules/catalog/courses";
 import { cn } from "@/lib/format";
-import { computeResults, isDiscoveryComplete } from "@/modules/chat/scoring";
+import { computeResults, isDiscoveryComplete } from "@/modules/chat/legacy/scoring";
 import { useAppState, useHydrated } from "@/lib/store";
 import { CourseCard } from "./course-card";
 
