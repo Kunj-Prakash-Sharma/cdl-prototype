@@ -59,3 +59,24 @@ jobs:
       - uses: actions/checkout@v4
       # Build only (no push): proves the container image the app deploys from still builds.
       - run: docker build -t self-app:ci .
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Known-vulnerable dependencies (production only; fail on high or critical).
+      - run: npm audit --omit=dev --audit-level=high
+      # Secrets committed by mistake.
+      - uses: trufflesecurity/trufflehog@v3.88.0
+        with:
+          extra_args: --results=verified,unknown
+      # Insecure code patterns (injection, XSS, weak crypto, ...).
+      - run: pip install semgrep==1.100.0
+      - run: semgrep scan --config p/typescript --config p/owasp-top-ten --error --exclude node_modules --exclude .next
