@@ -7,15 +7,16 @@ What the Meera quiz asks, how answers are scored, and how the report is built. D
 ## 1. Summary
 - About 26 quick-tap questions (D60 says "about 25"): **4 basics, 10 OCEAN (2 per trait), 12 RIASEC (2 per type)**. Order: basics, OCEAN, RIASEC.
 - Each question has a fixed **question ID** and **2 to 3 pre-approved variants** (wordings). The AI is not used anywhere in the quiz. Scoring is a pure, unit-tested function that sees question IDs and answer values only.
-- OCEAN items are written in the style of the **IPIP** (public domain, commercial use allowed). RIASEC items are **our own** (no free validated set has a clear commercial licence for reworded items).
+- OCEAN items are written in the style of the **IPIP** (public domain, commercial use allowed). RIASEC items are plain-language rewrites of **ORVIS** activities (hosted on the IPIP site, described as public domain; licence likely OK, not yet confirmed). Both come from a 50-question **pool** for client review ([item-sources.md](item-sources.md)); the quiz asks a chosen subset per set version (draft 1.0.0 has 10 + 12). Updated 2026-11-02 (D68).
 - Two items per scale is short. Treat results as **a first look**: broad bands for OCEAN, a top-3 interest area for RIASEC. No percentiles, no precise scores, no claims of clinical or scientific validation.
 
 ## 2. Sources and licensing
 | Source | Use for | Verdict | Notes |
 |---|---|---|---|
-| IPIP Big Five markers (ipip.ori.org) | OCEAN item style | **Use** | Public domain: "permission has already been automatically granted ... for any person to use IPIP items, scales, and inventories for any purpose, commercial or non-commercial". No attribution needed. Citing Goldberg is good practice. Source: [ipip.ori.org/newPermission.htm](https://ipip.ori.org/newPermission.htm), [50-item key](https://ipip.ori.org/newBigFive5broadKey.htm). **Re-read the quote before launch** (our research fetched it through a summarising tool) |
-| IPIP RIASEC scales | RIASEC | **Does not exist** | The IPIP index lists only ORVIS (8 vocational scales), not Holland types. [Scale index](https://ipip.ori.org/newIndexofScaleLabels.htm) |
-| Our own RIASEC items | RIASEC | **Use** | Written by us, so no licence and free to write variants. **Not validated.** Describe as "based on Holland's six interest types", never as a validated test |
+| IPIP Big Five markers (ipip.ori.org) | OCEAN item style | **Use** | Public domain: "permission has already been automatically granted ... for any person to use IPIP items, scales, and inventories for any purpose, commercial or non-commercial". No attribution needed. Citing Goldberg is good practice. Source: [ipip.ori.org/newPermission.htm](https://ipip.ori.org/newPermission.htm), [50-item key](https://ipip.ori.org/newBigFive5broadKey.htm). **Re-read by Vijay on 2026-10-30: open to use** (quote and per-item mapping in [item-sources.md](item-sources.md)) |
+| IPIP RIASEC scales | RIASEC | **Does not exist** | The IPIP index lists only ORVIS (8 vocational scales), not Holland types; ORVIS is used with a mapping to Holland types (next rows). [Scale index](https://ipip.ori.org/newIndexofScaleLabels.htm) |
+| ORVIS (Oregon Vocational Interest Scales, 8 scales on ipip.ori.org) | RIASEC | **Use, licence to confirm** | Rewrites of ORVIS activities, mapped to Holland types as in Pozzebon et al. 2010. The IPIP home page says its items and scales are public domain but does not name ORVIS; the ORVIS page has no licence text. Checked 2026-11-02, details in [item-sources.md](item-sources.md). **Not validated after rewording.** Describe as "based on Holland's six interest types", never as a validated test |
+| Our own interest items (draft set 1.0.0) | RIASEC | **Draft only** | The earlier 12 items we wrote ourselves; replaced by a pool selection if the client approves |
 | O\*NET Mini-IP (30 items) | RIASEC | **Later upgrade** | Free, 5 items per type, alpha about .73 ([manual](https://www.onetcenter.org/dl_files/IP_Manual.pdf)). Verbatim use is CC BY-ND; any reworded variant needs the O\*NET Tools Developer License (credit O\*NET and DOL, say it was modified, "validate" the product; meaning unclear). The page does not state commercial terms. **Email O\*NET before using it.** [Licence page](https://www.onetcenter.org/license_tools.html) |
 | O\*NET Database (occupation RIASEC data) | Career families | **Optional** | CC BY 4.0 with attribution. Can seed career families. See section 8 |
 | BFI-2 | OCEAN | **Rejected** | Non-commercial research only; commercial use needs a request (unverified, pages were not fetchable) |
@@ -47,12 +48,12 @@ Versioned config in `modules/chat` (see section 7). Fixed IDs never change meani
 Checklist for every variant (writer and client reviewer):
 1. Same idea and same direction as the base item. A reverse item stays reverse.
 2. One idea per sentence. No "and"/"or" that asks two things.
-3. Plain words, about class 8 reading level, short sentences, works for ages about 15 and up. No jargon.
+3. Plain words, about class 8 reading level, short sentences, works for ages about 14 and up, Indian English learners. No jargon.
 4. No leading or flattering phrasing; no "good" or "bad" answer is obvious.
 5. No clinical, diagnostic or medical words (anxiety, depression, disorder). No judgments about people.
 6. No salary, rank, percentile, or "best/worst" language.
 7. Hindi and other languages are later (the config supports adding them; scope.md).
-8. Max about 90 characters, fits 375px without scrolling.
+8. Max about 90 characters (longer is fine within this, if it adds clarity, not a second idea), fits 375px without scrolling.
 
 **Versioning:** editing a variant's wording is a patch (`1.0.0` to `1.0.1`, no re-approval of scoring). Adding or removing an item, changing a key or dimension, or changing the scale is a **new set version** (`1.1.0`); results keep the set version they were scored with.
 
@@ -68,6 +69,19 @@ Input: map of `questionId` to value 1 to 5, plus the set version. No other input
 7. **Close top 3:** if `score(1st) - score(3rd) <= 13`, the three are within about one answer step: show them as a group ("your top interests are close") with the letters in rank order, no claim of a strict order.
 8. **No clear lead (flat):** if `max - min <= 13` across all six types, there is no Holland code; show a gentle "broad interests" message and suggest courses by the basics' goal instead.
 9. Thresholds (37/62, 13) live in config, not code, and need client sign-off.
+
+**Provenance of these rules** (added 2026-10-30; checked against sources, no outside source was found for the rules marked "ours"):
+| Rule | Source |
+|---|---|
+| Reverse key `6 - value`, then average the items | Standard practice for IPIP scales (the IPIP key page marks + / - items; it does not print the formula) |
+| Holland types in the order R, I, A, S, E, C; code = top 3 types in rank order | Holland (1973) hexagon; see [Holland Codes](https://en.wikipedia.org/wiki/Holland_Codes) |
+| Tie-break R, I, A, S, E, C | **Ours.** No published tie rule found |
+| 0 to 100 rescale and OCEAN bands 37/62 | **Ours** (roughly thirds). No source |
+| Close top 3 and flat profile at spread <= 13 (about one answer step) | **Ours.** No source |
+| Minimum 80% of a stage answered | **Ours.** No source |
+| "Steps of 12.5" and the spread of 13 | Hold only for **2 items per trait**. With 3 to 5 items per trait the score steps are finer, so the spread and the bands must be re-checked when the quiz length is chosen (they are config) |
+| Straight-lining = all answers in a stage the same | **Ours** (a simple heuristic) |
+All "ours" rules sit in config, can change in a new set version, and need client sign-off (section 9). They are for a first-look quiz, not a validated test.
 
 ### Worked examples (use as unit-test fixtures)
 Raw answers are entered values; `-` items are shown after reversal.
@@ -111,7 +125,7 @@ type Item = {
 Stored answer: `sessionId`, `questionId`, `variantId`, `value` (1 to 5), `setVersion`, `answeredAt`. Stored result: `sessionId`, `setVersion`, per-dimension score, status (`ok`/`incomplete`/`invalid`/`flat`), `hollandCode`. **No question text and no free text stored** (D18). Name and basics follow the profile data rules (name is PII). OCEAN `A` (Agreeableness) and RIASEC `A` (Artistic) share a letter, so always key by stage + dimension.
 
 ## 8. Report mapping
-- **OCEAN:** strengths (Higher bands) and growth areas (Lower bands) as short, plain sentences, e.g. Higher Conscientiousness -> "You follow through", Lower -> "Growth: break big tasks into small steps". Middle shows no card. Neuroticism appears only as **emotional steadiness**. Footer line: "This is a first look based on a few questions. It is not a diagnosis or a clinical test."
+- **OCEAN:** strengths (Higher bands) and growth areas (Lower bands) as short, plain sentences, e.g. Higher Conscientiousness -> "You follow through", Lower -> "Growth: break big tasks into small steps". Middle shows no card. Neuroticism appears only as **emotional steadiness**. Footer line (shown on the whole report, OCEAN and RIASEC): "This is a first look based on a few questions. It is not a diagnosis, a clinical test or a validated test. The interest areas are based on Holland's six interest types." Draft wording; client and lawyer approve (section 9).
 - **RIASEC:** top interest areas (the Holland code letters, plain names), 3 to 5 **example career families** per area, and **suggested courses** from the catalog. Career families come from a hand-curated list per RIASEC type (seed from the prototype `careers.ts`, **strip % fit, salary and anything per-person**). Optional later: derive from the O\*NET Database with the required attribution.
 - **Never shown:** aptitude, work values, percentile, "top N%", salary, % fit, certificates, learner counts (CLAUDE.md, scope.md).
 
@@ -123,12 +137,15 @@ Stored answer: `sessionId`, `questionId`, `variantId`, `value` (1 to 5), `setVer
 | How RIASEC is described to users (no "validated" claim) | Client + lawyer | open |
 | Lawyer review of the "not a diagnosis" footer | Client | open |
 | Career family source: hand-curated now, O\*NET Database later? | Lead | open |
-| Optional upgrade: email O\*NET about Mini-IP use with variants | Lead | not started |
+| Optional upgrade: email O\*NET about Mini-IP use with variants (their licence pages disagree: CC BY 4.0 vs CC BY-ND; commercial use not stated). Draft written 2026-10-30; Vijay sends | Lead | draft ready, not sent |
+| Client approval of the OCEAN item mapping and the 3 "loose" items in [item-sources.md](item-sources.md) (draft set 1.0.0) | Client | open |
+| Client picks the quiz length and which of the 50 pool questions are asked (pool in [item-sources.md](item-sources.md), client copy in `docs/client-review/meera-question-bank.html`). Then rebuild the question set from the pool as a new version; thresholds re-checked | Client + lead | open |
+| ORVIS licence and Holland mapping: open the 2010 paper once; optional email to the IPIP site | Team | open |
 | `src/modules/chat/questions.ts` and `scoring.ts` are prototype code (aptitude, values, percentile, % fit). Rewrite them in the chat feature, with its own spec (`/feature-spec`) | Dev | not started |
 | `src/integrations/ai/` is no longer used by the quiz. Remove it in the chat feature spec | Dev | not started |
 
 ## 10. Draft item wording
-All drafts. `+` = agree-keyed, `-` = reversed. Variant 1 is the base wording.
+This is **draft set 1.0.0** (22 items). The wider 50-question pool for client review, with sources, is in [item-sources.md](item-sources.md). All drafts. `+` = agree-keyed, `-` = reversed. Variant 1 is the base wording.
 
 ### OCEAN ("How much does this sound like you?")
 | ID | Trait | Key | Variant 1 | Variant 2 |

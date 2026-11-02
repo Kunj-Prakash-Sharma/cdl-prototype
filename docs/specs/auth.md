@@ -61,8 +61,8 @@ A learner logs in with a phone number and an SMS code. The client team logs in t
 ## Decisions (closed Oct 28, 2026; recorded as D64)
 | # | Topic | Decision |
 |---|---|---|
-| 1 | Country codes | India +91 only |
-| 2 | Login required | Before starting the chat, before buying, and for **any video playback, including the free first lesson** (the free lesson only skips payment; login lets us see where each viewer stops and resumes). Home page and course detail pages stay open |
+| 1 | Country codes | India +91 only. *Nov 2, 2026 (D65): login will also accept an email with the same OTP method; needs its own spec, not built yet* |
+| 2 | Login required | Before starting the chat, before buying, and for **paid video playback**. *Nov 2, 2026 (D66): free lecture previews need no login (this replaces the earlier "free first lesson needs login"; preview analytics use an anonymous session id).* Home page and course detail pages stay open |
 | 3 | Session length | 30 days |
 | 4 | Returning user | Sees the saved report; can retake (new attempt, old report stays until the new one completes) |
 | 5 | OTP rules | 6 digits, 5 min expiry, 5 tries, then locked 15 min |
