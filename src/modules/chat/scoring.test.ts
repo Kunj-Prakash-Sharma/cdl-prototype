@@ -303,7 +303,12 @@ describe("the input", () => {
   it("does not look at which wording was shown (the answer map carries no variant)", () => {
     // Variants of an item are different texts with one key; scoring only ever receives IDs and values.
     for (const item of set.items)
-      expect(Object.keys(item).sort()).toEqual(["dimension", "id", "key", "stage", "variants"]);
+      expect(Object.keys(item).sort()).toEqual(["dimension", "id", "key", "source", "stage", "variants"]);
+  });
+
+  it("does not look at an item's source (provenance only)", () => {
+    const noSource = { ...set, items: set.items.map((item) => ({ ...item, source: { kind: "own" as const } })) };
+    expect(scoreAttempt(F1, noSource)).toEqual(scoreAttempt(F1, set));
   });
 });
 

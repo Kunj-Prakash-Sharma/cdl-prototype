@@ -121,3 +121,25 @@ describe("question set 1.0.0: scales, thresholds, basics", () => {
     expect(set.acknowledgements.length).toBeGreaterThanOrEqual(3);
   });
 });
+
+describe("question set 1.0.0: provenance (docs/requirements/item-sources.md)", () => {
+  it("gives every item a source", () => {
+    for (const item of set.items) {
+      expect(item.source, item.id).toBeDefined();
+      expect(["ipip", "own"], item.id).toContain(item.source.kind);
+    }
+  });
+
+  it("maps every OCEAN item to a named IPIP marker and says how close it is", () => {
+    for (const item of ocean) {
+      expect(item.source.kind, item.id).toBe("ipip");
+      if (item.source.kind !== "ipip") continue;
+      expect(item.source.marker.trim(), item.id).not.toBe("");
+      expect(["direct", "close", "loose"], item.id).toContain(item.source.match);
+    }
+  });
+
+  it("marks every RIASEC item as our own (no outside source, not validated)", () => {
+    for (const item of riasec) expect(item.source, item.id).toEqual({ kind: "own" });
+  });
+});

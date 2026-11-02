@@ -19,9 +19,18 @@ export const RIASEC_DIMENSIONS: readonly RiasecDimension[] = ["R", "I", "A", "S"
 
 export type Variant = { id: string; text: string };
 
+/**
+ * Where an item idea comes from (docs/requirements/item-sources.md). `ipip` items are our simpler rewordings of an
+ * IPIP marker (public domain, https://ipip.ori.org); `match` says how close: "direct" (same idea, near same words),
+ * "close" (same idea, different words), "loose" (related idea; no exact IPIP-50 marker). `own` items are written by us
+ * and are not validated. Provenance only: scoring never reads it.
+ */
+export type ItemSource = { kind: "ipip"; marker: string; match: "direct" | "close" | "loose" } | { kind: "own" };
+
 export type Item = {
   /** Fixed, never reused: "o-E-2". If an item's meaning or key changes it gets a new ID. */
   id: string;
+  source: ItemSource;
   stage: Stage;
   dimension: Dimension;
   /** "-" items are reverse-keyed when scored. Every variant of an item keeps the same polarity. */
@@ -76,8 +85,17 @@ export type QuestionSet = {
 const v = (itemId: string, ...texts: string[]): Variant[] =>
   texts.map((text, i) => ({ id: `${itemId}.v${i + 1}`, text }));
 
-const ocean = (id: string, dimension: OceanDimension, key: "+" | "-", ...texts: string[]): Item => ({
+const ipip = (marker: string, match: "direct" | "close" | "loose"): ItemSource => ({ kind: "ipip", marker, match });
+
+const ocean = (
+  id: string,
+  dimension: OceanDimension,
+  key: "+" | "-",
+  source: ItemSource,
+  ...texts: string[]
+): Item => ({
   id,
+  source,
   stage: "ocean",
   dimension,
   key,
@@ -87,6 +105,7 @@ const ocean = (id: string, dimension: OceanDimension, key: "+" | "-", ...texts: 
 // RIASEC items are all agree-keyed: "How much would you enjoy this?"
 const riasec = (id: string, dimension: RiasecDimension, ...texts: string[]): Item => ({
   id,
+  source: { kind: "own" },
   stage: "riasec",
   dimension,
   key: "+",
@@ -167,34 +186,86 @@ export const QUESTION_SET_1_0_0: QuestionSet = {
 
   items: [
     // OCEAN. N is keyed so that a high score means steady and calm ("emotional steadiness").
-    ocean("o-O-1", "O", "+", "I enjoy trying new ideas.", "I like learning things I have never tried."),
-    ocean("o-O-2", "O", "-", "I prefer to do things the usual way.", "I would rather stick to what I already know."),
-    ocean("o-C-1", "C", "+", "I finish what I start.", "Once I begin something, I see it through."),
+    ocean(
+      "o-O-1",
+      "O",
+      "+",
+      ipip("Am full of ideas.", "loose"),
+      "I enjoy trying new ideas.",
+      "I like learning things I have never tried.",
+    ),
+    ocean(
+      "o-O-2",
+      "O",
+      "-",
+      ipip("Am not interested in abstract ideas.", "loose"),
+      "I prefer to do things the usual way.",
+      "I would rather stick to what I already know.",
+    ),
+    ocean(
+      "o-C-1",
+      "C",
+      "+",
+      ipip("Get chores done right away.", "loose"),
+      "I finish what I start.",
+      "Once I begin something, I see it through.",
+    ),
     ocean(
       "o-C-2",
       "C",
       "-",
+      ipip("Shirk my duties.", "close"),
       "I leave my work until the last minute.",
       "I put things off until I am almost out of time.",
     ),
-    ocean("o-E-1", "E", "+", "I start conversations easily.", "Meeting new people feels easy for me."),
+    ocean(
+      "o-E-1",
+      "E",
+      "+",
+      ipip("Start conversations.", "direct"),
+      "I start conversations easily.",
+      "Meeting new people feels easy for me.",
+    ),
     ocean(
       "o-E-2",
       "E",
       "-",
+      ipip("Keep in the background.", "direct"),
       "In a group, I stay in the background.",
       "I like to keep quiet when I am with many people.",
     ),
-    ocean("o-A-1", "A", "+", "I notice when someone around me is upset.", "I care about how other people feel."),
+    ocean(
+      "o-A-1",
+      "A",
+      "+",
+      ipip("Feel others' emotions.", "close"),
+      "I notice when someone around me is upset.",
+      "I care about how other people feel.",
+    ),
     ocean(
       "o-A-2",
       "A",
       "-",
+      ipip("Am not interested in other people's problems.", "direct"),
       "I am not very interested in other people's problems.",
       "I would rather focus on my own things than on others' troubles.",
     ),
-    ocean("o-N-1", "N", "+", "I stay calm when things go wrong.", "I keep my cool under pressure."),
-    ocean("o-N-2", "N", "-", "Small problems can make me feel very stressed.", "I get upset easily."),
+    ocean(
+      "o-N-1",
+      "N",
+      "+",
+      ipip("Am relaxed most of the time.", "close"),
+      "I stay calm when things go wrong.",
+      "I keep my cool under pressure.",
+    ),
+    ocean(
+      "o-N-2",
+      "N",
+      "-",
+      ipip("Get stressed out easily.", "direct"),
+      "Small problems can make me feel very stressed.",
+      "I get upset easily.",
+    ),
 
     // RIASEC
     riasec(
