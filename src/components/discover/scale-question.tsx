@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/lib/format";
-import type { NextStep } from "@/modules/chat/types";
+import type { NextStep, StageProgress } from "@/modules/chat/types";
 import { AiBubble } from "./chat-bubbles";
 
 type QuestionStep = Extract<NextStep, { kind: "question" }>;
@@ -17,29 +17,35 @@ const CIRCLE = ["size-9 sm:size-10", "size-11 sm:size-12", "size-14 sm:size-16"]
  */
 export function ScaleQuestion({
   step,
+  stage,
   ack,
   error,
   pending,
   onChoose,
 }: {
   step: QuestionStep;
+  /** The part this question belongs to, for "Question 5 of 10". */
+  stage: StageProgress;
   ack: string | null;
   error: string | null;
   pending: boolean;
   onChoose: (value: number) => void;
 }) {
-  const [selected, setSelected] = useState<number | null>(null);
+  // The pick is remembered with its question, so it clears itself when the next question arrives. This component is not
+  // remounted per question: only the content inside the card slides, like the prototype.
+  const [picked, setPicked] = useState<{ id: string; value: number } | null>(null);
+  // After a failed save (an error shows) the pick is not shown, so the learner can answer again.
+  const selected = picked?.id === step.id && !error ? picked.value : null;
   const labels = step.scale.labels;
   const middle = (labels.length - 1) / 2;
-  // Keyboard focus moves to the new question, otherwise it falls to the page after each answer.
-  const heading = useRef<HTMLHeadingElement>(null);
-  useEffect(() => {
-    heading.current?.focus({ preventScroll: true });
+  // Keyboard focus moves to each new question as it appears, otherwise it falls to the page after each answer.
+  const focusHeading = useCallback((element: HTMLHeadingElement | null) => {
+    element?.focus({ preventScroll: true });
   }, []);
 
   const choose = (value: number) => {
     if (pending) return;
-    setSelected(value);
+    setPicked({ id: step.id, value });
     onChoose(value);
   };
 
@@ -50,13 +56,13 @@ export function ScaleQuestion({
       if (event.target instanceof HTMLInputElement) return;
       const value = Number(event.key);
       if (Number.isInteger(value) && value >= 1 && value <= labels.length && !pending) {
-        setSelected(value);
+        setPicked({ id: step.id, value });
         onChoose(value);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [labels.length, pending, onChoose]);
+  }, [labels.length, pending, onChoose, step.id]);
 
   return (
     <div>
@@ -75,15 +81,18 @@ export function ScaleQuestion({
             transition={{ duration: 0.28, ease: "easeOut" }}
             className="px-4 py-10 sm:px-12 sm:py-14"
           >
-            <p className="text-center text-sm font-semibold text-slate-400">{step.scale.prompt}</p>
+            <p className="text-center text-sm font-semibold text-slate-400">
+              Question {stage.answered + 1} of {stage.total}
+            </p>
             <h2
-              ref={heading}
+              ref={focusHeading}
               tabIndex={-1}
               className="mx-auto mt-4 max-w-xl text-center text-2xl leading-snug font-bold tracking-tight text-balance text-ink outline-none sm:text-3xl"
               data-testid="question-text"
             >
               {step.text}
             </h2>
+            <p className="mt-3 text-center text-sm text-slate-500">{step.scale.prompt}</p>
 
             <div
               className="mt-10 flex items-center justify-center gap-0.5 sm:gap-3"
@@ -102,7 +111,6 @@ export function ScaleQuestion({
                     type="button"
                     aria-pressed={on}
                     aria-label={label}
-                    title={`${label} (${value})`}
                     disabled={pending}
                     data-testid={`scale-${value}`}
                     onClick={() => choose(value)}
@@ -134,7 +142,9 @@ export function ScaleQuestion({
 
             <div className="mx-auto mt-3 flex max-w-md justify-between gap-3 text-xs font-semibold sm:text-sm">
               <span className="text-sun-600">{labels[0]}</span>
-              <span className="text-slate-400">{selected ? labels[selected - 1] : ""}</span>
+              <span className="text-slate-400">
+                {selected ? labels[selected - 1] : `Tap or press 1–${labels.length}`}
+              </span>
               <span className="text-right text-brand-700">{labels[labels.length - 1]}</span>
             </div>
             {error && (

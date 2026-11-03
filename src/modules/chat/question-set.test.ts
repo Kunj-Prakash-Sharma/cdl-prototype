@@ -110,6 +110,25 @@ describe("question set 1.0.0: wording rules (assessment.md section 5)", () => {
     for (const text of allVariantTexts) expect(text, text).not.toMatch(forbidden);
   });
 
+  it("gives every part a label, title and subtitle, and the step bar a last step", () => {
+    const parts = ["basics", ...new Set(set.items.map((i) => i.stage))] as const;
+    for (const id of parts) {
+      const copy = set.stageCopy[id];
+      for (const text of [copy.label, copy.title, copy.subtitle]) expect(text.trim().length, id).toBeGreaterThan(0);
+      expect(copy.label.length, id).toBeLessThan(20); // fits the step bar on a phone
+    }
+    expect(set.finishLabel.trim()).not.toBe("");
+  });
+
+  it("keeps the part wording free of clinical and ranking words too", () => {
+    const forbidden =
+      /\b(anxiety|anxious|depress\w*|disorder|diagnos\w*|clinical|neurotic\w*|salary|percentile|best|worst|rank\w*)\b/i;
+    const texts = Object.values(set.stageCopy)
+      .flatMap((c) => [c.label, c.title, c.subtitle])
+      .concat(set.finishLabel);
+    for (const text of texts) expect(text, text).not.toMatch(forbidden);
+  });
+
   it("never shows 'neuroticism'", () => {
     const everything = JSON.stringify(set);
     expect(everything).not.toMatch(/neurotic/i);

@@ -35,6 +35,7 @@ export function progressOf(set: QuestionSet, answers: SavedAnswers, hasName: boo
     const entries = order.filter((entry) => entry.stage === id);
     return {
       id,
+      ...set.stageCopy[id],
       answered: entries.filter((entry) => isAnswered(entry, answers, hasName)).length,
       total: entries.length,
     };
@@ -43,6 +44,7 @@ export function progressOf(set: QuestionSet, answers: SavedAnswers, hasName: boo
     answered: stages.reduce((sum, stage) => sum + stage.answered, 0),
     total: order.length,
     stages,
+    finishLabel: set.finishLabel,
   };
 }
 

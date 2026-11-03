@@ -10,6 +10,8 @@
 import { getPoolItem } from "./question-pool";
 
 export type Stage = "ocean" | "riasec";
+/** "basics" holds the name and the tap questions about the learner; the others come from the items. */
+export type StageId = "basics" | Stage;
 export type OceanDimension = "O" | "C" | "E" | "A" | "N";
 export type RiasecDimension = "R" | "I" | "A" | "S" | "E" | "C";
 /** `A` exists in both stages (Agreeableness, Artistic), so a dimension is always read together with its stage. */
@@ -73,6 +75,15 @@ export type BasicQuestion = {
   options: BasicOption[];
 };
 
+/** What the learner sees for one part of the quiz (draft wording until the client approves it). */
+export type StageCopy = {
+  /** Short name in the top step bar. */
+  label: string;
+  /** Heading of the part. */
+  title: string;
+  subtitle: string;
+};
+
 export type QuestionSet = {
   version: string;
   /** The typed name question (D46: the only free text). Its answer goes to the learner profile, never to answers. */
@@ -83,6 +94,10 @@ export type QuestionSet = {
   thresholds: Thresholds;
   /** Short Meera lines shown between scored questions (draft copy). */
   acknowledgements: string[];
+  /** Headings for each part, shown in the step bar and above the questions. Data, so the UI hardcodes no part name. */
+  stageCopy: Record<StageId, StageCopy>;
+  /** The last step in the bar, after the questions. */
+  finishLabel: string;
 };
 
 const v = (itemId: string, ...texts: string[]): Variant[] =>
@@ -268,6 +283,25 @@ export const QUESTION_SET_1_0_0: QuestionSet = {
   items: LIVE.map(liveItem),
 
   thresholds: { oceanLow: 37, oceanHigh: 63, closeSpread: 13, minAnsweredPct: 80 },
+
+  stageCopy: {
+    basics: {
+      label: "About you",
+      title: "Let's get to know you",
+      subtitle: "A few quick questions so your report fits you.",
+    },
+    ocean: {
+      label: "Personality",
+      title: "Your personality",
+      subtitle: "How you tend to think, feel and act. There are no right or wrong answers.",
+    },
+    riasec: {
+      label: "Interests",
+      title: "Your interests",
+      subtitle: "The kind of work and activities you would enjoy.",
+    },
+  },
+  finishLabel: "Your report",
 
   acknowledgements: [
     "Got it.",

@@ -55,7 +55,20 @@ describe("progress", () => {
 
   it("counts the name as answered once the profile has one", () => {
     expect(progressOf(set, {}, true).answered).toBe(1);
-    expect(progressOf(set, {}, true).stages[0]).toEqual({ id: "basics", answered: 1, total: 1 + set.basics.length });
+    expect(progressOf(set, {}, true).stages[0]).toEqual({
+      id: "basics",
+      ...set.stageCopy.basics,
+      answered: 1,
+      total: 1 + set.basics.length,
+    });
+  });
+
+  it("carries each part's wording and the last step's wording from the set", () => {
+    const progress = progressOf(set, {}, false);
+    for (const stage of progress.stages) {
+      expect({ label: stage.label, title: stage.title, subtitle: stage.subtitle }).toEqual(set.stageCopy[stage.id]);
+    }
+    expect(progress.finishLabel).toBe(set.finishLabel);
   });
 
   it("counts every saved answer and ignores unknown keys", () => {

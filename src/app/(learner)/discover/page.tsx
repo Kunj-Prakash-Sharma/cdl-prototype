@@ -33,7 +33,7 @@ async function Discover() {
       <ChatFlow
         key={latest.attemptId}
         attemptId={latest.attemptId}
-        initial={{ kind: "done", progress: { answered: 0, total: 0, stages: [] } }}
+        initial={{ kind: "done", progress: { answered: 0, total: 0, stages: [], finishLabel: "" } }}
         finished={latest}
       />
     );

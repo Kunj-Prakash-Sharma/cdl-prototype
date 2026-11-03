@@ -1,13 +1,19 @@
 // Safe to import from client components: types and constants only, no server code.
 // The UI renders what a NextStep carries (text, labels, progress). It never knows question IDs, counts, stage names
 // or wording: all of that comes from the question set, so changing the set changes no UI code (D68).
-import type { Stage } from "./question-set";
+import type { Stage, StageCopy, StageId } from "./question-set";
 
-/** "basics" holds the name and the tap questions about the learner; the others come from the set. */
-export type StageId = "basics" | Stage;
+export type { StageId };
 
-export type StageProgress = { id: StageId; answered: number; total: number };
-export type Progress = { answered: number; total: number; stages: StageProgress[] };
+/** One part of the quiz: its wording (from the set) and how far the learner is in it. */
+export type StageProgress = StageCopy & { id: StageId; answered: number; total: number };
+export type Progress = {
+  answered: number;
+  total: number;
+  stages: StageProgress[];
+  /** The last step of the bar, after the questions (wording from the set). */
+  finishLabel: string;
+};
 
 export type ScaleView = { prompt: string; labels: readonly string[] };
 
