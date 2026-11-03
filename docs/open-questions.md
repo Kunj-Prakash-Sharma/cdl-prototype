@@ -7,7 +7,7 @@ Update the status and date as items close. When an item closes, record the outco
 |---|---|---|---|
 | Mixpanel plans, pricing and free-tier limits; request India data residency (region is fixed per project, so ask before creating it) | Lead architect | Week 1 | open |
 | SMS provider choice and DLT registration under the client's legal entity. **The client handles DLT himself (Nov 2, 2026).** From him we need the approved sender name and the exact approved OTP template text; the SMS provider choice is still open | Client + lead | Start week 1 | client doing DLT; provider open |
-| ORVIS licence and Holland mapping: open the 2010 paper (Pozzebon et al.) once; optional email to the IPIP site. Checked 2026-11-02: IPIP home page says its items and scales are public domain, ORVIS page has no licence text. See [requirements/item-sources.md](requirements/item-sources.md) | Team | Before launch | likely OK, not confirmed |
+| ORVIS licence and Holland mapping: the 2010 paper (Pozzebon et al.) calls ORVIS public domain throughout; mapping matches its appendix. See [requirements/item-sources.md](requirements/item-sources.md) | Team | Before launch | **done 2026-11-03** |
 | Day-1 AWS checks in Mumbai: MediaConvert, ECS Express Mode (Bedrock check dropped, D62) | Developers | Day 1 | open |
 | Repo `Kunj-Prakash-Sharma/cdl-prototype` is **public**: recommend making it private before production code lands (no branch protection; team follows branch + PR + green CI) | Kunj | Before real code is pushed | open |
 | How code reaches AWS: CI only checks and builds the image, there is no deploy step. CI runs on PRs into `dev` and pushes to `dev` only; add `main` when there is a release flow | Lead architect | Before first deploy | open |
@@ -26,10 +26,11 @@ From the Scope of Work. Dates are "to give" unless stated.
 | Brand name, logo, colours, website address, name shown in login SMS | to give date | open |
 | Payment account in the client's business name (KYC; GST status) | to give date | open |
 | Privacy, terms and refund pages | to give date | open |
-| Approval of question wording **and variants** (OCEAN, RIASEC; drafts in [requirements/assessment.md](requirements/assessment.md)), scoring thresholds and report wording | to give date | open |
-| Approval of the OCEAN item mapping to IPIP markers and of the 3 "loose" items (`o-O-1`, `o-O-2`, `o-C-1`) in [requirements/item-sources.md](requirements/item-sources.md). **Nothing has been approved by the client yet** | to give date | open |
-| Sign-off on the scoring rules that are our own choices, with no outside source: OCEAN bands 37/62, close and flat spread 13, minimum 80% answered, tie order R-I-A-S-E-C, straight-lining rule ([requirements/assessment.md](requirements/assessment.md) section 6, "Provenance") | to give date | open |
-| Report footer wording about validity ("a first look ... not a validated test ... based on Holland's six interest types"); client and lawyer | to give date | open |
+| Approval of the 50-question bank wording, scoring cut-offs and report cards (style B, "Balanced" middle cards) | to give date | **approved 2026-11-03** (D69). Client's one change: even answer labels, applied |
+| Approval of the question sources and the "loose" items (draft set 1.0.0, now replaced by the pool) | to give date | **approved 2026-11-03** as part of the bank approval; draft set no longer used |
+| Sign-off on the scoring rules that are our own choices (bands 37/63, spread 13, minimum 80%, tie order R-I-A-S-E-C, straight-lining) | to give date | **approved 2026-11-03** (D69). The quiz stays at 2 questions per trait or type, so the thresholds fit as designed |
+| Report footer wording about validity ("a first look ... not a validated test ... based on Holland's six interest types") | to give date | **temporary line in use; confirm with the client and a lawyer later** |
+| Variants: the approved pool has one wording per question. For the 22 live questions we draft 2 more wordings each (3 per question, D62/D69); the client sees them before launch | Lead + client | drafts by us, client review open |
 | Helpline link and wording, plus the blocked-word list for the name check (chat spec) | to give date | open |
 | Final prices, bundles, maximum discounts, refund policy | to give date | open |
 | One team email address for callback alerts | to give date | open |
