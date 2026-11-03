@@ -39,45 +39,45 @@ async function guarded<T extends object>(run: () => Promise<ChatResult<T>>): Pro
 }
 
 export async function startAttempt() {
-  const learner = await currentLearner();
-  return guarded(() => chat.startOrResumeAttempt(learner));
+  return guarded(async () => chat.startOrResumeAttempt(await currentLearner()));
 }
 
 /** Retake: a new attempt, or the open one if there is one (no pile of empty attempts). */
 export async function retake() {
-  const learner = await currentLearner();
-  return guarded(() => chat.retake(learner));
+  return guarded(async () => chat.retake(await currentLearner()));
 }
 
 export async function submitAnswer(input: unknown) {
   const parsed = answerSchema.safeParse(input);
   if (!parsed.success) return invalid;
-  const learner = await currentLearner();
-  const limit = answerLimiter.hit(learner.userId, performance.now());
-  if (!limit.ok) return { ok: false, code: "rate_limited", retryAfterSec: limit.retryAfterSec } as const;
-  return guarded(() => chat.submitAnswer(learner, parsed.data.attemptId, parsed.data.questionId, parsed.data.value));
+  return guarded(async () => {
+    const learner = await currentLearner();
+    const limit = answerLimiter.hit(learner.userId, performance.now());
+    if (!limit.ok) return { ok: false, code: "rate_limited", retryAfterSec: limit.retryAfterSec } as const;
+    return chat.submitAnswer(learner, parsed.data.attemptId, parsed.data.questionId, parsed.data.value);
+  });
 }
 
 /** The one typed answer. A blocked word ends the attempt (`name_blocked`: show the stop screen with the helpline). */
 export async function submitName(input: unknown) {
   const parsed = nameSchema.safeParse(input);
   if (!parsed.success) return invalid;
-  const learner = await currentLearner();
-  const limit = answerLimiter.hit(learner.userId, performance.now());
-  if (!limit.ok) return { ok: false, code: "rate_limited", retryAfterSec: limit.retryAfterSec } as const;
-  return guarded(() => chat.submitName(learner, parsed.data.attemptId, parsed.data.name, updateProfileName));
+  return guarded(async () => {
+    const learner = await currentLearner();
+    const limit = answerLimiter.hit(learner.userId, performance.now());
+    if (!limit.ok) return { ok: false, code: "rate_limited", retryAfterSec: limit.retryAfterSec } as const;
+    return chat.submitName(learner, parsed.data.attemptId, parsed.data.name, updateProfileName);
+  });
 }
 
 export async function finishAttempt(input: unknown) {
   const parsed = attemptSchema.safeParse(input);
   if (!parsed.success) return invalid;
-  const learner = await currentLearner();
-  return guarded(() => chat.finishAttempt(learner, parsed.data.attemptId));
+  return guarded(async () => chat.finishAttempt(await currentLearner(), parsed.data.attemptId));
 }
 
 export async function retryStage(input: unknown) {
   const parsed = stageSchema.safeParse(input);
   if (!parsed.success) return invalid;
-  const learner = await currentLearner();
-  return guarded(() => chat.retryStage(learner, parsed.data.attemptId, parsed.data.stage));
+  return guarded(async () => chat.retryStage(await currentLearner(), parsed.data.attemptId, parsed.data.stage));
 }

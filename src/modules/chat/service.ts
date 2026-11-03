@@ -86,6 +86,11 @@ export async function retake(learner: Learner) {
   return startOrResumeAttempt(learner);
 }
 
+/** Does the learner have an unfinished attempt? (Read-only: unlike startOrResumeAttempt it never creates one.) */
+export async function hasOpenAttempt(userId: string): Promise<boolean> {
+  return (await repo.findOpenAttempt(userId)) !== undefined;
+}
+
 /** Where the learner is: the first question without an answer, recomputed from the saved answers every time. */
 export async function getNextStep(learner: Learner, attemptId: string): Promise<ChatResult<{ next: NextStep }>> {
   const loaded = await loadOwned(learner, attemptId);
