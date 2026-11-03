@@ -462,6 +462,27 @@ describe("the typed name", () => {
     expect((await attemptRow(attemptId)).status).toBe("in_progress");
   });
 
+  it("asks again for an abuse word, without ending the attempt or showing the helpline", async () => {
+    const learner = await makeLearner("");
+    const { attemptId } = await start(learner);
+    const save = saver();
+    for (const word of ["idiot", "madarchod", "चूतिया"]) {
+      expect(await submitName(learner, attemptId, word, save), word).toEqual({ ok: false, code: "name_format" });
+    }
+    expect(save).not.toHaveBeenCalled();
+    expect((await attemptRow(attemptId)).status).toBe("in_progress");
+    // The learner can still give a real name afterwards.
+    expect((await submitName(learner, attemptId, "Asha", save)).ok).toBe(true);
+  });
+
+  it("refuses a look-alike spelling as a bad format, and saves nothing", async () => {
+    const learner = await makeLearner("");
+    const { attemptId } = await start(learner);
+    const save = saver();
+    expect(await submitName(learner, attemptId, "ѕuicide", save)).toEqual({ ok: false, code: "name_format" });
+    expect(save).not.toHaveBeenCalled();
+  });
+
   it("ends the attempt on a blocked word: nothing saved, never resumed, the next start is a new attempt", async () => {
     const learner = await makeLearner("");
     const { attemptId } = await start(learner);

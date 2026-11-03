@@ -167,7 +167,8 @@ export async function finishAttempt(learner: Learner, attemptId: string): Promis
 export type NameSaver = (userId: string, name: string) => Promise<{ ok: boolean }>;
 
 /**
- * The typed name (the only free text, D46). Checked by `validateName`: a bad format asks again; a blocked word ends the
+ * The typed name (the only free text, D46). Checked by `validateName`: a bad format or an abuse word asks again; a self-harm
+ * phrase ends the
  * attempt for good (nothing saved, the caller shows the stop screen with the helpline); a good name is saved on the
  * profile through `saveName`, never in a chat table.
  */
@@ -193,6 +194,7 @@ export async function submitName(
       }
       return { ok: false, code: "name_blocked" };
     }
+    // An abuse word (or anything else that is not a name) only asks again: no helpline, the attempt stays open.
     return { ok: false, code: "name_format" };
   }
 
