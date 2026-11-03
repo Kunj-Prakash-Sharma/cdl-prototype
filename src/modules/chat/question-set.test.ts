@@ -7,6 +7,7 @@ import {
   getQuestionSet,
   type Item,
 } from "./question-set";
+import { QUESTION_POOL, getPoolItem } from "./question-pool";
 
 const set = CURRENT_QUESTION_SET;
 const ocean = set.items.filter((i) => i.stage === "ocean");
@@ -30,8 +31,33 @@ describe("question set 1.0.0: shape (assessment.md sections 3 and 7)", () => {
   it("uses the exact fixed IDs, in order", () => {
     expect(set.name.id).toBe("b-name");
     expect(set.basics.map((b) => b.id)).toEqual(["b-age", "b-status", "b-goal"]);
-    expect(ocean.map((i) => i.id)).toEqual(OCEAN_DIMENSIONS.flatMap((d) => [`o-${d}-1`, `o-${d}-2`]));
-    expect(riasec.map((i) => i.id)).toEqual(RIASEC_DIMENSIONS.flatMap((d) => [`r-${d}-1`, `r-${d}-2`]));
+    // Live IDs are pool IDs (D68): which two of a trait's pool questions are asked is the set's choice.
+    expect(ocean.map((i) => i.id)).toEqual([
+      "o-O-1",
+      "o-O-4",
+      "o-C-1",
+      "o-C-5",
+      "o-E-1",
+      "o-E-4",
+      "o-A-2",
+      "o-A-4",
+      "o-N-1",
+      "o-N-3",
+    ]);
+    expect(riasec.map((i) => i.id)).toEqual([
+      "r-R-1",
+      "r-R-4",
+      "r-I-2",
+      "r-I-3",
+      "r-A-1",
+      "r-A-2",
+      "r-S-1",
+      "r-S-2",
+      "r-E-1",
+      "r-E-2",
+      "r-C-1",
+      "r-C-2",
+    ]);
   });
 
   it("has unique item IDs, and unique variant IDs of the form <item>.v<n>", () => {
@@ -44,10 +70,11 @@ describe("question set 1.0.0: shape (assessment.md sections 3 and 7)", () => {
     }
   });
 
-  it("gives every scored item 2 to 3 non-empty variants", () => {
+  it("gives every scored item 3 distinct, non-empty variants (the approved wording is variant 1)", () => {
     for (const item of set.items) {
-      expect(item.variants.length, item.id).toBeGreaterThanOrEqual(2);
-      expect(item.variants.length, item.id).toBeLessThanOrEqual(3);
+      expect(item.variants.length, item.id).toBe(3);
+      expect(new Set(item.variants.map((variant) => variant.text)).size, item.id).toBe(3);
+      expect(item.variants[0]?.text, item.id).toBe(getPoolItem(item.id).text);
       for (const variant of item.variants) expect(variant.text.trim().length, variant.id).toBeGreaterThan(0);
     }
   });
@@ -126,7 +153,7 @@ describe("question set 1.0.0: provenance (docs/requirements/item-sources.md)", (
   it("gives every item a source", () => {
     for (const item of set.items) {
       expect(item.source, item.id).toBeDefined();
-      expect(["ipip", "own"], item.id).toContain(item.source.kind);
+      expect(["ipip", "orvis"], item.id).toContain(item.source.kind);
     }
   });
 
@@ -139,7 +166,61 @@ describe("question set 1.0.0: provenance (docs/requirements/item-sources.md)", (
     }
   });
 
-  it("marks every RIASEC item as our own (no outside source, not validated)", () => {
-    for (const item of riasec) expect(item.source, item.id).toEqual({ kind: "own" });
+  it("maps every RIASEC item to a named ORVIS activity", () => {
+    for (const item of riasec) {
+      expect(item.source.kind, item.id).toBe("orvis");
+      if (item.source.kind !== "orvis") continue;
+      expect(item.source.activity.trim(), item.id).not.toBe("");
+    }
+  });
+
+  it("takes each live item's source, key, stage and trait from the pool question with the same ID", () => {
+    for (const item of set.items) {
+      const pooled = getPoolItem(item.id);
+      expect({ source: item.source, key: item.key, stage: item.stage, dimension: item.dimension }, item.id).toEqual({
+        source: pooled.source,
+        key: pooled.key,
+        stage: pooled.stage,
+        dimension: pooled.dimension,
+      });
+    }
+  });
+});
+
+describe("question pool (client-approved, 2026-11-03)", () => {
+  it("has 25 personality and 25 interest questions with unique IDs", () => {
+    expect(QUESTION_POOL).toHaveLength(50);
+    expect(new Set(QUESTION_POOL.map((q) => q.id)).size).toBe(50);
+    expect(QUESTION_POOL.filter((q) => q.stage === "ocean")).toHaveLength(25);
+    expect(QUESTION_POOL.filter((q) => q.stage === "riasec")).toHaveLength(25);
+  });
+
+  it("gives every OCEAN trait both an agree-keyed and a reverse-keyed question (so a live set can pick one of each)", () => {
+    for (const d of OCEAN_DIMENSIONS) {
+      const keys = new Set(QUESTION_POOL.filter((q) => q.stage === "ocean" && q.dimension === d).map((q) => q.key));
+      expect([...keys].sort(), `ocean ${d}`).toEqual(["+", "-"]);
+    }
+  });
+
+  it("has at least 2 questions for every interest type, all agree-keyed, all with an ORVIS source", () => {
+    for (const d of RIASEC_DIMENSIONS) {
+      const own = QUESTION_POOL.filter((q) => q.stage === "riasec" && q.dimension === d);
+      expect(own.length, `riasec ${d}`).toBeGreaterThanOrEqual(2);
+      expect(
+        own.every((q) => q.key === "+" && q.source.kind === "orvis"),
+        `riasec ${d}`,
+      ).toBe(true);
+    }
+  });
+
+  it("uses IPIP sources for personality and keeps IDs matching stage and trait", () => {
+    for (const q of QUESTION_POOL) {
+      expect(q.id, q.id).toBe(`${q.stage === "ocean" ? "o" : "r"}-${q.dimension}-${q.id.split("-")[2]}`);
+      if (q.stage === "ocean") expect(q.source.kind, q.id).toBe("ipip");
+    }
+  });
+
+  it("rejects an unknown pool ID", () => {
+    expect(() => getPoolItem("o-X-9")).toThrow(/Unknown pool question/);
   });
 });

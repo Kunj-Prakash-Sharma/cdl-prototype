@@ -1,11 +1,13 @@
 // The versioned question set for the Meera quiz. DATA ONLY: no logic, no imports from db, env or time.
-// Source of truth: docs/requirements/assessment.md (sections 3 to 7 and the draft wording in section 10).
-// All wording is a DRAFT until the client approves it (docs/open-questions.md). Keep it here as data so it can
-// change without touching scoring.
+// Source of truth: docs/requirements/assessment.md (sections 3 to 7) and the approved pool in question-pool.ts.
+// The set only lists WHICH pool questions are asked (and their extra wordings), so swapping a question is a one-line
+// change here and a new set version. Wording is client-approved; variants 2 and 3 are our drafts until the client
+// sees them (docs/open-questions.md). Keep it as data so it can change without touching scoring.
 //
 // Versioning (assessment.md section 5): editing a variant's wording is a patch (1.0.0 to 1.0.1). Adding or removing
 // an item, or changing a key, a dimension, the scale or a threshold is a new version (1.1.0). Never delete an old
-// set: attempts keep the version they started with and are scored against it.
+// set that real attempts used: attempts keep the version they started with and are scored against it.
+import { getPoolItem } from "./question-pool";
 
 export type Stage = "ocean" | "riasec";
 export type OceanDimension = "O" | "C" | "E" | "A" | "N";
@@ -20,12 +22,13 @@ export const RIASEC_DIMENSIONS: readonly RiasecDimension[] = ["R", "I", "A", "S"
 export type Variant = { id: string; text: string };
 
 /**
- * Where an item idea comes from (docs/requirements/item-sources.md). `ipip` items are our simpler rewordings of an
- * IPIP marker (public domain, https://ipip.ori.org); `match` says how close: "direct" (same idea, near same words),
- * "close" (same idea, different words), "loose" (related idea; no exact IPIP-50 marker). `own` items are written by us
- * and are not validated. Provenance only: scoring never reads it.
+ * Where a question comes from (docs/requirements/item-sources.md). `ipip` = our plain rewrite of an IPIP marker,
+ * `orvis` = our plain rewrite of an ORVIS activity (both public domain). `match`: "direct" = same idea, near same
+ * words; "close" = same idea, different words; "loose" = related idea only. Provenance only: scoring never reads it.
  */
-export type ItemSource = { kind: "ipip"; marker: string; match: "direct" | "close" | "loose" } | { kind: "own" };
+export type ItemSource =
+  | { kind: "ipip"; marker: string; scale: string; match: "direct" | "close" | "loose" }
+  | { kind: "orvis"; activity: string; scale: string; match: "direct" | "close" | "loose" };
 
 export type Item = {
   /** Fixed, never reused: "o-E-2". If an item's meaning or key changes it gets a new ID. */
@@ -85,32 +88,110 @@ export type QuestionSet = {
 const v = (itemId: string, ...texts: string[]): Variant[] =>
   texts.map((text, i) => ({ id: `${itemId}.v${i + 1}`, text }));
 
-const ipip = (marker: string, match: "direct" | "close" | "loose"): ItemSource => ({ kind: "ipip", marker, match });
+/** The questions this version asks, in order: personality (agree-keyed, then reverse-keyed, per trait), then interests. */
+const LIVE: readonly { id: string; more: readonly [string, string] }[] = [
+  { id: "o-O-1", more: ["My mind is full of new ideas.", "New ideas come to me all the time."] },
+  {
+    id: "o-O-4",
+    more: [
+      "Ideas that are not real or visible are hard for me to follow.",
+      "I struggle to understand things that I cannot see or touch.",
+    ],
+  },
+  {
+    id: "o-C-1",
+    more: ["I start my chores or homework straight away.", "When I have work to do, I get it done right away."],
+  },
+  {
+    id: "o-C-5",
+    more: ["I try to get out of my duties when I can.", "I skip my responsibilities when I get the chance."],
+  },
+  {
+    id: "o-E-1",
+    more: ["Starting a chat with someone is easy for me.", "I find it easy to talk to people first."],
+  },
+  {
+    id: "o-E-4",
+    more: ["In a group, I like to stay quietly at the back.", "In a group, I keep to the background."],
+  },
+  {
+    id: "o-A-2",
+    more: [
+      "When someone is upset, I can feel what they are going through.",
+      "I feel for people when they are going through a hard time.",
+    ],
+  },
+  {
+    id: "o-A-4",
+    more: ["I am not keen to listen to other people's problems.", "Other people's problems do not interest me."],
+  },
+  { id: "o-N-1", more: ["I feel calm and relaxed on most days.", "I am usually calm and at ease."] },
+  {
+    id: "o-N-3",
+    more: ["It does not take much to make me feel stressed.", "I get stressed out quickly."],
+  },
+  {
+    id: "r-R-1",
+    more: ["Fixing a bike, scooter or other vehicle.", "Finding out what is wrong with a bike or car and fixing it."],
+  },
+  {
+    id: "r-R-4",
+    more: ["Trekking or camping outdoors.", "Spending a few days on an outdoor adventure in the hills or forest."],
+  },
+  {
+    id: "r-I-2",
+    more: ["Working out a difficult puzzle or riddle.", "Figuring out the answer to a really tricky problem."],
+  },
+  {
+    id: "r-I-3",
+    more: [
+      "Learning to write code for a computer or phone app.",
+      "Building a small program that makes a computer do something.",
+    ],
+  },
+  {
+    id: "r-A-1",
+    more: ["Drawing or painting something from your imagination.", "Making art, like sketches or paintings."],
+  },
+  {
+    id: "r-A-2",
+    more: ["Making up and writing a story of your own.", "Writing a short story from your own ideas."],
+  },
+  {
+    id: "r-S-1",
+    more: ["Teaching someone how to do something new.", "Helping a classmate or friend understand something."],
+  },
+  {
+    id: "r-S-2",
+    more: [
+      "Being there for people when they are having a hard time.",
+      "Listening to and supporting people who are going through a hard time.",
+    ],
+  },
+  { id: "r-E-1", more: ["Being the leader of a team.", "Taking charge and guiding a group to reach a goal."] },
+  { id: "r-E-2", more: ["Talking people into trying your idea.", "Persuading others to see things your way."] },
+  {
+    id: "r-C-1",
+    more: [
+      "Writing down details carefully and keeping them in order.",
+      "Keeping neat records of things, like lists or accounts.",
+    ],
+  },
+  { id: "r-C-2", more: ["Planning how to spend and save money.", "Working out a monthly budget for money."] },
+];
 
-const ocean = (
-  id: string,
-  dimension: OceanDimension,
-  key: "+" | "-",
-  source: ItemSource,
-  ...texts: string[]
-): Item => ({
-  id,
-  source,
-  stage: "ocean",
-  dimension,
-  key,
-  variants: v(id, ...texts),
-});
-
-// RIASEC items are all agree-keyed: "How much would you enjoy this?"
-const riasec = (id: string, dimension: RiasecDimension, ...texts: string[]): Item => ({
-  id,
-  source: { kind: "own" },
-  stage: "riasec",
-  dimension,
-  key: "+",
-  variants: v(id, ...texts),
-});
+/** Variant 1 is the approved pool wording; variants 2 and 3 are the extra wordings listed above. */
+const liveItem = ({ id, more }: { id: string; more: readonly [string, string] }): Item => {
+  const poolItem = getPoolItem(id);
+  return {
+    id: poolItem.id,
+    source: poolItem.source,
+    stage: poolItem.stage,
+    dimension: poolItem.dimension,
+    key: poolItem.key,
+    variants: v(poolItem.id, poolItem.text, ...more),
+  };
+};
 
 export const QUESTION_SET_1_0_0: QuestionSet = {
   version: "1.0.0",
@@ -184,148 +265,7 @@ export const QUESTION_SET_1_0_0: QuestionSet = {
     },
   },
 
-  items: [
-    // OCEAN. N is keyed so that a high score means steady and calm ("emotional steadiness").
-    ocean(
-      "o-O-1",
-      "O",
-      "+",
-      ipip("Am full of ideas.", "loose"),
-      "I enjoy trying new ideas.",
-      "I like learning things I have never tried.",
-    ),
-    ocean(
-      "o-O-2",
-      "O",
-      "-",
-      ipip("Am not interested in abstract ideas.", "loose"),
-      "I prefer to do things the usual way.",
-      "I would rather stick to what I already know.",
-    ),
-    ocean(
-      "o-C-1",
-      "C",
-      "+",
-      ipip("Get chores done right away.", "loose"),
-      "I finish what I start.",
-      "Once I begin something, I see it through.",
-    ),
-    ocean(
-      "o-C-2",
-      "C",
-      "-",
-      ipip("Shirk my duties.", "close"),
-      "I leave my work until the last minute.",
-      "I put things off until I am almost out of time.",
-    ),
-    ocean(
-      "o-E-1",
-      "E",
-      "+",
-      ipip("Start conversations.", "direct"),
-      "I start conversations easily.",
-      "Meeting new people feels easy for me.",
-    ),
-    ocean(
-      "o-E-2",
-      "E",
-      "-",
-      ipip("Keep in the background.", "direct"),
-      "In a group, I stay in the background.",
-      "I like to keep quiet when I am with many people.",
-    ),
-    ocean(
-      "o-A-1",
-      "A",
-      "+",
-      ipip("Feel others' emotions.", "close"),
-      "I notice when someone around me is upset.",
-      "I care about how other people feel.",
-    ),
-    ocean(
-      "o-A-2",
-      "A",
-      "-",
-      ipip("Am not interested in other people's problems.", "direct"),
-      "I am not very interested in other people's problems.",
-      "I would rather focus on my own things than on others' troubles.",
-    ),
-    ocean(
-      "o-N-1",
-      "N",
-      "+",
-      ipip("Am relaxed most of the time.", "close"),
-      "I stay calm when things go wrong.",
-      "I keep my cool under pressure.",
-    ),
-    ocean(
-      "o-N-2",
-      "N",
-      "-",
-      ipip("Get stressed out easily.", "direct"),
-      "Small problems can make me feel very stressed.",
-      "I get upset easily.",
-    ),
-
-    // RIASEC
-    riasec(
-      "r-R-1",
-      "R",
-      "Fixing or building something with my hands.",
-      "Repairing a machine or making something from parts.",
-    ),
-    riasec(
-      "r-R-2",
-      "R",
-      "Working outdoors or with tools and equipment.",
-      "Spending a day with tools, machines or nature.",
-    ),
-    riasec(
-      "r-I-1",
-      "I",
-      "Figuring out how something works by testing it.",
-      "Solving a tricky puzzle or science problem.",
-    ),
-    riasec(
-      "r-I-2",
-      "I",
-      "Researching a question until I find the answer.",
-      "Exploring to understand why things happen.",
-    ),
-    riasec(
-      "r-A-1",
-      "A",
-      "Drawing, writing, designing or making music.",
-      "Creating something original, like art, a story or a song.",
-    ),
-    riasec(
-      "r-A-2",
-      "A",
-      "Coming up with new, creative ideas for a project.",
-      "Designing how something should look or feel.",
-    ),
-    riasec("r-S-1", "S", "Helping someone learn something new.", "Teaching or coaching a friend."),
-    riasec(
-      "r-S-2",
-      "S",
-      "Supporting people who are going through a hard time.",
-      "Listening to people and helping with their problems.",
-    ),
-    riasec("r-E-1", "E", "Leading a team to reach a goal.", "Taking charge of a group project."),
-    riasec("r-E-2", "E", "Convincing others to back my idea.", "Starting a small business or selling something."),
-    riasec(
-      "r-C-1",
-      "C",
-      "Organising information, files or schedules neatly.",
-      "Keeping lists and records in perfect order.",
-    ),
-    riasec(
-      "r-C-2",
-      "C",
-      "Following clear steps to get a task exactly right.",
-      "Checking details and numbers to avoid mistakes.",
-    ),
-  ],
+  items: LIVE.map(liveItem),
 
   thresholds: { oceanLow: 37, oceanHigh: 63, closeSpread: 13, minAnsweredPct: 80 },
 

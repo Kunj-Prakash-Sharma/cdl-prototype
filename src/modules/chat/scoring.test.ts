@@ -13,27 +13,36 @@ import { bandFor, scoreAttempt, scoreOcean, scoreRiasec, type Answers } from "./
 
 const set = CURRENT_QUESTION_SET;
 
+/** The set's own question IDs for a stage and trait (n = 1 or 2), so these tests do not hardcode which questions are live. */
+const idOf = (stage: "ocean" | "riasec", dimension: string, n: 1 | 2): string => {
+  const item = set.items.filter((i) => i.stage === stage && i.dimension === dimension)[n - 1];
+  if (!item) throw new Error(`no ${stage} ${dimension} item ${n}`);
+  return item.id;
+};
+const o = (d: string, n: 1 | 2) => idOf("ocean", d, n);
+const r = (d: string, n: 1 | 2) => idOf("riasec", d, n);
+
 type Pair = readonly [number, number];
 /** Raw answers as a learner would tap them: item 1 then item 2 of each dimension. */
 const oceanAnswers = (raw: Record<OceanDimension, Pair>): Record<string, number> =>
   Object.fromEntries(
     OCEAN_DIMENSIONS.flatMap((d) => [
-      [`o-${d}-1`, raw[d][0]],
-      [`o-${d}-2`, raw[d][1]],
+      [o(d, 1), raw[d][0]],
+      [o(d, 2), raw[d][1]],
     ]),
   );
 const riasecAnswers = (raw: Record<RiasecDimension, Pair>): Record<string, number> =>
   Object.fromEntries(
     RIASEC_DIMENSIONS.flatMap((d) => [
-      [`r-${d}-1`, raw[d][0]],
-      [`r-${d}-2`, raw[d][1]],
+      [r(d, 1), raw[d][0]],
+      [r(d, 2), raw[d][1]],
     ]),
   );
 const allSame = (prefix: "o" | "r", dims: readonly string[], value: number) =>
   Object.fromEntries(
     dims.flatMap((d) => [
-      [`${prefix}-${d}-1`, value],
-      [`${prefix}-${d}-2`, value],
+      [idOf(prefix === "o" ? "ocean" : "riasec", d, 1), value],
+      [idOf(prefix === "o" ? "ocean" : "riasec", d, 2), value],
     ]),
   );
 const withThresholds = (t: Partial<Thresholds>): QuestionSet => ({ ...set, thresholds: { ...set.thresholds, ...t } });
@@ -111,13 +120,13 @@ describe("F3: flat and straight-lined RIASEC", () => {
 describe("F4: incomplete", () => {
   it("marks RIASEC incomplete with 9 of 12 answered (below 80%)", () => {
     const nine = { ...F1_RIASEC };
-    for (const id of ["r-R-2", "r-A-2", "r-S-2"]) delete nine[id]; // every dimension still has one item
+    for (const id of [r("R", 2), r("A", 2), r("S", 2)]) delete nine[id]; // every dimension still has one item
     expect(scoreRiasec(nine, set)).toEqual({ status: "incomplete", stage: "riasec" });
   });
 
   it("accepts 10 of 12 answered (83%)", () => {
     const ten = { ...F1_RIASEC };
-    for (const id of ["r-R-2", "r-S-2"]) delete ten[id];
+    for (const id of [r("R", 2), r("S", 2)]) delete ten[id];
     expect(scoreRiasec(ten, set).status).toBe("ok");
   });
 });
@@ -125,23 +134,23 @@ describe("F4: incomplete", () => {
 describe("minimum answered (rule 3)", () => {
   it("needs 8 of 10 OCEAN items", () => {
     const eight = { ...F1_OCEAN };
-    for (const id of ["o-O-2", "o-E-2"]) delete eight[id];
+    for (const id of [o("O", 2), o("E", 2)]) delete eight[id];
     expect(scoreOcean(eight, set).status).toBe("ok");
-    delete eight["o-C-2"];
+    delete eight[o("C", 2)];
     expect(scoreOcean(eight, set)).toEqual({ status: "incomplete", stage: "ocean" });
   });
 
   it("needs at least one answered item in every dimension, even above 80%", () => {
     const noC = { ...F1_RIASEC };
-    delete noC["r-C-1"];
-    delete noC["r-C-2"]; // 10 of 12 = 83%, but C has nothing
+    delete noC[r("C", 1)];
+    delete noC[r("C", 2)]; // 10 of 12 = 83%, but C has nothing
     expect(scoreRiasec(noC, set)).toEqual({ status: "incomplete", stage: "riasec" });
   });
 
   it("scores a dimension from its one answered item", () => {
     const one = { ...F1_OCEAN };
-    delete one["o-O-2"]; // only o-O-1 = 5 (+) -> 100
-    delete one["o-N-1"]; // only o-N-2 = 3 (-) -> keyed 3 -> 50
+    delete one[o("O", 2)]; // only the first O item = 5 (+) -> 100
+    delete one[o("N", 1)]; // only the second N item = 3 (-) -> keyed 3 -> 50
     const result = scoreOcean(one, set);
     if (result.status !== "ok") throw new Error("expected ok");
     expect(result.scores.O.score).toBe(100);
@@ -171,18 +180,18 @@ describe("straight-lining (rule 4)", () => {
   it("checks completeness before straight-lining (too few answers is incomplete, not invalid)", () => {
     const sevenSame = Object.fromEntries(
       OCEAN_DIMENSIONS.slice(0, 3).flatMap((d) => [
-        [`o-${d}-1`, 3],
-        [`o-${d}-2`, 3],
+        [o(d, 1), 3],
+        [o(d, 2), 3],
       ]),
     );
-    expect(scoreOcean({ ...sevenSame, "o-A-1": 3 }, set)).toEqual({ status: "incomplete", stage: "ocean" });
+    expect(scoreOcean({ ...sevenSame, [o("A", 1)]: 3 }, set)).toEqual({ status: "incomplete", stage: "ocean" });
   });
 });
 
 describe("reverse keying (rule 1) and rounding (rule 2)", () => {
   const baseline = F1_OCEAN; // varied, so no other dimension can trigger straight-lining
   const scoreOf = (d: OceanDimension, [first, second]: Pair) => {
-    const result = scoreOcean({ ...baseline, [`o-${d}-1`]: first, [`o-${d}-2`]: second }, set);
+    const result = scoreOcean({ ...baseline, [o(d, 1)]: first, [o(d, 2)]: second }, set);
     if (result.status !== "ok") throw new Error("expected ok");
     return result.scores[d].score;
   };
@@ -282,9 +291,9 @@ describe("the input", () => {
     const base = scoreRiasec(F1_RIASEC, set);
     if (base.status !== "ok") throw new Error("expected ok");
     for (const bad of [0, 6, 2.5, Number.NaN, Number.POSITIVE_INFINITY, -3]) {
-      const result = scoreRiasec({ ...F1_RIASEC, "r-S-2": bad }, set);
+      const result = scoreRiasec({ ...F1_RIASEC, [r("S", 2)]: bad }, set);
       if (result.status !== "ok") throw new Error(`expected ok for ${bad}`);
-      expect(result.scores.S, `value ${bad}`).toBe(75); // only r-S-1 = 4 counted
+      expect(result.scores.S, `value ${bad}`).toBe(75); // only the first S item = 4 counted
     }
   });
 
@@ -307,7 +316,13 @@ describe("the input", () => {
   });
 
   it("does not look at an item's source (provenance only)", () => {
-    const noSource = { ...set, items: set.items.map((item) => ({ ...item, source: { kind: "own" as const } })) };
+    const noSource = {
+      ...set,
+      items: set.items.map((item) => ({
+        ...item,
+        source: { kind: "ipip" as const, marker: "x", scale: "x", match: "loose" as const },
+      })),
+    };
     expect(scoreAttempt(F1, noSource)).toEqual(scoreAttempt(F1, set));
   });
 });
