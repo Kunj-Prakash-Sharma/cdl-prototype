@@ -87,10 +87,9 @@ Functions take a `Learner` (`{ userId, name }`, built by the caller from auth's 
 
 ### UI (port with `/ui-port`; tokens only, 375px + desktop)
 Reuse and adapt prototype components in `src/components/discover/` (see [../prototype/reuse-map.md](../prototype/reuse-map.md)):
-- `discovery-flow.tsx`: stage machine becomes about, OCEAN, RIASEC, report; state from the server (no `localStorage`).
-- `chat-stage.tsx`: bubbles, typing indicator, chips; steps and acknowledgements from config; only the name is typed; the side panel becomes a bottom sheet.
-- `personality-stage.tsx`: the Likert UI renders both OCEAN and RIASEC from config (labels per scale).
-- `analyzing-stage.tsx`: loader while `finishAttempt` runs.
+- **Built (2026-11-03):** `chat-flow.tsx` draws whatever the server's `NextStep` says (no stage machine, no `localStorage`); `chat-card.tsx` (name and tap questions in the prototype's bubble look), `scale-question.tsx` (the round-button scale: statement, labels and number of buttons come from the step), `progress-header.tsx`, `status-screens.tsx` (finishing loader, try again, stop screen, temporary saved-result view), `helpline-link.tsx`, `chat-messages.ts` (UI-owned wording for error codes). `page.tsx` resumes or starts the attempt on the server, and shows the saved result with a retake button to a learner who finished and has nothing open.
+- **No hardcoding (D68), enforced by `no-hardcoding.test.ts`:** no UI file may contain question ids, counts, part names, scale words, the guide or product name, a raw colour, or an import of server-only question data.
+- Deleted: `discovery-flow`, `intro-stage`, `chat-stage`, `personality-stage`, `aptitude-stage`, `values-stage`, `analyzing-stage`, `stepper`, `stage-shell`.
 - `results-report.tsx`: **rewrite** to the report in assessment.md section 8; print stylesheet; radar chart generalised to N axes (5 OCEAN + 6 RIASEC) or two charts.
 - **Delete** `aptitude-stage.tsx`, `values-stage.tsx` and aptitude/values/percentile code paths.
 - A "Try again" screen for `invalid` stages (copy: "Your answers were all the same. Want to try that part again?").
