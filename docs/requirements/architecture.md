@@ -154,7 +154,7 @@ We add a real staging environment when three or more developers work in parallel
 - **Content protection:** signed, expiring video access checked against entitlements, plus a viewer watermark. No DRM at launch.
 - **Payments:** card data never touches our servers. Webhooks are signature-checked and safe to repeat.
 - **Admin:** roles, an audit log of admin actions, and no shared logins.
-- **Sensitive words:** if any typed field contains self-harm words, show a helpline link and stop the chat. The helpline and wording need the client's approval.
+- **Sensitive words:** a helpline link is always visible on every chat screen (D70), and if any typed field contains self-harm words, show the helpline stop screen and end the chat (the name check is the backup). The helpline and wording need the client's approval.
 
 ### For the client's lawyer
 - Children's data and parental consent under the Digital Personal Data Protection Act, 2023 and its Rules.

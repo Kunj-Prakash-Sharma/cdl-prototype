@@ -37,7 +37,7 @@ A logged-in learner chats with Meera through about 26 quick-tap questions (4 bas
 | `scoring.ts` | **Pure** `scoreAttempt(answers: Record<string, number>, set: QuestionSet): ScoreResult`. No imports from db, env, or time. Replaces prototype `scoring.ts` entirely |
 | `report.ts` | **Pure** `buildReport(result: ScoreResult, basics: Basics): ReportView` (strength/growth cards from OCEAN bands, Holland code, career families, copy). Report copy lives in `report-copy.ts` |
 | `careers.ts` | Reduced: Holland type to 3 to 5 example career families each, plain names only (D47). Delete salary, outlook, % fit, matching maths from the prototype file |
-| `name-check.ts` | `validateName(raw): { ok: true; value: string } \| { ok: false; reason: "format" \| "blocked" }`. Letters (incl. spaces, apostrophe, hyphen), max 30, blocklist for self-harm/abuse words (list provided with helpline copy by client; ship a small placeholder list, flagged) |
+| `name-check.ts` | `validateName(raw, lists?): { ok: true; value: string } \| { ok: false; reason: "format" \| "blocked" \| "abusive" }`. Letters (spaces, apostrophe, hyphen and combining marks allowed), max 30 (JS string length), **allowed scripts only: Latin, nine Indian scripts and Arabic for Urdu, one script per word** (closes the look-alike bypass; "आशा Verma" is fine), stored in NFKC form. Two blocklists with different outcomes: **self-harm** phrases give `blocked` (helpline stop screen, attempt ended); **abuse** words give `abusive` (ask again, no helpline, attempt stays open, because a real name can collide with an abuse word). Lists are data in `name-blocklist.ts`: a TEMPORARY English + Hinglish + Devanagari set (abuse terms from the LDNOOBW list, CC BY 4.0, credit required; self-harm phrases are our own, unreviewed), to be replaced by the client's list |
 | `schema.ts` | Drizzle tables (below) |
 | `repo.ts` | DB access only |
 | `service.ts` | Public API, below |
@@ -94,7 +94,8 @@ Reuse and adapt prototype components in `src/components/discover/` (see [../prot
 - `results-report.tsx`: **rewrite** to the report in assessment.md section 8; print stylesheet; radar chart generalised to N axes (5 OCEAN + 6 RIASEC) or two charts.
 - **Delete** `aptitude-stage.tsx`, `values-stage.tsx` and aptitude/values/percentile code paths.
 - A "Try again" screen for `invalid` stages (copy: "Your answers were all the same. Want to try that part again?").
-- The self-harm stop screen with the helpline message (copy and link from the client; placeholder until then).
+- **A helpline link that is always visible** on every chat screen, the stop screen and the report (D70). It is the primary safety measure and does not depend on any text matching. Wording, number and link are data in `src/config/helpline.ts` (placeholder until the client supplies them).
+- The self-harm stop screen with the same helpline message (the name check is the backup; copy and link from the client; placeholder until then).
 
 ## Rules and invariants that apply
 - No raw chat text stored; answers by question ID + variant ID + value (D18). The name goes to the profile only.
@@ -110,7 +111,7 @@ Reuse and adapt prototype components in `src/components/discover/` (see [../prot
 - Refresh or resume mid-quiz: same variants (deterministic pick), resumes at the first unanswered item.
 - Double tap / retry: upsert, no duplicate rows. Answer for an item already answered overwrites it (allow "back" one step only if the UI offers it).
 - Out-of-range value, unknown item ID, item from a later stage: rejected.
-- Name fails format: ask again; name hits the blocklist: stop screen with the helpline, attempt marked `abandoned`, no name saved, no further questions.
+- Name fails format, mixes scripts or uses a script that is not allowed: ask again (`name_format`). Name is an abuse word: ask again, no helpline, the attempt stays open (`name_format`). Name hits the self-harm list: stop screen with the helpline, attempt marked `abandoned`, no name saved, no further questions (`name_blocked`).
 - Straight-lining: stage `invalid`, offer retry of that stage; the attempt does not complete until fixed (rows for that stage cleared on retry).
 - Incomplete (abandoned after D58 inactivity): `chat_exited` fires; the attempt stays resumable; it never produces a report until complete.
 - Question set version changes mid-attempt: the attempt keeps its `set_version`; score against that version (keep old set configs in the repo, never delete).
@@ -137,7 +138,7 @@ Unit tests (vitest, run a single file at a time):
 - `scoring.test.ts`: the four worked examples F1 to F4 in assessment.md (F1 tie-break gives `ISA` and `close: true`; F2 `RIA` ranked; F3 invalid and flat-but-varied gives no code; F4 incomplete). Reverse keying per item; rounding half up (12.5 gives 13); OCEAN band edges 37/38 and 62/63; spread edge 13 versus 14; minimum 80%; straight-lining detection per stage; scoring ignores unknown keys.
 - `variants.test.ts`: deterministic for the same input; every index reachable over many sessions; same polarity (assert each variant exists under an item with a single `key`).
 - `question-set.test.ts`: IDs unique; counts 4/10/12; every scored item has 2 to 3 variants; every dimension has 2 items; each OCEAN trait has one `+` and one `-`; RIASEC items all `+`; variants under 90 chars.
-- `name-check.test.ts`: letters only, max 30, blocklist, apostrophes/hyphens, trims, Unicode letters.
+- `name-check.test.ts`: letters only, max 30, both blocklists and their different outcomes, script allowlist and mixed-script words, apostrophes/hyphens, NFKC, trims, and a sample of common Indian names that must never be blocked.
 - `service.test.ts` (against test DB or mocked repo): resume, upsert, out-of-range rejection, finish writes result, retake creates a new attempt, `getLatestReport` returns the newest completed.
 - `report.test.ts`: no forbidden fields (assert absence of percentile, salary, fit); Neuroticism label is "emotional steadiness"; footer line present.
 
@@ -152,6 +153,6 @@ Before merge: `/code-review`. Not a payments/auth feature, but run `/security-re
 
 ## Open items carried
 - Client approval of item and variant wording, report copy, thresholds (open-questions.md).
-- Helpline link/wording and the blocklist words (client).
+- Helpline link/wording and the blocklist words (client). The Hindi/Hinglish list in the code is temporary and unreviewed; regional languages are not covered.
 - Auth service must expose `updateProfileName` (add to the auth spec if absent).
 - Catalog spec/admin must support `riasec_types` on courses.
