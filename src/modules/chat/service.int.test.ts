@@ -2,7 +2,7 @@
 // No Better Auth and no Next here: the service takes the learner as a plain object, so only the database is real.
 // Run with: npm run test:int
 import { eq, sql } from "drizzle-orm";
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/lib/db";
 import { questionOrder } from "./flow";
 import { CURRENT_QUESTION_SET } from "./question-set";
@@ -16,6 +16,7 @@ import {
   retryStage,
   startOrResumeAttempt,
   submitAnswer,
+  submitName,
   type Learner,
   type NextStep,
 } from "./service";
@@ -422,5 +423,91 @@ describe("question set version", () => {
     expect(await getNextStep(learner, row!.id)).toEqual({ ok: false, code: "unknown" });
     expect(await finishAttempt(learner, row!.id)).toEqual({ ok: false, code: "unknown" });
     expect(await startOrResumeAttempt(learner)).toEqual({ ok: false, code: "unknown" });
+  });
+});
+
+describe("the typed name", () => {
+  /** Saves the name like auth's updateProfileName would (raw SQL, so this test needs no auth code). */
+  const saver = () =>
+    vi.fn(async (userId: string, name: string) => {
+      await db.execute(sql`update auth_user set name = ${name} where id = ${userId}`);
+      return { ok: true };
+    });
+  const nameOf = async (userId: string) =>
+    (await db.execute<{ name: string }>(sql`select name from auth_user where id = ${userId}`)).rows[0]!.name;
+
+  it("saves a good name on the profile (trimmed) and moves on to the basics", async () => {
+    const learner = await makeLearner("");
+    const { attemptId } = await start(learner);
+    const save = saver();
+    const res = await submitName(learner, attemptId, "  Asha  ", save);
+    if (!res.ok) throw new Error(res.code);
+    expect(save).toHaveBeenCalledExactlyOnceWith(learner.userId, "Asha");
+    expect(await nameOf(learner.userId)).toBe("Asha");
+    expect(res.next.kind).toBe("basics");
+    expect(await answerRows(attemptId)).toHaveLength(0); // the name is not an answer row
+  });
+
+  it("asks again for a name with the wrong format and saves nothing", async () => {
+    const learner = await makeLearner("");
+    const { attemptId } = await start(learner);
+    const save = saver();
+    for (const bad of ["", "   ", "R2D2", "<script>", "x".repeat(31), "Asha!!"]) {
+      expect(await submitName(learner, attemptId, bad, save), JSON.stringify(bad)).toEqual({
+        ok: false,
+        code: "name_format",
+      });
+    }
+    expect(save).not.toHaveBeenCalled();
+    expect((await attemptRow(attemptId)).status).toBe("in_progress");
+  });
+
+  it("ends the attempt on a blocked word: nothing saved, never resumed, the next start is a new attempt", async () => {
+    const learner = await makeLearner("");
+    const { attemptId } = await start(learner);
+    const save = saver();
+    expect(await submitName(learner, attemptId, "I want to die", save)).toEqual({ ok: false, code: "name_blocked" });
+    expect(save).not.toHaveBeenCalled();
+    expect(await nameOf(learner.userId)).toBe("");
+    expect((await attemptRow(attemptId)).status).toBe("abandoned");
+    expect(await submitAnswer(learner, attemptId, set.basics[0]!.id, 0)).toEqual({ ok: false, code: "attempt_closed" });
+    const again = await start(learner);
+    expect(again.attemptId).not.toBe(attemptId);
+  });
+
+  it("reports a failed profile save as our problem (unknown), not as a bad name", async () => {
+    const learner = await makeLearner("");
+    const { attemptId } = await start(learner);
+    expect(await submitName(learner, attemptId, "Asha", async () => ({ ok: false }))).toEqual({
+      ok: false,
+      code: "unknown",
+    });
+  });
+
+  it("does not return a next step for an attempt that was ended while the name was being saved", async () => {
+    const learner = await makeLearner("");
+    const { attemptId } = await start(learner);
+    const endsItMeanwhile = async (userId: string, name: string) => {
+      await db.execute(sql`update auth_user set name = ${name} where id = ${userId}`);
+      await abandonAttempt(learner, attemptId); // another request got there first
+      return { ok: true };
+    };
+    expect(await submitName(learner, attemptId, "Asha", endsItMeanwhile)).toEqual({
+      ok: false,
+      code: "attempt_closed",
+    });
+  });
+
+  it("does nothing for someone else's attempt or a finished one", async () => {
+    const owner = await makeLearner("");
+    const stranger = await makeLearner("");
+    const { attemptId } = await start(owner);
+    const save = saver();
+    expect(await submitName(stranger, attemptId, "Asha", save)).toEqual({ ok: false, code: "not_found" });
+    expect(await submitName(stranger, attemptId, "I want to die", save)).toEqual({ ok: false, code: "not_found" });
+    expect((await attemptRow(attemptId)).status).toBe("in_progress"); // a stranger cannot end it with a blocked word
+    await abandonAttempt(owner, attemptId);
+    expect(await submitName(owner, attemptId, "Asha", save)).toEqual({ ok: false, code: "attempt_closed" });
+    expect(save).not.toHaveBeenCalled();
   });
 });

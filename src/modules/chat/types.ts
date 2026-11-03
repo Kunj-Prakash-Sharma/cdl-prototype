@@ -41,12 +41,15 @@ export const CHAT_ERROR_CODES = [
   "incomplete", // finish was called before every question was answered
   "stage_invalid", // a stage's answers were all the same: ask that part again
   "not_allowed", // for example retrying a stage that is not marked invalid
+  "name_format", // the name is not letters, apostrophe, hyphen or space, or is too long (ask again)
+  "name_blocked", // the name hit the blocked-word list: stop screen with the helpline, attempt ended
+  "rate_limited", // too many answers in a minute (see retryAfterSec)
   "unknown", // anything unexpected (for example an attempt whose question set is missing)
 ] as const;
 export type ChatErrorCode = (typeof CHAT_ERROR_CODES)[number];
 
 export type ChatResult<T extends object = object> =
-  ({ ok: true } & T) | { ok: false; code: ChatErrorCode; stage?: Stage };
+  ({ ok: true } & T) | { ok: false; code: ChatErrorCode; stage?: Stage; retryAfterSec?: number };
 
 export type Learner = {
   userId: string;

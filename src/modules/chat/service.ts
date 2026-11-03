@@ -15,6 +15,8 @@ import { CURRENT_QUESTION_SET, getQuestionSet, type QuestionSet, type Stage } fr
 import { toResultRow, toResultView, type ResultView } from "./result";
 import * as repo from "./repo";
 import { scoreAttempt, scoreOcean, scoreRiasec, type StageProblem } from "./scoring";
+import { logger } from "@/lib/logger";
+import { validateName } from "./name-check";
 import type { ChatResult, Learner, NextStep } from "./types";
 import { variantFor } from "./variants";
 
@@ -159,6 +161,51 @@ export async function finishAttempt(learner: Learner, attemptId: string): Promis
   if (!row) return { ok: false, code: "unknown" };
   const finishedAt = stored ? now : ((await repo.getAttempt(attemptId))?.completedAt ?? now);
   return { ok: true, result: toResultView(row, finishedAt) };
+}
+
+/** Saves the name on the learner's profile. Injected by the caller (actions pass auth's updateProfileName), so chat never touches auth. */
+export type NameSaver = (userId: string, name: string) => Promise<{ ok: boolean }>;
+
+/**
+ * The typed name (the only free text, D46). Checked by `validateName`: a bad format asks again; a blocked word ends the
+ * attempt for good (nothing saved, the caller shows the stop screen with the helpline); a good name is saved on the
+ * profile through `saveName`, never in a chat table.
+ */
+export async function submitName(
+  learner: Learner,
+  attemptId: string,
+  rawName: string,
+  saveName: NameSaver,
+): Promise<ChatResult<{ next: NextStep }>> {
+  const loaded = await loadOwned(learner, attemptId);
+  if (loaded === null || loaded === "unknown_set") return failed(loaded);
+  const { attempt, set } = loaded;
+  if (attempt.status !== "in_progress") return { ok: false, code: "attempt_closed" };
+
+  const checked = validateName(rawName);
+  if (!checked.ok) {
+    if (checked.reason === "blocked") {
+      // The learner must reach the stop screen even if closing the attempt fails: log (never the name) and answer.
+      try {
+        await repo.setAttemptStatus(attemptId, "in_progress", "abandoned");
+      } catch (err) {
+        logger.error("could not end the attempt after a blocked name", { error: err });
+      }
+      return { ok: false, code: "name_blocked" };
+    }
+    return { ok: false, code: "name_format" };
+  }
+
+  const saved = await saveName(learner.userId, checked.value);
+  // A failed save is not the learner's typing (validateName already passed): it is ours.
+  if (!saved.ok) return { ok: false, code: "unknown" };
+
+  // Another request may have ended the attempt while the name was being saved.
+  const current = await repo.getAttempt(attemptId);
+  if (!current || current.status !== "in_progress") return { ok: false, code: "attempt_closed" };
+
+  const answers = await repo.listAnswers(attemptId);
+  return { ok: true, next: computeNextStep(set, answers, { attemptId, hasName: true }) };
 }
 
 const SCORERS: Record<Stage, (answers: Record<string, number>, set: QuestionSet) => { status: string } | StageProblem> =
