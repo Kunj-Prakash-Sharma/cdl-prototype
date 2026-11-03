@@ -43,7 +43,7 @@ Five modules, each owning its data. Admin and analytics are not modules: admin i
 Split a file when it passes about 300 lines; do not pre-split.
 
 ## Boundary rules
-1. Modules talk to each other **only through `service.ts`**. Never import another module's `repo`, `schema` or `actions`.
+1. Modules talk to each other **only through `service.ts`**. Never import another module's `repo`, `schema` or `actions`. *One exception (2026-11-03): a table may import another module's table object to declare a foreign key (for example `chat_attempts.user_id` references `auth_user`), and for nothing else. No queries, no reads, no writes.*
 2. Route handlers and server actions are thin: validate input (zod), check the session/role, call a service, return.
 3. Business logic lives in `service.ts`; DB access lives in `repo.ts`.
 4. Scoring is a **pure function** in `modules/chat`, unit-tested, and never uses the AI.

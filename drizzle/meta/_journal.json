@@ -8,6 +8,13 @@
       "when": 1793188454600,
       "tag": "0000_milky_shaman",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793692009416,
+      "tag": "0001_pale_rattler",
+      "breakpoints": true
     }
   ]
 }
