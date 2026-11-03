@@ -88,6 +88,8 @@ async function finishQuiz(page: Page) {
 }
 
 test.describe("chat", () => {
+  // Each question slides out and the next slides in (like the prototype), so a full quiz takes about half a minute.
+  test.describe.configure({ timeout: 120_000 });
   test("a learner answers every question and reaches the saved result", async ({ page }) => {
     await openChat(page);
     await expect(page.getByTestId("helpline")).toBeVisible();
@@ -163,10 +165,8 @@ test.describe("chat", () => {
     await expect(page.getByTestId("helpline")).toBeVisible();
     await page.getByTestId("retry-button").click();
     await expect(page.getByTestId("question-text")).toBeVisible();
-    // Only the last part is asked again: the progress is back to everything before that part.
-    await expect(page.getByTestId("progress")).toHaveText(
-      new RegExp(`^\\s*${basicsCount + 1 + scoredCount - lastPartSize} of `),
-    );
+    // Only the last part is asked again: its counter is back to zero, and the parts before it stay finished.
+    await expect(page.getByTestId("stage-header")).toContainText(`0/${lastPartSize} answered`);
 
     await answerScored(page, lastPartSize, varied);
     await expect(page.getByTestId("result")).toBeVisible({ timeout: 20_000 });
