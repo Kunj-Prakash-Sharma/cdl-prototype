@@ -176,11 +176,11 @@ export const QUESTION_SET_1_0_0: QuestionSet = {
   scales: {
     ocean: {
       prompt: "How much does this sound like you?",
-      labels: ["Not like me", "A little", "Somewhat", "Mostly", "Just like me"],
+      labels: ["Not at all me", "A little like me", "Somewhat like me", "Mostly me", "Exactly me"],
     },
     riasec: {
       prompt: "How much would you enjoy this?",
-      labels: ["Not at all", "A little", "Okay", "Quite a lot", "Love it"],
+      labels: ["Not at all", "A little", "Somewhat", "Quite a lot", "A lot"],
     },
   },
 
