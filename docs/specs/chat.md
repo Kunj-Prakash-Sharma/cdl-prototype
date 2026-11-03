@@ -41,7 +41,7 @@ A logged-in learner chats with Meera through about 26 quick-tap questions (4 bas
 | `schema.ts` | Drizzle tables (below) |
 | `repo.ts` | DB access only |
 | `service.ts` | Public API, below |
-| `actions.ts` | Server actions: `startAttempt`, `submitAnswer`, `submitName`, `finishAttempt`, `retake`. zod-validated, thin |
+| `actions.ts` | Server actions: `startAttempt`, `retake`, `submitAnswer`, `submitName`, `finishAttempt`, `retryStage`. zod-validated, thin; each calls `requireUser()` (a logged-out visitor is sent to login) and never reads a user id from the client. `submitName` passes auth's `updateProfileName` to the service as the name saver, so chat never touches auth. Unexpected errors are logged without personal data and answered as `unknown` |
 
 ### Types (shapes; fix exact names while coding)
 ```ts
@@ -83,7 +83,7 @@ Functions take a `Learner` (`{ userId, name }`, built by the caller from auth's 
 ### Routes / actions
 - `/discover` (exists): the chat flow. Auth guard `(learner)` already redirects to `/login` (OTP before start).
 - `/discover/report`: server component; reads `getLatestReport`; owner only; empty state links back to `/discover`.
-- Server actions above. No REST handlers needed (D42).
+- Server actions above. No REST handlers needed (D42). The UI contract is the typed result: `{ ok: true, ... }` or `{ ok: false, code, retryAfterSec? }`; codes are in `types.ts` (the UI owns all wording).
 
 ### UI (port with `/ui-port`; tokens only, 375px + desktop)
 Reuse and adapt prototype components in `src/components/discover/` (see [../prototype/reuse-map.md](../prototype/reuse-map.md)):
@@ -118,7 +118,8 @@ Reuse and adapt prototype components in `src/components/discover/` (see [../prot
 - Report opened with no completed attempt: empty state.
 - Two tabs: last write wins per item; no corruption (unique key).
 - Retake: a new attempt; old report stays visible until the new one completes.
-- Rate limit on `submitAnswer` per user (simple per-minute cap) to stop scripted floods.
+- Rate limit: 60 answers or names per learner per minute (`limits.ts`, in memory per app instance, so with several instances the real cap is higher: enough to stop a scripted flood, not for billing). Over the cap answers `rate_limited` with `retryAfterSec`.
+- Blocked name: `name_blocked`, the attempt is ended (abandoned), nothing is saved. Bad format: `name_format`, ask again. A stranger's blocked-word request cannot end someone else's attempt (ownership is checked first).
 
 ## Cleanup (done as part of this feature)
 - Delete or rewrite prototype `src/modules/chat/questions.ts`, `scoring.ts`, aptitude/values/percentile code, the `careers.ts` matching maths, and unused `lib/store.ts` chat state.
