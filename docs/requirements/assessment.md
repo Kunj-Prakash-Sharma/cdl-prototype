@@ -7,7 +7,7 @@ What the Meera quiz asks, how answers are scored, and how the report is built. D
 ## 1. Summary
 - About 26 quick-tap questions (D60 says "about 25"): **4 basics, 10 OCEAN (2 per trait), 12 RIASEC (2 per type)**. Order: basics, OCEAN, RIASEC.
 - Each question has a fixed **question ID** and **2 to 3 pre-approved variants** (wordings). The AI is not used anywhere in the quiz. Scoring is a pure, unit-tested function that sees question IDs and answer values only.
-- OCEAN items are written in the style of the **IPIP** (public domain, commercial use allowed). RIASEC items are plain-language rewrites of **ORVIS** activities (hosted on the IPIP site, public domain, confirmed in the source paper 2026-11-03). Both come from a 50-question **pool** for client review ([item-sources.md](item-sources.md)); the quiz asks a chosen subset per set version (draft 1.0.0 has 10 + 12). Updated 2026-11-02 (D68).
+- OCEAN items are written in the style of the **IPIP** (public domain, commercial use allowed). RIASEC items are plain-language rewrites of **ORVIS** activities (hosted on the IPIP site, public domain, confirmed in the source paper 2026-11-03). Both come from a 50-question **pool** for client review ([item-sources.md](item-sources.md)); the quiz asks a chosen subset per set version (set 1.0.0 asks 10 + 12). Updated 2026-11-02 (D68).
 - Two items per scale is short. Treat results as **a first look**: broad bands for OCEAN, a top-3 interest area for RIASEC. No percentiles, no precise scores, no claims of clinical or scientific validation.
 
 ## 2. Sources and licensing
@@ -16,20 +16,19 @@ What the Meera quiz asks, how answers are scored, and how the report is built. D
 | IPIP Big Five markers (ipip.ori.org) | OCEAN item style | **Use** | Public domain: "permission has already been automatically granted ... for any person to use IPIP items, scales, and inventories for any purpose, commercial or non-commercial". No attribution needed. Citing Goldberg is good practice. Source: [ipip.ori.org/newPermission.htm](https://ipip.ori.org/newPermission.htm), [50-item key](https://ipip.ori.org/newBigFive5broadKey.htm). **Re-read by Vijay on 2026-10-30: open to use** (quote and per-item mapping in [item-sources.md](item-sources.md)) |
 | IPIP RIASEC scales | RIASEC | **Does not exist** | The IPIP index lists only ORVIS (8 vocational scales), not Holland types; ORVIS is used with a mapping to Holland types (next rows). [Scale index](https://ipip.ori.org/newIndexofScaleLabels.htm) |
 | ORVIS (Oregon Vocational Interest Scales, 8 scales on ipip.ori.org) | RIASEC | **Use, licence confirmed 2026-11-03** | Rewrites of ORVIS activities, mapped to Holland types as in Pozzebon et al. 2010. The IPIP home page says its items and scales are public domain but does not name ORVIS; the ORVIS page has no licence text, but the 2010 paper that introduces ORVIS calls it public domain throughout (read 2026-11-03, details in [item-sources.md](item-sources.md)). **Not validated after rewording.** Describe as "based on Holland's six interest types", never as a validated test |
-| Our own interest items (draft set 1.0.0) | RIASEC | **Draft only** | The earlier 12 items we wrote ourselves; replaced by a pool selection if the client approves |
 | O\*NET Mini-IP (30 items) | RIASEC | **Later upgrade** | Free, 5 items per type, alpha about .73 ([manual](https://www.onetcenter.org/dl_files/IP_Manual.pdf)). Verbatim use is CC BY-ND; any reworded variant needs the O\*NET Tools Developer License (credit O\*NET and DOL, say it was modified, "validate" the product; meaning unclear). The page does not state commercial terms. **Email O\*NET before using it.** [Licence page](https://www.onetcenter.org/license_tools.html) |
 | O\*NET Database (occupation RIASEC data) | Career families | **Optional** | CC BY 4.0 with attribution. Can seed career families. See section 8 |
 | BFI-2 | OCEAN | **Rejected** | Non-commercial research only; commercial use needs a request (unverified, pages were not fetchable) |
 | NEO-PI-R / NEO-FFI, Holland SDS | Both | **Rejected** | Proprietary, sold commercially |
 
 ## 3. Question-set design
-Versioned config in `modules/chat` (see section 7). Fixed IDs never change meaning; if an item's meaning or key changes, it gets a new ID.
+Versioned config in `modules/chat` (see section 7). Fixed IDs never change meaning; if an item's meaning or key changes, it gets a new ID. Live IDs are the IDs of the approved 50-question pool (D68); the IDs below are set 1.0.0 (D69), and which pool questions are asked is the set's choice.
 
 | Stage | IDs | Count | Input |
 |---|---|---|---|
 | Basics | `b-name`, `b-age`, `b-status`, `b-goal` | 4 | Name is typed (D46); age band, studying/working/other, goal are taps. Not scored |
-| OCEAN | `o-O-1`, `o-O-2`, `o-C-1`, `o-C-2`, `o-E-1`, `o-E-2`, `o-A-1`, `o-A-2`, `o-N-1`, `o-N-2` | 10 | 5-point tap |
-| RIASEC | `r-R-1`, `r-R-2`, `r-I-1`, `r-I-2`, `r-A-1`, `r-A-2`, `r-S-1`, `r-S-2`, `r-E-1`, `r-E-2`, `r-C-1`, `r-C-2` | 12 | 5-point tap |
+| OCEAN | `o-O-1`, `o-O-4`, `o-C-1`, `o-C-5`, `o-E-1`, `o-E-4`, `o-A-2`, `o-A-4`, `o-N-1`, `o-N-3` | 10 | 5-point tap |
+| RIASEC | `r-R-1`, `r-R-4`, `r-I-2`, `r-I-3`, `r-A-1`, `r-A-2`, `r-S-1`, `r-S-2`, `r-E-1`, `r-E-2`, `r-C-1`, `r-C-2` | 12 | 5-point tap |
 
 **Answer scales** (fixed labels, shown the same for every variant):
 - OCEAN, "How much does this sound like you?": 1 Not at all me · 2 A little like me · 3 Somewhat like me · 4 Mostly me · 5 Exactly me. (Client change, 2026-11-03: evenly stepped labels instead of two extremes and one "somewhat".)
@@ -138,43 +137,11 @@ Stored answer: `sessionId`, `questionId`, `variantId`, `value` (1 to 5), `setVer
 | Lawyer review of the "not a diagnosis" footer | Client | open |
 | Career family source: hand-curated now, O\*NET Database later? | Lead | open |
 | Optional upgrade: email O\*NET about Mini-IP use with variants (their licence pages disagree: CC BY 4.0 vs CC BY-ND; commercial use not stated). Draft written 2026-10-30; Vijay sends | Lead | draft ready, not sent |
-| Client approval of the OCEAN item mapping and the "loose" items (draft set 1.0.0) | Client | approved 2026-11-03 as part of the pool; draft set to be replaced |
+| Client approval of the question sources (the pool) | Client | approved 2026-11-03 |
 | Quiz length decided 2026-11-03: **10 personality + 12 interests (2 per trait or type)**, 3 wordings per question (approved pool wording = variant 1; variants 2 and 3 drafted by us, shown to the client before launch). Open: which 2 pool questions per trait or type are asked (one agree-keyed and one reverse-keyed for each personality trait), then rebuild the question set from the pool as a new version | Lead | open |
 | ORVIS licence and Holland mapping | Team | **done 2026-11-03**: paper read, public domain, mapping matches the appendix (details in [item-sources.md](item-sources.md)) |
 | `src/modules/chat/questions.ts` and `scoring.ts` are prototype code (aptitude, values, percentile, % fit). Rewrite them in the chat feature, with its own spec (`/feature-spec`) | Dev | not started |
 | `src/integrations/ai/` is no longer used by the quiz. Remove it in the chat feature spec | Dev | not started |
 
-## 10. Draft item wording
-This is **draft set 1.0.0** (22 items). The wider 50-question pool for client review, with sources, is in [item-sources.md](item-sources.md). All drafts. `+` = agree-keyed, `-` = reversed. Variant 1 is the base wording.
-
-### OCEAN ("How much does this sound like you?")
-| ID | Trait | Key | Variant 1 | Variant 2 |
-|---|---|---|---|---|
-| `o-O-1` | Openness | + | I enjoy trying new ideas. | I like learning things I have never tried. |
-| `o-O-2` | Openness | - | I prefer to do things the usual way. | I would rather stick to what I already know. |
-| `o-C-1` | Conscientiousness | + | I finish what I start. | Once I begin something, I see it through. |
-| `o-C-2` | Conscientiousness | - | I leave my work until the last minute. | I put things off until I am almost out of time. |
-| `o-E-1` | Extraversion | + | I start conversations easily. | Meeting new people feels easy for me. |
-| `o-E-2` | Extraversion | - | In a group, I stay in the background. | I like to keep quiet when I am with many people. |
-| `o-A-1` | Agreeableness | + | I notice when someone around me is upset. | I care about how other people feel. |
-| `o-A-2` | Agreeableness | - | I am not very interested in other people's problems. | I would rather focus on my own things than on others' troubles. |
-| `o-N-1` | Emotional steadiness | + | I stay calm when things go wrong. | I keep my cool under pressure. |
-| `o-N-2` | Emotional steadiness | - | Small problems can make me feel very stressed. | I get upset easily. |
-
-### RIASEC ("How much would you enjoy this?")
-| ID | Type | Variant 1 | Variant 2 |
-|---|---|---|---|
-| `r-R-1` | Realistic | Fixing or building something with my hands. | Repairing a machine or making something from parts. |
-| `r-R-2` | Realistic | Working outdoors or with tools and equipment. | Spending a day with tools, machines or nature. |
-| `r-I-1` | Investigative | Figuring out how something works by testing it. | Solving a tricky puzzle or science problem. |
-| `r-I-2` | Investigative | Researching a question until I find the answer. | Exploring to understand why things happen. |
-| `r-A-1` | Artistic | Drawing, writing, designing or making music. | Creating something original, like art, a story or a song. |
-| `r-A-2` | Artistic | Coming up with new, creative ideas for a project. | Designing how something should look or feel. |
-| `r-S-1` | Social | Helping someone learn something new. | Teaching or coaching a friend. |
-| `r-S-2` | Social | Supporting people who are going through a hard time. | Listening to people and helping with their problems. |
-| `r-E-1` | Enterprising | Leading a team to reach a goal. | Taking charge of a group project. |
-| `r-E-2` | Enterprising | Convincing others to back my idea. | Starting a small business or selling something. |
-| `r-C-1` | Conventional | Organising information, files or schedules neatly. | Keeping lists and records in perfect order. |
-| `r-C-2` | Conventional | Following clear steps to get a task exactly right. | Checking details and numbers to avoid mistakes. |
-
-Add a third variant to any item the client wants more variety on, following the rules in section 5.
+## 10. Question wording
+The wording lives in one place: [item-sources.md](item-sources.md) lists the approved 50-question pool and the live set 1.0.0 with its three wordings per question. The code is `src/modules/chat/question-pool.ts` (pool) and `question-set.ts` (which questions are asked). Variant 1 is the client-approved wording; variants 2 and 3 are our drafts until the client sees them. `+` = agree-keyed, `-` = reversed. Follow the rules in section 5 when adding or changing a variant.

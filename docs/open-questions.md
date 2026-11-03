@@ -27,7 +27,7 @@ From the Scope of Work. Dates are "to give" unless stated.
 | Payment account in the client's business name (KYC; GST status) | to give date | open |
 | Privacy, terms and refund pages | to give date | open |
 | Approval of the 50-question bank wording, scoring cut-offs and report cards (style B, "Balanced" middle cards) | to give date | **approved 2026-11-03** (D69). Client's one change: even answer labels, applied |
-| Approval of the question sources and the "loose" items (draft set 1.0.0, now replaced by the pool) | to give date | **approved 2026-11-03** as part of the bank approval; draft set no longer used |
+| Approval of the question sources (the pool) | to give date | **approved 2026-11-03** as part of the bank approval |
 | Sign-off on the scoring rules that are our own choices (bands 37/63, spread 13, minimum 80%, tie order R-I-A-S-E-C, straight-lining) | to give date | **approved 2026-11-03** (D69). The quiz stays at 2 questions per trait or type, so the thresholds fit as designed |
 | Report footer wording about validity ("a first look ... not a validated test ... based on Holland's six interest types") | to give date | **temporary line in use; confirm with the client and a lawyer later** |
 | Variants: the approved pool has one wording per question. For the 22 live questions we draft 2 more wordings each (3 per question, D62/D69); the client sees them before launch | Lead + client | drafts by us, client review open |

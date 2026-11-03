@@ -7,7 +7,7 @@ Updated 2026-11-03. Answers "where did each question come from?". The 50-questio
 |---|---|---|
 | **Pool, personality (25)** | Plain-language rewrites of **IPIP** markers: 50-item Big Five key ([key page](https://ipip.ori.org/newBigFive5broadKey.htm)) and IPIP-NEO facets ([NEO key](https://ipip.ori.org/newNEOKey.htm)). IPIP is public domain | Licence read by the team 2026-10-30. Rewrites do not carry the published reliability figures |
 | **Pool, interests (25)** | Plain-language rewrites of **ORVIS** activities (Oregon Vocational Interest Scales, [key page](https://ipip.ori.org/newORVISKey.htm)), mapped to Holland types as in Pozzebon et al. 2010 | **Licence confirmed 2026-11-03** (see below). Scale-to-Holland mapping checked against the paper's appendix |
-| **Draft set 1.0.0** (22 items, in code) | Our own earlier drafts (10 IPIP-style personality, 12 own interest items). A **draft selection**, to be rebuilt from the pool with 3 questions per trait (D69) | Replaced by a pool selection (D68, D69) |
+| **Live set 1.0.0** (22 items, in code) | A selection from the pool: 2 per trait or type, 3 wordings each (D69). Variant 1 = approved pool wording | Variants 2 and 3 are our drafts; the client sees them before launch |
 | Scoring rules | Mix of convention and our own choices | `assessment.md` section 6, "Provenance" |
 
 ## Licence check
@@ -20,7 +20,7 @@ Updated 2026-11-03. Answers "where did each question come from?". The 50-questio
 `Match`: **direct** = same idea, near same words. **close** = same idea, different words.
 
 ## Pool (50 questions, approved by the client 2026-11-03)
-IDs below are the pool's own. They overlap by name with the draft set 1.0.0 below but **mean different things** (for example pool `o-O-1` is "I have lots of new ideas in my head", draft `o-O-1` is "I enjoy trying new ideas"). Until launch the draft set may be re-numbered; see "Rules for IDs".
+IDs below are the pool's own. Live items use the same IDs; see "Rules for IDs".
 
 ### Personality (OCEAN), 25
 | Pool ID | Dim | Key | Plain wording | Original IPIP marker / ORVIS activity | Source scale | Match |
@@ -80,23 +80,33 @@ IDs below are the pool's own. They overlap by name with the draft set 1.0.0 belo
 | `r-C-3` | C | + | Setting up a filing system for papers and documents. | Develop an office filing system | ORVIS · Organization (Conventional) | close |
 | `r-C-4` | C | + | Keeping count of the stock in a shop. | Keep track of a company's inventory | ORVIS · Organization (Conventional) | close |
 
-## Draft set 1.0.0 (22 items in code today)
-Our own earlier drafts, mapped to the nearest IPIP marker. `loose` = related idea, no exact marker in the IPIP 50-item key. Kept until the set is rebuilt from the pool (3 per trait).
+## Live set 1.0.0 (22 questions, in code)
+The quiz asks these 22 pool questions: 2 per personality trait (one agree-keyed, one reverse-keyed) and 2 per interest type. **Variant 1 is the client-approved pool wording**; variants 2 and 3 are our drafts (same meaning, same direction), **not yet seen by the client**. IDs are the pool IDs. The other 28 pool questions stay in reserve (`src/modules/chat/question-pool.ts`).
 
-| Our ID | Trait | Our key | Our variant 1 | IPIP marker (key) | Match | Note |
-|---|---|---|---|---|---|---|
-| `o-O-1` | Openness (IPIP: Intellect/Imagination) | + | I enjoy trying new ideas. | "Am full of ideas." (+) | loose | Ours is about trying new things; IPIP-50 stresses ideas and imagination |
-| `o-O-2` | Openness | - | I prefer to do things the usual way. | "Am not interested in abstract ideas." (-) | loose | Ours is about routine, IPIP is about abstract thinking. Different facet |
-| `o-C-1` | Conscientiousness | + | I finish what I start. | "Get chores done right away." (+) | loose | Follow-through vs promptness |
-| `o-C-2` | Conscientiousness | - | I leave my work until the last minute. | "Shirk my duties." (-) | close | Procrastination vs avoiding duties |
-| `o-E-1` | Extraversion | + | I start conversations easily. | "Start conversations." (+) | direct | |
-| `o-E-2` | Extraversion | - | In a group, I stay in the background. | "Keep in the background." (-) | direct | |
-| `o-A-1` | Agreeableness | + | I notice when someone around me is upset. | "Feel others' emotions." (+) | close | |
-| `o-A-2` | Agreeableness | - | I am not very interested in other people's problems. | "Am not interested in other people's problems." (-) | direct | |
-| `o-N-1` | Emotional steadiness (IPIP: Emotional Stability) | + | I stay calm when things go wrong. | "Am relaxed most of the time." (+) | close | |
-| `o-N-2` | Emotional steadiness | - | Small problems can make me feel very stressed. | "Get stressed out easily." (-) | direct | Variant 2 "I get upset easily." is close to IPIP "Get upset easily." (-) |
-
-Draft set interests (12 items, `r-*`): written by us, no outside source, not validated. The pool's interest questions are used instead.
+| ID | Key | Variant 1 (approved) | Variant 2 (draft) | Variant 3 (draft) |
+|---|---|---|---|---|
+| `o-O-1` | + | I enjoy trying new ideas. | My mind is full of new ideas. | New ideas come to me all the time. |
+| `o-O-4` | - | I find it hard to understand ideas that I cannot see or touch. | Ideas that are not real or visible are hard for me to follow. | I struggle to understand things that I cannot see or touch. |
+| `o-C-1` | + | I finish what I start. | I start my chores or homework straight away. | When I have work to do, I get it done right away. |
+| `o-C-5` | - | I try to avoid my duties or responsibilities when I can. | I try to get out of my duties when I can. | I skip my responsibilities when I get the chance. |
+| `o-E-1` | + | I start conversations easily. | Starting a chat with someone is easy for me. | I find it easy to talk to people first. |
+| `o-E-4` | - | When I am in a group, I prefer to stay in the background. | In a group, I like to stay quietly at the back. | In a group, I keep to the background. |
+| `o-A-2` | - | I am not very interested in other people's problems. | When someone is upset, I can feel what they are going through. | I feel for people when they are going through a hard time. |
+| `o-A-4` | - | I am not interested in hearing about other people's problems. | I am not keen to listen to other people's problems. | Other people's problems do not interest me. |
+| `o-N-1` | + | I stay calm when things go wrong. | I feel calm and relaxed on most days. | I am usually calm and at ease. |
+| `o-N-3` | - | I feel stressed very easily. | It does not take much to make me feel stressed. | I get stressed out quickly. |
+| `r-R-1` | + | Repairing a bike, scooter or car. | Fixing a bike, scooter or other vehicle. | Finding out what is wrong with a bike or car and fixing it. |
+| `r-R-4` | + | Going on an adventure outdoors, like trekking or camping in the hills. | Trekking or camping outdoors. | Spending a few days on an outdoor adventure in the hills or forest. |
+| `r-I-2` | + | Solving hard puzzles or tricky problems. | Working out a difficult puzzle or riddle. | Figuring out the answer to a really tricky problem. |
+| `r-I-3` | + | Writing a computer program or code. | Learning to write code for a computer or phone app. | Building a small program that makes a computer do something. |
+| `r-A-1` | + | Painting or drawing pictures. | Drawing or painting something from your imagination. | Making art, like sketches or paintings. |
+| `r-A-2` | + | Writing your own short stories. | Making up and writing a story of your own. | Writing a short story from your own ideas. |
+| `r-S-1` | + | Helping other people learn new things. | Teaching someone how to do something new. | Helping a classmate or friend understand something. |
+| `r-S-2` | + | Comforting and supporting people when they need it. | Being there for people when they are having a hard time. | Listening to and supporting people who are going through a hard time. |
+| `r-E-1` | + | Leading a group of people. | Being the leader of a team. | Taking charge and guiding a group to reach a goal. |
+| `r-E-2` | + | Convincing other people to change their mind. | Talking people into trying your idea. | Persuading others to see things your way. |
+| `r-C-1` | + | Keeping careful and detailed records. | Writing down details carefully and keeping them in order. | Keeping neat records of things, like lists or accounts. |
+| `r-C-2` | + | Making a budget to plan how money is spent. | Planning how to spend and save money. | Working out a monthly budget for money. |
 
 ## Rules for IDs and changes
 - **IDs freeze when a real learner's answer is first stored** (launch, or staging with real users). Until then draft sets may be re-numbered freely. After that an ID never changes meaning; a changed idea gets a new ID and a new set version.
