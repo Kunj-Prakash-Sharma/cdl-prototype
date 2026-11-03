@@ -55,13 +55,16 @@ type ScoreResult =
 Scoring is per stage; a stage that is `invalid` or `incomplete` blocks the report for that stage (assessment.md section 6).
 
 ### `service.ts` (public to other modules and pages)
-- `startOrResumeAttempt(userId): Promise<{ attemptId; next: NextStep }>`: resumes the latest unfinished attempt, else creates one.
-- `getNextStep(attemptId): Promise<NextStep>`: `{ kind: "name" | "basics" | "question"; itemId; variantId; text; scale; progress }` or `{ kind: "done" }`.
-- `submitAnswer(attemptId, itemId, value): Promise<NextStep>`: upsert by (attempt, item); rejects values outside the item's scale and unknown item IDs; stores the variant that `pickVariant` assigned.
-- `finishAttempt(attemptId): Promise<ScoreResult>`: runs `scoreAttempt`, stores result, sets status.
-- `getLatestReport(userId): Promise<ReportView | null>`.
-- `retake(userId): Promise<{ attemptId }>`.
-- Other modules call only these. `commerce`/`catalog` never read chat tables.
+Functions take a `Learner` (`{ userId, name }`, built by the caller from auth's `requireUser()`) and return `{ ok: true, ... }` or `{ ok: false, code }` (never throw for expected cases). Codes: `invalid_input`, `not_found` (missing **or someone else's** attempt, the same answer), `attempt_closed`, `out_of_order`, `incomplete`, `stage_invalid`, `not_allowed`, `unknown`. Every attempt function checks ownership and loads the question set from the attempt's own `set_version`.
+- `startOrResumeAttempt(learner)`: resumes the open attempt, else creates one (race-safe through the unique index). Returns `{ attemptId, resumed, next }`.
+- `getNextStep(learner, attemptId)`: the first question without a saved answer, recomputed each time (no stored counter). A `NextStep` carries text, scale labels and progress for the UI, never keys, scores or sources: `{ kind: "name" | "basics" | "question" | "done", ... }`.
+- `submitAnswer(learner, attemptId, questionId, value)`: upsert; rejects unknown questions, values outside the scale or option list, the name, and questions not reached yet (`out_of_order`; earlier ones can be changed). The server picks and stores the variant. Returns `{ next, acknowledgement }`.
+- `finishAttempt(learner, attemptId)`: scores with the attempt's own set, stores result + status in **one transaction**; idempotent; `incomplete` or `stage_invalid` (with the stage) when it cannot score.
+- `retryStage(learner, attemptId, stage)`: clears that stage's answers, only if it really scored invalid.
+- `retake(learner)`: a new attempt, unless one is open, which is resumed (no pile of empty attempts).
+- `abandonAttempt(learner, attemptId)`: ends an attempt for good (blocked name); never resumed.
+- `getLatestResult(userId)`: the newest completed attempt's result, or null. (`getLatestReport` with course suggestions is 4d.)
+- Pure helpers: `flow.ts` (order, progress, next step, answer checks), `result.ts` (score to row and back), `types.ts` (client-safe types). Other modules call only `service.ts`. `commerce`/`catalog` never read chat tables.
 
 ### Integrations used
 - `@/integrations/analytics`: `track(sessionId, event, props)`. **No `ai` integration** (D62).
@@ -69,9 +72,10 @@ Scoring is per stage; a stage that is `invalid` or `incomplete` blocks the repor
 - Catalog: `catalog.service.coursesForInterests(letters: string[]): Promise<CourseSummary[]>` (**new**, see below). Chat never imports catalog `repo`/`schema`.
 
 ### Schema changes (Drizzle; run `npm run db:generate`, never edit a committed migration)
-- `chat_attempts`: `id` uuid pk, `user_id` (fk to auth user), `set_version` text, `status` enum (`in_progress`, `completed`, `invalid`, `abandoned`), `started_at`, `last_answer_at`, `completed_at` null. Session id for analytics = attempt id.
-- `chat_answers`: `attempt_id` fk, `question_id` text, `variant_id` text, `value` smallint (1 to 5 for scored items; option index for basics), `answered_at`. **Unique (attempt_id, question_id)** for upsert. No question text, no free text (D18). The name is **not** stored here.
-- `chat_results`: `attempt_id` pk/fk, `set_version`, `scores` jsonb (per-dimension numbers and bands), `holland` text null (e.g. `ISA`), `holland_close` boolean, `flat` boolean, `ocean_status`, `riasec_status`, `created_at`.
+- `chat_attempts`: `id` uuid pk, `user_id` (foreign key to `auth_user`, cascade on delete: the one allowed cross-module import, for the foreign key only, see modules.md), `set_version` text, `status` enum (`in_progress`, `completed`, `invalid`, `abandoned`), `started_at`, `last_answer_at`, `completed_at` null. Session id for analytics = attempt id. **A partial unique index allows only one `in_progress` attempt per learner** (two tabs cannot both create one).
+- `chat_answers`: `attempt_id` fk, `question_id` text, `variant_id` text (null for basics), `value` smallint (1 to 5 for scored items; option index for basics), `answered_at`. **Primary key (attempt_id, question_id)** gives the upsert. No question text, no free text (D18). The name is **not** stored here.
+- `chat_results`: `attempt_id` pk/fk, `set_version`, `scores` jsonb (per-dimension numbers and bands), `holland` text null (e.g. `ISA`), `holland_close` boolean, `flat` boolean, **`stage_status` jsonb** (one entry per stage, e.g. `{"ocean":"ok","riasec":"ok"}`, so a new stage needs no new column; replaces the two `ocean_status` / `riasec_status` columns), `created_at`.
+- Column names are snake_case. Migration: `drizzle/0001_pale_rattler.sql`.
 - Basics (`b-age`, `b-status`, `b-goal`) are rows in `chat_answers` like any other.
 - **PII columns:** none new. `user_id` links to the auth profile where the name lives; comment this in `schema.ts`.
 - Catalog: add `riasec_types` (text array, e.g. `{I,S}`) to the course table via the catalog module (own migration, set in admin later; seed placeholders). `coursesForInterests` returns published courses whose `riasec_types` overlap the code, ranked by overlap count then course order.
