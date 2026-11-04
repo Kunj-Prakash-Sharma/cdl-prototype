@@ -31,10 +31,9 @@ From the Scope of Work. Dates are "to give" unless stated.
 | Sign-off on the scoring rules that are our own choices (bands 37/63, spread 13, minimum 80%, tie order R-I-A-S-E-C, straight-lining) | to give date | **approved 2026-11-03** (D69). The quiz stays at 2 questions per trait or type, so the thresholds fit as designed |
 | Report footer wording about validity ("a first look ... not a validated test ... based on Holland's six interest types") | to give date | **temporary line in use; confirm with the client and a lawyer later** |
 | Variants: the approved pool has one wording per question. For the 22 live questions we draft 2 more wordings each (3 per question, D62/D69); the client sees them before launch | Lead + client | drafts by us, client review open |
-| Helpline link and wording, plus the blocked-word list for the name check (chat spec) | to give date | open |
+| Helpline link and wording (also for the self-harm stop message), plus the blocked-word list for the name check (chat spec). A dummy helpline stays in place until the client gives the real one | to give date | open |
 | Final prices, bundles, maximum discounts, refund policy | to give date | open |
 | One team email address for callback alerts | to give date | open |
-| Helpline link and wording for the self-harm stop message | to give date | open |
 | Confirmation: no raw chat text stored (D18) | to give date | open |
 | Final domain (needed for SES DKIM/SPF and sender name) | to give date | open |
 | Confirm: free lecture previews need **no login** (D66, direction from us on Nov 2, 2026; the client has not confirmed). Replaces the earlier "first lesson needs login" question | to give date | open |
