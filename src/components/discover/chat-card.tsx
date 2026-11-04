@@ -61,8 +61,13 @@ export function ChatCard({
         ) : (
           <>
             {ack && <AiBubble first>{ack}</AiBubble>}
-            {step.kind === "name" && <AiBubble first={!ack}>{`Hi, I'm ${brand.guideName}.`}</AiBubble>}
-            <AiBubble delay={0.2} first={step.kind === "basics" && !ack}>
+            {step.kind === "name" && (
+              <>
+                <AiBubble first={!ack}>{`Hi, I'm ${brand.guideName}.`}</AiBubble>
+                <AiBubble delay={0.2}>{"I'm a virtual guide, not a human."}</AiBubble>
+              </>
+            )}
+            <AiBubble delay={step.kind === "name" ? 0.4 : 0.2} first={step.kind === "basics" && !ack}>
               {step.prompt}
             </AiBubble>
           </>

@@ -39,6 +39,8 @@ async function openChat(page: Page) {
   await page.getByLabel("6-digit code").fill(code);
   await expect(page).toHaveURL(/\/discover$/);
   await expect(page.getByTestId("name-input")).toBeVisible();
+  // The guide says what it is before asking anything (E4-S1: a virtual guide, not a human).
+  await expect(page.getByText("virtual guide, not a human")).toBeVisible();
 }
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
