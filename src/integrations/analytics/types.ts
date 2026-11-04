@@ -14,6 +14,11 @@ export interface EventMap {
     secondsTaken: number;
   };
   chat_exited: { lastStage: string; lastMessageNumber: number };
+  chat_stage_completed: { stage: string; setVersion: string };
+  chat_completed: { setVersion: string; hollandClose: boolean; flat: boolean; durationSeconds: number };
+  /** `name_rejected` covers every name refusal (format, abuse word, self-harm phrase) so events never single out the sensitive case. */
+  chat_invalid: { reason: "stage_invalid" | "name_rejected"; stage?: string };
+  chat_retake: Record<string, never>;
   report_viewed: { scoresPresent: boolean; coursesSuggested: number };
   report_action: { action: "save" | "pdf" | "callback" | "courses" };
   course_viewed: { courseId: string };

@@ -6,12 +6,16 @@
 import {
   acknowledgementFor,
   checkAnswer,
+  completedStage,
   computeNextStep,
   firstUnanswered,
+  progressOf,
+  questionOrder,
   isReachable,
   stageQuestionIds,
 } from "./flow";
 import { CURRENT_QUESTION_SET, getQuestionSet, type QuestionSet, type Stage } from "./question-set";
+import { secondsBetween, trackChat } from "./events";
 import { toResultRow, toResultView, type ResultView } from "./result";
 import * as repo from "./repo";
 import { scoreAttempt, scoreOcean, scoreRiasec, type StageProblem } from "./scoring";
@@ -69,6 +73,7 @@ export async function startOrResumeAttempt(
   if (!attempt) return { ok: false, code: "unknown" };
   const set = getQuestionSet(attempt.setVersion);
   if (!set) return { ok: false, code: "unknown" };
+  if (!resumed) trackChat(attempt.id, "chat_started", {});
   const answers = await repo.listAnswers(attempt.id);
   return {
     ok: true,
@@ -83,7 +88,9 @@ export async function startOrResumeAttempt(
  * tapping Retake repeatedly cannot pile up empty attempts). Old attempts and their reports are kept.
  */
 export async function retake(learner: Learner) {
-  return startOrResumeAttempt(learner);
+  const res = await startOrResumeAttempt(learner);
+  if (res.ok && !res.resumed) trackChat(res.attemptId, "chat_retake", {});
+  return res;
 }
 
 /** Does the learner have an unfinished attempt? (Read-only: unlike startOrResumeAttempt it never creates one.) */
@@ -115,7 +122,8 @@ export async function submitAnswer(
   const { attempt, set } = loaded;
   if (attempt.status !== "in_progress") return { ok: false, code: "attempt_closed" };
 
-  if (!checkAnswer(set, questionId, value).ok) return { ok: false, code: "invalid_input" };
+  const checked = checkAnswer(set, questionId, value);
+  if (!checked.ok) return { ok: false, code: "invalid_input" };
 
   const answers = await repo.listAnswers(attemptId);
   if (!isReachable(set, answers, hasName(learner), questionId)) return { ok: false, code: "out_of_order" };
@@ -123,9 +131,21 @@ export async function submitAnswer(
   // Which wording was shown is decided here from the attempt, never trusted from the client.
   const item = set.items.find((i) => i.id === questionId);
   const variantId = item ? variantFor(attemptId, item).id : null;
-  await repo.saveAnswer({ attemptId, questionId, variantId, value }, new Date());
+  const now = new Date();
+  await repo.saveAnswer({ attemptId, questionId, variantId, value }, now);
 
   const updated = { ...answers, [questionId]: value };
+  // A second tap on the same question only overwrites: it is not a new step in the funnel.
+  if (!Object.hasOwn(answers, questionId)) {
+    trackChat(attemptId, "chat_step", {
+      stage: checked.stage,
+      messageNumber: questionOrder(set).findIndex((entry) => entry.id === questionId) + 1,
+      inputType: checked.kind === "basics" ? "single" : "likert",
+      secondsTaken: secondsBetween(attempt.lastAnswerAt ?? attempt.startedAt, now),
+    });
+    const done = completedStage(progressOf(set, answers, hasName(learner)), progressOf(set, updated, hasName(learner)));
+    if (done) trackChat(attemptId, "chat_stage_completed", { stage: done, setVersion: set.version });
+  }
   return {
     ok: true,
     next: computeNextStep(set, updated, { attemptId, hasName: hasName(learner) }),
@@ -156,6 +176,8 @@ export async function finishAttempt(learner: Learner, attemptId: string): Promis
 
   const score = scoreAttempt(answers, set);
   if (score.status !== "ok") {
+    if (score.status === "invalid")
+      trackChat(attemptId, "chat_invalid", { reason: "stage_invalid", stage: score.stage });
     return { ok: false, code: score.status === "invalid" ? "stage_invalid" : "incomplete", stage: score.stage };
   }
 
@@ -164,6 +186,15 @@ export async function finishAttempt(learner: Learner, attemptId: string): Promis
   // Another tab finished it first: return what it stored.
   const row = await repo.getResult(attemptId);
   if (!row) return { ok: false, code: "unknown" };
+  // Only the request that actually completed it counts (another tab may have won the race).
+  if (stored) {
+    trackChat(attemptId, "chat_completed", {
+      setVersion: set.version,
+      hollandClose: row.hollandClose,
+      flat: row.flat,
+      durationSeconds: secondsBetween(attempt.startedAt, now),
+    });
+  }
   const finishedAt = stored ? now : ((await repo.getAttempt(attemptId))?.completedAt ?? now);
   return { ok: true, result: toResultView(row, finishedAt) };
 }
@@ -190,6 +221,7 @@ export async function submitName(
 
   const checked = validateName(rawName);
   if (!checked.ok) {
+    trackChat(attemptId, "chat_invalid", { reason: "name_rejected" });
     if (checked.reason === "blocked") {
       // The learner must reach the stop screen even if closing the attempt fails: log (never the name) and answer.
       try {
@@ -211,6 +243,14 @@ export async function submitName(
   const current = await repo.getAttempt(attemptId);
   if (!current || current.status !== "in_progress") return { ok: false, code: "attempt_closed" };
 
+  if (!hasName(learner)) {
+    trackChat(attemptId, "chat_step", {
+      stage: "basics",
+      messageNumber: questionOrder(set).findIndex((entry) => entry.id === set.name.id) + 1,
+      inputType: "name",
+      secondsTaken: secondsBetween(attempt.lastAnswerAt ?? attempt.startedAt, new Date()),
+    });
+  }
   const answers = await repo.listAnswers(attemptId);
   return { ok: true, next: computeNextStep(set, answers, { attemptId, hasName: true }) };
 }

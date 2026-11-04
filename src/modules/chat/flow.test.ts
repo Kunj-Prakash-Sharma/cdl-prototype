@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   acknowledgementFor,
   checkAnswer,
+  completedStage,
   computeNextStep,
   firstUnanswered,
   isReachable,
@@ -214,5 +215,30 @@ describe("acknowledgementFor and stageQuestionIds", () => {
   it("lists the scored questions of one stage, in the set's order", () => {
     expect(stageQuestionIds(set, "ocean")).toEqual(set.items.filter((i) => i.stage === "ocean").map((i) => i.id));
     expect(stageQuestionIds(set, "riasec")).toHaveLength(set.items.filter((i) => i.stage === "riasec").length);
+  });
+});
+
+describe("completedStage: which part did this answer finish?", () => {
+  const stageIds = stageOrder(set);
+  const idsOf = (stage: string) => order.filter((e) => e.stage === stage && e.kind !== "name").map((e) => e.id);
+  const fill = (ids: string[]): SavedAnswers =>
+    Object.fromEntries(ids.map((id) => [id, set.basics.some((b) => b.id === id) ? 0 : 3]));
+
+  it("names the part when its last question gets answered", () => {
+    for (const stage of stageIds.filter((id) => id !== "basics")) {
+      const ids = idsOf(stage);
+      const before = fill(ids.slice(0, -1));
+      const after = fill(ids);
+      expect(completedStage(progressOf(set, before, true), progressOf(set, after, true)), stage).toBe(stage);
+    }
+  });
+
+  it("is null while the part still has questions left, and when nothing new finished", () => {
+    const ids = idsOf("ocean");
+    expect(
+      completedStage(progressOf(set, fill(ids.slice(0, 1)), true), progressOf(set, fill(ids.slice(0, 2)), true)),
+    ).toBeNull();
+    const done = fill(ids);
+    expect(completedStage(progressOf(set, done, true), progressOf(set, done, true))).toBeNull();
   });
 });

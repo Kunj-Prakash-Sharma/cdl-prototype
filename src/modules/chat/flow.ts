@@ -48,6 +48,13 @@ export function progressOf(set: QuestionSet, answers: SavedAnswers, hasName: boo
   };
 }
 
+/** The part that this answer just finished (every question in it answered now, not before), or null. */
+export function completedStage(before: Progress, after: Progress): StageId | null {
+  const done = (p: StageProgress) => p.answered === p.total;
+  const wasOpen = new Set(before.stages.filter((p) => !done(p)).map((p) => p.id));
+  return after.stages.find((p) => done(p) && wasOpen.has(p.id))?.id ?? null;
+}
+
 /** The first question without an answer, or null when everything is answered. */
 export function firstUnanswered(set: QuestionSet, answers: SavedAnswers, hasName: boolean): OrderEntry | null {
   return questionOrder(set).find((entry) => !isAnswered(entry, answers, hasName)) ?? null;

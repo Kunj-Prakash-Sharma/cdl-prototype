@@ -2,7 +2,8 @@
 // No Better Auth and no Next here: the service takes the learner as a plain object, so only the database is real.
 // Run with: npm run test:int
 import { eq, sql } from "drizzle-orm";
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { analytics } from "@/integrations/analytics";
 import { db } from "@/lib/db";
 import { questionOrder } from "./flow";
 import { CURRENT_QUESTION_SET } from "./question-set";
@@ -530,5 +531,133 @@ describe("the typed name", () => {
     await abandonAttempt(owner, attemptId);
     expect(await submitName(owner, attemptId, "Asha", save)).toEqual({ ok: false, code: "attempt_closed" });
     expect(save).not.toHaveBeenCalled();
+  });
+});
+
+describe("funnel events", () => {
+  const sent = (spy: { mock: { calls: unknown[][] } }) =>
+    spy.mock.calls.map(([session, event, props]) => ({ session, event: event as string, props }));
+  const named = (spy: { mock: { calls: unknown[][] } }, event: string) => sent(spy).filter((e) => e.event === event);
+  const spyOnTrack = () => vi.spyOn(analytics, "track").mockImplementation(() => {});
+  afterEach(() => vi.restoreAllMocks());
+
+  it("sends one event per step, per finished part and one on completion, all under the attempt id", async () => {
+    const learner = await makeLearner("Zorbaxian");
+    const spy = spyOnTrack();
+    const { attemptId } = await start(learner);
+    await answerAll(learner, attemptId);
+    await finishAttempt(learner, attemptId);
+
+    expect(named(spy, "chat_started")).toEqual([{ session: attemptId, event: "chat_started", props: {} }]);
+    const steps = named(spy, "chat_step");
+    expect(steps).toHaveLength(order.length - 1); // the name is already on the profile
+    expect(steps.every((e) => e.session === attemptId)).toBe(true);
+    expect(steps[0]!.props).toMatchObject({ stage: "basics", messageNumber: 2, inputType: "single" });
+    expect(steps.at(-1)!.props).toMatchObject({ messageNumber: order.length, inputType: "likert" });
+    expect(named(spy, "chat_stage_completed").map((e) => (e.props as { stage: string }).stage)).toEqual([
+      "basics",
+      ...new Set(set.items.map((i) => i.stage)),
+    ]);
+    expect(named(spy, "chat_completed")).toHaveLength(1);
+    expect(named(spy, "chat_completed")[0]!.props).toEqual({
+      setVersion: set.version,
+      hollandClose: expect.any(Boolean),
+      flat: expect.any(Boolean),
+      durationSeconds: expect.any(Number),
+    });
+    // No name, no answer text: only numbers, stages and fixed words.
+    expect(JSON.stringify(sent(spy))).not.toContain("Zorbaxian");
+  });
+
+  it("does not count a second tap on the same question as a new step", async () => {
+    const learner = await makeLearner();
+    const { attemptId } = await start(learner);
+    const spy = spyOnTrack();
+    const basics = set.basics[0]!.id;
+    await submitAnswer(learner, attemptId, basics, 0);
+    await submitAnswer(learner, attemptId, basics, 1);
+    expect(named(spy, "chat_step")).toHaveLength(1);
+  });
+
+  it("sends chat_started for a new attempt only, and chat_retake only for a retake that makes a new attempt", async () => {
+    const learner = await makeLearner();
+    const spy = spyOnTrack();
+    const { attemptId } = await start(learner);
+    await start(learner); // resumes
+    await retake(learner); // resumes too
+    expect(named(spy, "chat_started")).toHaveLength(1);
+    expect(named(spy, "chat_retake")).toHaveLength(0);
+
+    await answerAll(learner, attemptId);
+    await finishAttempt(learner, attemptId);
+    const again = await retake(learner);
+    if (!again.ok) throw new Error(again.code);
+    expect(named(spy, "chat_started")).toHaveLength(2);
+    expect(named(spy, "chat_retake")).toEqual([{ session: again.attemptId, event: "chat_retake", props: {} }]);
+  });
+
+  it("sends chat_completed once, even if finish is called twice", async () => {
+    const learner = await makeLearner();
+    const { attemptId } = await start(learner);
+    await answerAll(learner, attemptId);
+    const spy = spyOnTrack();
+    await finishAttempt(learner, attemptId);
+    await finishAttempt(learner, attemptId);
+    expect(named(spy, "chat_completed")).toHaveLength(1);
+  });
+
+  it("sends chat_invalid with the part when its answers are all the same", async () => {
+    const learner = await makeLearner();
+    const { attemptId } = await start(learner);
+    const riasecIds = new Set(set.items.filter((i) => i.stage === "riasec").map((i) => i.id));
+    await answerAll(learner, attemptId, (index) => (riasecIds.has(set.items[index]!.id) ? 3 : (index % 5) + 1));
+    const spy = spyOnTrack();
+    await finishAttempt(learner, attemptId);
+    expect(named(spy, "chat_invalid")).toEqual([
+      { session: attemptId, event: "chat_invalid", props: { reason: "stage_invalid", stage: "riasec" } },
+    ]);
+    expect(named(spy, "chat_completed")).toHaveLength(0);
+  });
+
+  it("reports every refused name the same way, so the sensitive case is not singled out, and never the text", async () => {
+    const learner = await makeLearner("");
+    const { attemptId } = await start(learner);
+    const spy = spyOnTrack();
+    const save = vi.fn(async () => ({ ok: true }));
+    await submitName(learner, attemptId, "R2D2", save);
+    await submitName(learner, attemptId, "idiot", save);
+    await submitName(learner, attemptId, "I want to die", save);
+    expect(named(spy, "chat_invalid").map((e) => e.props)).toEqual(Array(3).fill({ reason: "name_rejected" }));
+    expect(named(spy, "chat_step")).toHaveLength(0);
+    expect(JSON.stringify(sent(spy))).not.toMatch(/R2D2|idiot|die/);
+  });
+
+  it("sends a name step when a good name is saved", async () => {
+    const learner = await makeLearner("");
+    const { attemptId } = await start(learner);
+    const spy = spyOnTrack();
+    const save = vi.fn(async () => ({ ok: true }));
+    await submitName(learner, attemptId, "Asha", save);
+    expect(named(spy, "chat_step")).toEqual([
+      {
+        session: attemptId,
+        event: "chat_step",
+        props: { stage: "basics", messageNumber: 1, inputType: "name", secondsTaken: expect.any(Number) },
+      },
+    ]);
+  });
+
+  it("still saves the answer when analytics breaks (it throws, or rejects)", async () => {
+    const learner = await makeLearner();
+    const { attemptId } = await start(learner);
+    const spy = vi.spyOn(analytics, "track").mockImplementation(() => {
+      throw new Error("analytics down");
+    });
+    const first = await submitAnswer(learner, attemptId, set.basics[0]!.id, 0);
+    expect(first.ok).toBe(true);
+    spy.mockImplementation(() => Promise.reject(new Error("analytics down")));
+    const second = await submitAnswer(learner, attemptId, set.basics[1]!.id, 0);
+    expect(second.ok).toBe(true);
+    expect(await answerRows(attemptId)).toHaveLength(2);
   });
 });
