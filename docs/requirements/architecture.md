@@ -175,6 +175,10 @@ Every funnel step sends one event under a pseudonymous session ID. Events carry 
 | otp_sent, otp_verified | OTP requested and confirmed | result, attempt number |
 | chat_step | Each Meera question is answered | stage, message number, input type, seconds taken |
 | chat_exited | Session goes quiet for the agreed timeout | last stage, last message number |
+| chat_stage_completed | The last question of a part is answered | stage, question set version |
+| chat_completed | The attempt is scored and saved | question set version, close-call flag, flat-profile flag, seconds from start to finish |
+| chat_invalid | A part had all-same answers, or a name was refused | reason (`stage_invalid`, `name_rejected`), stage |
+| chat_retake | "Take it again" starts a new attempt | none |
 | report_viewed | Report opens | scores present, courses suggested |
 | report_action | Save, PDF, callback or courses tapped | action |
 | course_viewed, preview_played | Course page opens, free lesson plays | course id |
@@ -182,6 +186,8 @@ Every funnel step sends one event under a pseudonymous session ID. Events carry 
 | lesson_completed | Lesson finished | course id, lesson id |
 
 The inactivity timeout that counts a session as "lost" was still to be agreed. **(Now: config, default 30 min, D58)**
+
+**Chat events as built (2026-11-04):** the session ID is the attempt id. Events are sent from `modules/chat/service.ts` through `events.ts`, which never waits for analytics and swallows its errors (logged, no personal data). `chat_step` fires once per new answer (a second tap on the same question is not a new step) and for the name step. `name_rejected` covers every refused name (format, abuse word, self-harm phrase) so events never single out the sensitive case. `chat_exited` is typed but **not fired yet**: nothing runs on a timer, so it needs a worker job over open attempts older than `CHAT_INACTIVITY_MINUTES`. `report_viewed` and `report_action` are typed and get wired with the report page.
 
 ## Cost drivers and capacity
 Video delivery is the cost that grows with usage; storage is small. Figures are from AWS's published example in US East at default settings. India rates differ.

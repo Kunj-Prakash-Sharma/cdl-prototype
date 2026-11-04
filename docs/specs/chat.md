@@ -130,7 +130,7 @@ Reuse and adapt prototype components in `src/components/discover/` (see [../prot
 
 ## Analytics (typed in `EventMap`; no PII)
 Existing in `src/integrations/analytics/types.ts`: `chat_started`, `chat_step` (stage, messageNumber, inputType, secondsTaken; one per answer, gives the exit point for D18), `chat_exited` (lastStage, lastMessageNumber; D58), `report_viewed`, `report_action`.
-**Add:** `chat_stage_completed { stage, setVersion }`, `chat_completed { setVersion, hollandClose: boolean, flat: boolean }`, `chat_invalid { stage }`, `chat_retake {}`.
+**Added (built 2026-11-04):** `chat_stage_completed { stage, setVersion }`, `chat_completed { setVersion, hollandClose: boolean, flat: boolean, durationSeconds }`, `chat_invalid { reason: "stage_invalid" | "name_rejected", stage? }` (`name_rejected` covers every refused name so the self-harm case is not singled out), `chat_retake {}`. `chat_step` also fires for the name step. `chat_exited` is typed but not fired yet (needs a worker job over open attempts older than `CHAT_INACTIVITY_MINUTES`).
 PDF click uses existing `report_action { action: "pdf" }` (equals "report_pdf_clicked"). `sessionId` = attempt id. Never send name, age band text or any answer text. Property values are codes only (e.g. stage names).
 
 ## Verification (end to end)
