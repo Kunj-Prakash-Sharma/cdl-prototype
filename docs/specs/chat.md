@@ -124,7 +124,7 @@ Reuse and adapt prototype components in `src/components/discover/` (see [../prot
 
 ## Cleanup (done as part of this feature)
 - Delete or rewrite prototype `src/modules/chat/questions.ts`, `scoring.ts`, aptitude/values/percentile code, the `careers.ts` matching maths, and unused `lib/store.ts` chat state.
-- Remove `src/integrations/ai/` and the `AI_PROVIDER` switch (`src/lib/env-schema.ts`, `.env.example`, any docs link).
+- ~~Remove `src/integrations/ai/` and the `AI_PROVIDER` switch (`src/lib/env-schema.ts`, `.env.example`, any docs link).~~ **Done 2026-11-04.**
 - Update `docs/requirements/architecture.md` event list and `src/integrations/analytics/types.ts` for the events below.
 - Reuse map: mark discovery rows **done** as ported.
 

@@ -141,7 +141,7 @@ Stored answer: `sessionId`, `questionId`, `variantId`, `value` (1 to 5), `setVer
 | Quiz length decided 2026-11-03: **10 personality + 12 interests (2 per trait or type)**, 3 wordings per question (approved pool wording = variant 1; variants 2 and 3 drafted by us, shown to the client before launch). Open: which 2 pool questions per trait or type are asked (one agree-keyed and one reverse-keyed for each personality trait), then rebuild the question set from the pool as a new version | Lead | open |
 | ORVIS licence and Holland mapping | Team | **done 2026-11-03**: paper read, public domain, mapping matches the appendix (details in [item-sources.md](item-sources.md)) |
 | `src/modules/chat/questions.ts` and `scoring.ts` are prototype code (aptitude, values, percentile, % fit). Rewrite them in the chat feature, with its own spec (`/feature-spec`) | Dev | not started |
-| `src/integrations/ai/` is no longer used by the quiz. Remove it in the chat feature spec | Dev | not started |
+| `src/integrations/ai/` is no longer used by the quiz. Remove it in the chat feature spec | Dev | **done 2026-11-04** (still in git history) |
 
 ## 10. Question wording
 The wording lives in one place: [item-sources.md](item-sources.md) lists the approved 50-question pool and the live set 1.0.0 with its three wordings per question. The code is `src/modules/chat/question-pool.ts` (pool) and `question-set.ts` (which questions are asked). Variant 1 is the client-approved wording; variants 2 and 3 are our drafts until the client sees them. `+` = agree-keyed, `-` = reversed. Follow the rules in section 5 when adding or changing a variant.

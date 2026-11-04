@@ -28,7 +28,6 @@ const schema = z
     PAYMENTS_PROVIDER: provider([]),
     VIDEO_PROVIDER: provider([]),
     STORAGE_PROVIDER: provider([]),
-    AI_PROVIDER: provider([]),
     EMAIL_PROVIDER: provider([]),
     ANALYTICS_PROVIDER: provider([]),
     QUEUE_PROVIDER: provider(["pgboss"], "pgboss"),
