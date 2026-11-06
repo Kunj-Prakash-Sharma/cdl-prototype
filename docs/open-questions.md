@@ -40,6 +40,8 @@ From the Scope of Work. Dates are "to give" unless stated.
 | Confirm: login by phone **or email** with the same OTP (D65, Nov 2, 2026). Spec comes later; email needs the final domain for SES | to give date | open |
 | Admin phone numbers: how many and which (expect 2 to 4); they get the admin role at login (D64) | to give date | open |
 | Legal review: no age gate with many users under 18 (DPDP Act) | client | open |
+| Report personality cards (15) are **DRAFT text** (D72). Copy the client-approved wording from the client sample page into `report-copy.ts` and remove the draft marker before any real learner sees a report | Us | Before launch | open |
+| Legal review of the under-18 consent route (D71): the login/terms line telling parents to log in for a learner under 18, and the age-based consent wording on the callback form. Exact wording needs the client's lawyer | client | open |
 
 ## Chat inactivity timeout
 Config `CHAT_INACTIVITY_MINUTES`, default 30. Client may tune it. (Decision D58.)
