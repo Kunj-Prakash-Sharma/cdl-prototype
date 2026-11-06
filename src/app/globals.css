@@ -142,3 +142,18 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Printing the report ("Save as PDF"): only the report, on white paper. The navbar and footer are hidden here; buttons
+   inside the report use Tailwind's print:hidden. */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  body {
+    background: white !important;
+  }
+  header,
+  footer {
+    display: none !important;
+  }
+}

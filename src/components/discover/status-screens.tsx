@@ -3,7 +3,7 @@
 import { motion } from "motion/react";
 import { Check } from "lucide-react";
 import { brand } from "@/config/brand";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { SageAvatar } from "@/components/ui/misc";
 import type { ResultView } from "@/modules/chat/result";
 import { HelplineLink } from "./helpline-link";
@@ -145,7 +145,12 @@ export function ResultPlaceholder({
         <Check className="size-8 text-emerald-500" strokeWidth={2.5} aria-hidden />
       </div>
       <h1 className="mt-5 text-2xl font-bold text-ink">Your answers are saved</h1>
-      <p className="mx-auto mt-2 max-w-md text-slate-600">Your report is being built and will appear here soon.</p>
+      <p className="mx-auto mt-2 max-w-md text-slate-600">Your report is ready to read.</p>
+      <div className="mt-6 flex justify-center">
+        <ButtonLink href="/discover/report" data-testid="see-report">
+          See my report
+        </ButtonLink>
+      </div>
       <details className="mx-auto mt-6 max-w-md text-left text-sm text-slate-500">
         <summary className="cursor-pointer font-semibold">Stored result (temporary, for testing)</summary>
         <pre className="mt-2 overflow-x-auto rounded-xl bg-slate-50 p-3 text-xs" data-testid="result-json">

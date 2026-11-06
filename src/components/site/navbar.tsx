@@ -13,7 +13,8 @@ import { useAppState } from "@/lib/store";
 import type { SessionView } from "@/modules/auth/types";
 
 const LINKS = [
-  { href: "/discover", label: "Career Discovery", ai: true },
+  { href: "/discover", label: "Career Discovery", ai: true, exact: true },
+  { href: "/discover/report", label: "My Report" },
   { href: "/learn", label: "Level 1 Learning" },
   { href: "/my-self", label: "My Learning", count: true },
 ];
@@ -31,7 +32,8 @@ function NavLinks({
   return (
     <>
       {LINKS.map((link) => {
-        const active = pathname === link.href || (link.href !== "/" && pathname?.startsWith(link.href + "/"));
+        const active =
+          pathname === link.href || (!link.exact && link.href !== "/" && pathname?.startsWith(link.href + "/"));
         return (
           <Link
             key={link.href}
