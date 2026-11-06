@@ -20,6 +20,11 @@ const schema = z
     // Comma-separated +91 numbers that get the admin role when they log in (D64 #9)
     ADMIN_PHONES: z.string().optional(),
 
+    // Where the instant "new callback request" email goes (E6-S3). One team address for now (open question #4668).
+    // Optional on purpose: the address is not decided yet. Without it the alert job fails loudly and is retried, and the
+    // lead is still saved. Make it required in production once the client gives the address.
+    CALLBACK_ALERT_EMAIL: z.email().optional(),
+
     // Chat: inactivity before a session counts as lost (decision D58)
     CHAT_INACTIVITY_MINUTES: z.coerce.number().int().positive().default(30),
 

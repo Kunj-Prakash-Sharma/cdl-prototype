@@ -15,6 +15,11 @@ describe("parseEnv", () => {
     expect(() => parseEnv({ DATABASE_URL: "x" })).not.toThrow();
     expect(() => parseEnv({ DATABASE_URL: "x", NODE_ENV: "production" })).toThrow(/AUTH_SECRET/);
   });
+  it("accepts a missing callback alert address, and rejects one that is not an email", () => {
+    expect(() => parseEnv({ DATABASE_URL: "x" })).not.toThrow();
+    expect(() => parseEnv({ DATABASE_URL: "x", CALLBACK_ALERT_EMAIL: "team@example.com" })).not.toThrow();
+    expect(() => parseEnv({ DATABASE_URL: "x", CALLBACK_ALERT_EMAIL: "not-an-email" })).toThrow(/CALLBACK_ALERT_EMAIL/);
+  });
   it("rejects a non-numeric chat timeout", () => {
     expect(() => parseEnv({ DATABASE_URL: "x", CHAT_INACTIVITY_MINUTES: "soon" })).toThrow(/CHAT_INACTIVITY_MINUTES/);
   });
