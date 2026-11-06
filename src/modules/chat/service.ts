@@ -16,6 +16,8 @@ import {
 } from "./flow";
 import { CURRENT_QUESTION_SET, getQuestionSet, type QuestionSet, type Stage } from "./question-set";
 import { secondsBetween, trackChat } from "./events";
+import { coursesForInterests, type CourseSuggestion } from "@/modules/catalog/service";
+import { reportFor, type ReportView } from "./report";
 import { toResultRow, toResultView, type ResultView } from "./result";
 import * as repo from "./repo";
 import { scoreAttempt, scoreOcean, scoreRiasec, type StageProblem } from "./scoring";
@@ -25,6 +27,7 @@ import type { ChatResult, Learner, NextStep } from "./types";
 import { variantFor } from "./variants";
 
 export type { ResultView } from "./result";
+export type { ReportView } from "./report";
 export type {
   ChatErrorCode,
   ChatResult,
@@ -298,4 +301,101 @@ export async function getLatestResult(userId: string): Promise<ResultView | null
   const latest = await repo.latestCompleted(userId);
   if (!latest || !latest.attempt.completedAt) return null;
   return toResultView(latest.result, latest.attempt.completedAt);
+}
+
+/** What the report page shows: the report plus the courses that suit the learner (plain fields, safe for client components). */
+export type LatestReport = ReportView & { courses: CourseSuggestion[]; coursesAreFallback: boolean };
+
+/**
+ * The report for the learner's newest completed attempt, built with the wording version that result was stamped with.
+ * `latest` is null when the learner has no completed attempt yet (the page shows an empty state). The learner can only
+ * ever reach their own result: it is looked up by their user id, never by an id from the URL. No side effects: the
+ * page fires `trackReportViewed` itself, so other callers (My SELF, callbacks) do not inflate the view count.
+ * `attemptId` is for server-side analytics only: do not pass it to client components.
+ */
+export async function getLatestReport(
+  userId: string,
+): Promise<ChatResult<{ latest: { report: LatestReport; attemptId: string } | null }>> {
+  const stored = await repo.latestCompleted(userId);
+  if (!stored || !stored.attempt.completedAt) return { ok: true, latest: null };
+  const built = reportFor(toResultView(stored.result, stored.attempt.completedAt));
+  if (!built.ok) {
+    logger.error("report wording version is missing", { reportVersion: stored.result.reportVersion });
+    return { ok: false, code: "unknown" };
+  }
+  const { courses, fallback } = coursesForInterests(built.report.hollandLetters);
+  return {
+    ok: true,
+    latest: { report: { ...built.report, courses, coursesAreFallback: fallback }, attemptId: stored.attempt.id },
+  };
+}
+
+/** Funnel event for opening the report. Fire and forget: analytics never fails the page (events.ts). */
+export function trackReportViewed(attemptId: string, report: LatestReport): void {
+  trackChat(attemptId, "report_viewed", { scoresPresent: true, coursesSuggested: report.courses.length });
+}
+
+export const REPORT_ACTIONS = ["save", "pdf", "callback", "courses"] as const;
+export type ReportAction = (typeof REPORT_ACTIONS)[number];
+
+/** Funnel event for a button on the report (D18: a fixed code only). A learner without a report records nothing. */
+export async function recordReportAction(learner: Learner, action: ReportAction): Promise<ChatResult> {
+  const stored = await repo.latestCompleted(learner.userId);
+  if (!stored) return { ok: false, code: "not_found" };
+  trackChat(stored.attempt.id, "report_action", { action });
+  return { ok: true };
+}
+
+/**
+ * What the team needs to know before a callback (D71): the learner's tap answers about themselves, as the labels the
+ * question set shows, and their top interest areas. No name and no phone (those stay in auth). `minor` is true when
+ * the age answer means under 18, so a parent or guardian is the contact.
+ */
+export type CallbackContext = {
+  attemptId: string;
+  minor: boolean;
+  age: string | null;
+  status: string | null;
+  goal: string | null;
+  topInterests: string[];
+};
+
+const answerLabel = (set: QuestionSet, answers: Record<string, number>, questionId: string) => {
+  const question = set.basics.find((basic) => basic.id === questionId);
+  const option = question?.options[answers[questionId] ?? -1];
+  return { label: option?.label ?? null, minor: option?.minor === true };
+};
+
+/** Builds the context of one completed attempt, or null if its question set or report wording is missing. */
+async function contextOf(attempt: repo.AttemptRow, resultRow: repo.ResultRow): Promise<CallbackContext | null> {
+  const set = getQuestionSet(attempt.setVersion);
+  const built = attempt.completedAt ? reportFor(toResultView(resultRow, attempt.completedAt)) : null;
+  if (!set || !built?.ok) return null;
+  const answers = await repo.listAnswers(attempt.id);
+  const age = answerLabel(set, answers, "b-age");
+  return {
+    attemptId: attempt.id,
+    minor: age.minor,
+    age: age.label,
+    status: answerLabel(set, answers, "b-status").label,
+    goal: answerLabel(set, answers, "b-goal").label,
+    topInterests: built.report.areas.map((area) => area.name),
+  };
+}
+
+/** The context of the learner's newest completed attempt (the report they are looking at), or null if there is none. */
+export async function getCallbackContext(userId: string): Promise<CallbackContext | null> {
+  const latest = await repo.latestCompleted(userId);
+  return latest ? contextOf(latest.attempt, latest.result) : null;
+}
+
+/**
+ * The context of one attempt, for the admin callback list. NO ownership check: only call it after `requireAdmin()`,
+ * with an attempt id that came from a lead row (never from the browser).
+ */
+export async function getCallbackContextForAdmin(attemptId: string): Promise<CallbackContext | null> {
+  const attempt = await repo.getAttempt(attemptId);
+  if (!attempt || attempt.status !== "completed") return null;
+  const result = await repo.getResult(attemptId);
+  return result ? contextOf(attempt, result) : null;
 }

@@ -81,3 +81,12 @@ export async function retryStage(input: unknown) {
   if (!parsed.success) return invalid;
   return guarded(async () => chat.retryStage(await currentLearner(), parsed.data.attemptId, parsed.data.stage));
 }
+
+const reportActionSchema = z.object({ action: z.enum(chat.REPORT_ACTIONS) });
+
+/** Records a click on a report button (save, pdf, callback, courses). Fixed codes only, nothing from the learner is stored. */
+export async function trackReportAction(input: unknown) {
+  const parsed = reportActionSchema.safeParse(input);
+  if (!parsed.success) return invalid;
+  return guarded(async () => chat.recordReportAction(await currentLearner(), parsed.data.action));
+}

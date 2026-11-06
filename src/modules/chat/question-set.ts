@@ -66,6 +66,8 @@ export type BasicOption = {
   label: string;
   /** Meera's short reply after this answer (draft copy). */
   acknowledgement: string;
+  /** True for an age answer that means the learner is under 18: a parent or guardian is then the contact (D71). */
+  minor?: boolean;
 };
 
 export type BasicQuestion = {
@@ -218,8 +220,8 @@ export const QUESTION_SET_1_0_0: QuestionSet = {
       id: "b-age",
       prompt: "How old are you?",
       options: [
-        { id: "under-15", label: "Under 15", acknowledgement: "Great time to start exploring." },
-        { id: "15-17", label: "15 to 17", acknowledgement: "Great time to start exploring." },
+        { id: "under-15", label: "Under 15", minor: true, acknowledgement: "Great time to start exploring." },
+        { id: "15-17", label: "15 to 17", minor: true, acknowledgement: "Great time to start exploring." },
         { id: "18-21", label: "18 to 21", acknowledgement: "A good time to try out different paths." },
         { id: "22-25", label: "22 to 25", acknowledgement: "A good time to try out different paths." },
         { id: "26-plus", label: "26 or older", acknowledgement: "Plenty of people change direction at this stage." },

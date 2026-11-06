@@ -65,6 +65,9 @@ export const chatResults = pgTable("chat_results", {
     .primaryKey()
     .references(() => chatAttempts.id, { onDelete: "cascade" }),
   setVersion: text("set_version").notNull(),
+  // Which report wording this result is read with (report-copy.ts). Stamped when the attempt finishes, so a later
+  // wording edit never rewrites a report the learner already read. The default only fills rows that existed before.
+  reportVersion: text("report_version").notNull().default("1.0.0-draft"),
   // { ocean: { O: { score, band }, ... }, riasec: { R: 38, ... } }: whatever traits the set has.
   scores: jsonb("scores").$type<Record<string, unknown>>().notNull(),
   holland: text("holland"), // top three interest letters in rank order, e.g. "ISA"; null when the profile is flat

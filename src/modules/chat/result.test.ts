@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CURRENT_QUESTION_SET, type QuestionSet } from "./question-set";
+import { CURRENT_REPORT_COPY } from "./report-copy";
 import type { ResultRow } from "./repo";
 import { toResultRow, toResultView } from "./result";
 import { scoreAttempt } from "./scoring";
@@ -19,6 +20,7 @@ const okScore = (pattern: (index: number) => number) => {
 const asRow = (draft: ReturnType<typeof toResultRow>): ResultRow => ({
   attemptId: draft.attemptId,
   setVersion: draft.setVersion,
+  reportVersion: draft.reportVersion ?? "1.0.0-draft",
   scores: draft.scores,
   holland: draft.holland ?? null,
   hollandClose: draft.hollandClose ?? false,
@@ -40,6 +42,11 @@ describe("toResultRow", () => {
     } else {
       expect(row.flat).toBe(true);
     }
+  });
+
+  it("stamps the current report wording version, so the report is read with the wording that was live at the finish", () => {
+    const score = okScore((i) => (i % 5) + 1);
+    expect(toResultRow("a", set, score).reportVersion).toBe(CURRENT_REPORT_COPY.version);
   });
 
   it("builds stage_status from the stages in the set, one entry each (no stage names hardcoded)", () => {
@@ -67,6 +74,7 @@ describe("toResultView", () => {
     expect(view).toEqual({
       attemptId: "attempt-7",
       setVersion: set.version,
+      reportVersion: CURRENT_REPORT_COPY.version,
       ocean: score.ocean,
       riasec: score.riasec,
       holland: score.holland,

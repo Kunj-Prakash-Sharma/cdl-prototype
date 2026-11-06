@@ -243,3 +243,16 @@ describe("question pool (client-approved, 2026-11-03)", () => {
     expect(() => getPoolItem("o-X-9")).toThrow(/Unknown pool question/);
   });
 });
+
+describe("minor age answers (D71)", () => {
+  it("flags exactly the under-18 age options, so a parent is the callback contact", () => {
+    const age = CURRENT_QUESTION_SET.basics.find((basic) => basic.id === "b-age")!;
+    expect(age.options.filter((option) => option.minor).map((option) => option.id)).toEqual(["under-15", "15-17"]);
+  });
+
+  it("flags no option of any other basic question", () => {
+    for (const basic of CURRENT_QUESTION_SET.basics.filter((b) => b.id !== "b-age")) {
+      expect(basic.options.some((option) => option.minor)).toBe(false);
+    }
+  });
+});

@@ -1,5 +1,6 @@
 // PURE: turns a score into a database row and back. No database, no clock.
 import type { QuestionSet, RiasecDimension } from "./question-set";
+import { CURRENT_REPORT_COPY } from "./report-copy";
 import type { Holland, OceanScores, RiasecScores, ScoreResult } from "./scoring";
 import type { NewResultRow, ResultRow } from "./repo";
 
@@ -7,6 +8,8 @@ import type { NewResultRow, ResultRow } from "./repo";
 export type ResultView = {
   attemptId: string;
   setVersion: string;
+  /** The report wording this result is read with (stamped when the attempt finished). */
+  reportVersion: string;
   ocean: OceanScores;
   riasec: RiasecScores;
   holland: Holland;
@@ -21,6 +24,7 @@ export function toResultRow(attemptId: string, set: QuestionSet, score: OkScore)
   return {
     attemptId,
     setVersion: set.version,
+    reportVersion: CURRENT_REPORT_COPY.version,
     scores: { ocean: score.ocean, riasec: score.riasec },
     holland: "letters" in score.holland ? score.holland.letters.join("") : null,
     hollandClose: "letters" in score.holland ? score.holland.close : false,
@@ -40,6 +44,7 @@ export function toResultView(row: ResultRow, completedAt: Date): ResultView {
   return {
     attemptId: row.attemptId,
     setVersion: row.setVersion,
+    reportVersion: row.reportVersion,
     ocean: scores.ocean,
     riasec: scores.riasec,
     holland,

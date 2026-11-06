@@ -1,0 +1,1 @@
+ALTER TABLE "chat_results" ADD COLUMN "report_version" text DEFAULT '1.0.0-draft' NOT NULL;

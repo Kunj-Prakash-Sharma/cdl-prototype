@@ -7,12 +7,18 @@ import { analytics } from "@/integrations/analytics";
 import { db } from "@/lib/db";
 import { questionOrder } from "./flow";
 import { CURRENT_QUESTION_SET } from "./question-set";
+import { CURRENT_REPORT_COPY, REPORT_COPIES, type ReportCopy } from "./report-copy";
 import { chatAnswers, chatAttempts, chatResults } from "./schema";
 import {
   abandonAttempt,
   finishAttempt,
+  getCallbackContext,
+  getCallbackContextForAdmin,
+  getLatestReport,
   getLatestResult,
   getNextStep,
+  recordReportAction,
+  trackReportViewed,
   retake,
   retryStage,
   startOrResumeAttempt,
@@ -659,5 +665,162 @@ describe("funnel events", () => {
     const second = await submitAnswer(learner, attemptId, set.basics[1]!.id, 0);
     expect(second.ok).toBe(true);
     expect(await answerRows(attemptId)).toHaveLength(2);
+  });
+});
+
+describe("the free report", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const finished = async (learner: Learner) => {
+    const { attemptId } = await start(learner);
+    await answerAll(learner, attemptId);
+    const res = await finishAttempt(learner, attemptId);
+    if (!res.ok) throw new Error(res.code);
+    return attemptId;
+  };
+  const latest = async (learner: Learner) => {
+    const res = await getLatestReport(learner.userId);
+    if (!res.ok) throw new Error(res.code);
+    return res.latest;
+  };
+
+  it("has no report before the learner has finished an attempt", async () => {
+    const learner = await makeLearner();
+    expect(await latest(learner)).toBeNull();
+    await start(learner); // an open attempt is not a report
+    expect(await latest(learner)).toBeNull();
+  });
+
+  it("stamps the wording version when the attempt finishes and builds the report from the stored result", async () => {
+    const learner = await makeLearner();
+    const attemptId = await finished(learner);
+    const [stored] = await db.select().from(chatResults).where(eq(chatResults.attemptId, attemptId));
+    expect(stored!.reportVersion).toBe(CURRENT_REPORT_COPY.version);
+
+    const got = await latest(learner);
+    expect(got!.attemptId).toBe(attemptId);
+    const { report } = got!;
+    expect(report.copyVersion).toBe(CURRENT_REPORT_COPY.version);
+    expect(report.draft).toBe(CURRENT_REPORT_COPY.draft);
+    expect(report.traits.map((t) => t.trait)).toEqual(["O", "C", "E", "A", "N"]);
+    expect(report.interests).toHaveLength(6);
+    expect(report.courses.length).toBeGreaterThan(0);
+    expect(report.courses.length).toBeLessThanOrEqual(3);
+    expect(report.footer).toBe(CURRENT_REPORT_COPY.footer);
+  });
+
+  it("reads an old result with its own wording even after newer wording exists", async () => {
+    const learner = await makeLearner();
+    const attemptId = await finished(learner);
+    const registry = REPORT_COPIES as Record<string, ReportCopy>;
+    const older: ReportCopy = { ...CURRENT_REPORT_COPY, version: "0.0.1-test", footer: "FOOTER OF THE OLD WORDING" };
+    registry[older.version] = older;
+    try {
+      await db.update(chatResults).set({ reportVersion: older.version }).where(eq(chatResults.attemptId, attemptId));
+      expect((await latest(learner))!.report.footer).toBe("FOOTER OF THE OLD WORDING");
+    } finally {
+      delete registry[older.version];
+    }
+  });
+
+  it("fails with a fixed code, not a crash, when a result names a wording version nobody has", async () => {
+    const learner = await makeLearner();
+    const attemptId = await finished(learner);
+    await db.update(chatResults).set({ reportVersion: "9.9.9" }).where(eq(chatResults.attemptId, attemptId));
+    expect(await getLatestReport(learner.userId)).toEqual({ ok: false, code: "unknown" });
+  });
+
+  it("only ever shows a learner their own report, and the newest completed one after a retake", async () => {
+    const [mine, theirs] = [await makeLearner(), await makeLearner()];
+    const first = await finished(mine);
+    expect(await latest(theirs)).toBeNull();
+    expect((await latest(mine))!.attemptId).toBe(first);
+    const second = await finished(mine);
+    expect((await latest(mine))!.attemptId).toBe(second);
+    expect(await latest(theirs)).toBeNull();
+  });
+
+  it("sends no event when the report is read; the page fires report_viewed itself, under the attempt id", async () => {
+    const learner = await makeLearner();
+    const attemptId = await finished(learner);
+    const spy = vi.spyOn(analytics, "track").mockImplementation(() => {});
+    const got = await latest(learner);
+    expect(spy).not.toHaveBeenCalled();
+    trackReportViewed(got!.attemptId, got!.report);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith(attemptId, "report_viewed", {
+      scoresPresent: true,
+      coursesSuggested: got!.report.courses.length,
+    });
+  });
+
+  it("records a report button click as a fixed code, and nothing for a learner without a report", async () => {
+    const learner = await makeLearner();
+    const spy = vi.spyOn(analytics, "track").mockImplementation(() => {});
+    expect(await recordReportAction(learner, "pdf")).toEqual({ ok: false, code: "not_found" });
+    expect(spy).not.toHaveBeenCalled();
+    const attemptId = await finished(learner);
+    spy.mockClear();
+    expect(await recordReportAction(learner, "callback")).toEqual({ ok: true });
+    expect(spy).toHaveBeenCalledWith(attemptId, "report_action", { action: "callback" });
+  });
+});
+
+describe("callback context (what the team needs before a call)", () => {
+  const finishWithAge = async (learner: Learner, ageIndex: number) => {
+    const { attemptId } = await start(learner);
+    await submitAnswer(learner, attemptId, "b-age", ageIndex);
+    await answerAll(learner, attemptId);
+    const res = await finishAttempt(learner, attemptId);
+    if (!res.ok) throw new Error(res.code);
+    return attemptId;
+  };
+
+  it("is null until the learner has a finished attempt", async () => {
+    const learner = await makeLearner();
+    expect(await getCallbackContext(learner.userId)).toBeNull();
+    await start(learner);
+    expect(await getCallbackContext(learner.userId)).toBeNull();
+  });
+
+  it("carries the age, status and goal labels, the top interest names and the attempt id, and no name or phone", async () => {
+    const learner = await makeLearner("Zorbaxian");
+    const attemptId = await finishWithAge(learner, 3); // "22 to 25"
+    const context = await getCallbackContext(learner.userId);
+    expect(context).toMatchObject({ attemptId, minor: false, age: "22 to 25" });
+    expect(context!.status).toBe(set.basics[1]!.options[0]!.label);
+    expect(context!.goal).toBe(set.basics[2]!.options[0]!.label);
+    expect(context!.topInterests.length).toBeLessThanOrEqual(3);
+    expect(JSON.stringify(context)).not.toContain("Zorbaxian");
+  });
+
+  it("marks a learner under 18 as a minor (so a parent is the contact) and an adult as not", async () => {
+    const [young, teen, adult] = [await makeLearner(), await makeLearner(), await makeLearner()];
+    await finishWithAge(young, 0); // under 15
+    await finishWithAge(teen, 1); // 15 to 17
+    await finishWithAge(adult, 2); // 18 to 21
+    expect((await getCallbackContext(young.userId))!.minor).toBe(true);
+    expect((await getCallbackContext(teen.userId))!.minor).toBe(true);
+    expect((await getCallbackContext(adult.userId))!.minor).toBe(false);
+  });
+
+  it("follows the newest finished attempt after a retake", async () => {
+    const learner = await makeLearner();
+    await finishWithAge(learner, 0);
+    await retake(learner);
+    const second = await finishWithAge(learner, 4);
+    const context = await getCallbackContext(learner.userId);
+    expect(context).toMatchObject({ attemptId: second, minor: false, age: "26 or older" });
+  });
+
+  it("gives the admin the context of one attempt, and nothing for an open or unknown attempt", async () => {
+    const learner = await makeLearner();
+    const open = (await start(learner)).attemptId;
+    expect(await getCallbackContextForAdmin(open)).toBeNull();
+    expect(await getCallbackContextForAdmin("00000000-0000-4000-8000-000000000000")).toBeNull();
+    await submitAnswer(learner, open, "b-age", 1);
+    await answerAll(learner, open);
+    await finishAttempt(learner, open);
+    expect(await getCallbackContextForAdmin(open)).toMatchObject({ attemptId: open, minor: true });
   });
 });
