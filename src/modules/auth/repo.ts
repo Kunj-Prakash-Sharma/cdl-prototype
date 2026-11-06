@@ -1,6 +1,6 @@
 // PRIVATE to modules/auth: database access only.
 import { createHmac } from "node:crypto";
-import { and, desc, eq, ilike, isNull, ne, or, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNull, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { escapeLike, type UserFilters } from "./admin-users";
@@ -162,4 +162,18 @@ export async function userCounts(
     })
     .from(authUser);
   return row ?? { total: 0, admins: 0, named: 0, newThisWeek: 0 };
+}
+
+export async function findPhoneByUserId(userId: string): Promise<string | null> {
+  const [row] = await db.select({ phone: authUser.phoneNumber }).from(authUser).where(eq(authUser.id, userId));
+  return row?.phone ?? null;
+}
+
+export async function findNamesByUserIds(userIds: string[]): Promise<Map<string, string>> {
+  if (userIds.length === 0) return new Map();
+  const rows = await db
+    .select({ id: authUser.id, name: authUser.name })
+    .from(authUser)
+    .where(inArray(authUser.id, userIds));
+  return new Map(rows.map((row) => [row.id, row.name]));
 }

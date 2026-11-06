@@ -5,7 +5,7 @@ import { auth } from "./auth";
 import { safeNextPath } from "./next-path";
 import { maskPhone } from "./phone";
 import { USERS_PAGE_SIZE, pageCount, type UserFilters } from "./admin-users";
-import { listUsers, setUserName, userCounts } from "./repo";
+import { findNamesByUserIds, findPhoneByUserId, listUsers, setUserName, userCounts } from "./repo";
 import type { ActionResult, AdminUsersView, SessionView } from "./types";
 
 export type { ActionResult, AdminUserRow, AdminUsersView, AuthErrorCode, Role, SessionView } from "./types";
@@ -81,4 +81,20 @@ export async function listUsersForAdmin(filters: UserFilters): Promise<AdminUser
     pageCount: pageCount(total),
     stats,
   };
+}
+
+/**
+ * The learner's raw phone number (E.164), for the one module that must call them: leads. It never goes to a browser or
+ * a log. Null when the account has no phone (for example a future email-only login, D65).
+ */
+export async function getLearnerPhone(userId: string): Promise<string | null> {
+  return findPhoneByUserId(userId);
+}
+
+/**
+ * Profile names by user id, for the admin callback list (leads reads the name live and never copies it). PII: only call
+ * it after an admin check, and never log or send the result to analytics. A learner who never gave a name has "".
+ */
+export async function getUserNames(userIds: string[]): Promise<Map<string, string>> {
+  return findNamesByUserIds(userIds);
 }

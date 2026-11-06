@@ -3,3 +3,4 @@
 // Each module owns its own tables (see docs/architecture/modules.md).
 export * from "@/modules/auth/schema";
 export * from "@/modules/chat/schema";
+export * from "@/modules/leads/schema";
