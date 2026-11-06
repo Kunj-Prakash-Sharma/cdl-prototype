@@ -52,3 +52,20 @@ export async function resetAuthLimits(): Promise<void> {
   await pool?.end();
   pool = undefined;
 }
+
+export type LeadRow = {
+  status: string;
+  contact_role: string;
+  preferred_time: string | null;
+  consent_version: string;
+  alerted_at: Date | null;
+};
+
+/** The callback requests saved for a learner's number (national format, as typed at login). */
+export async function leadsFor(nationalNumber: string): Promise<LeadRow[]> {
+  const { rows } = await db().query<LeadRow>(
+    `select status, contact_role, preferred_time, consent_version, alerted_at from leads where phone = $1`,
+    [`+91${nationalNumber}`],
+  );
+  return rows;
+}
