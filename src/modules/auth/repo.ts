@@ -4,7 +4,15 @@ import { and, desc, eq, ilike, inArray, isNull, ne, or, sql, type SQL } from "dr
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { escapeLike, type UserFilters } from "./admin-users";
-import { applyLock, decideSend, emptyThrottle, type SendDecision, type Throttle } from "./limits";
+import {
+  applyLock,
+  decideSend,
+  decideWindow,
+  emptyThrottle,
+  type SendDecision,
+  type Throttle,
+  type WindowDecision,
+} from "./limits";
 import { authOtpThrottle, authUser } from "./schema";
 
 /** HMAC of the number: lets us count per number without keeping the number in this table. */
@@ -46,6 +54,29 @@ export async function reserveSend(phone: string, now: Date): Promise<SendDecisio
       .set({ ...decision.next, verifyFails: 0, updatedAt: now })
       .where(eq(authOtpThrottle.phoneHash, key));
     return { ...decision, sendCount: decision.next.sendCount };
+  });
+}
+
+/** Row key of the one shared counter behind the SMS spend cutoff (D74). */
+export const SMS_TOTAL_KEY = "sms:total";
+/** Row key of one browser's counter: an HMAC of its cookie id, never the id itself. */
+export const deviceKey = (deviceId: string) => `dev:${phoneHash(`device:${deviceId}`)}`;
+
+/**
+ * Atomic "count one more, unless `cap` is already reached in the rolling day" on any counter row. Used for the device
+ * limit and the SMS spend cutoff. Two requests at once cannot both take the last slot (row lock).
+ */
+export async function reserveWindow(key: string, cap: number, now: Date): Promise<WindowDecision> {
+  return db.transaction(async (tx) => {
+    await tx.insert(authOtpThrottle).values({ phoneHash: key }).onConflictDoNothing();
+    const [row] = await tx.select().from(authOtpThrottle).where(eq(authOtpThrottle.phoneHash, key)).for("update");
+    const decision = decideWindow(toThrottle(row), now, cap);
+    if (!decision.ok) return decision;
+    await tx
+      .update(authOtpThrottle)
+      .set({ ...decision.next, updatedAt: now })
+      .where(eq(authOtpThrottle.phoneHash, key));
+    return decision;
   });
 }
 

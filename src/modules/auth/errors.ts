@@ -10,11 +10,12 @@ type Body = { code?: string; message?: string } | null | undefined;
 
 const CAPTCHA_CODES = new Set(["VERIFICATION_FAILED", "MISSING_RESPONSE", "UNKNOWN_ERROR"]);
 
-/** The send hook encodes a throttle as message `cooldown:23`, `daily_limit:3600` or `locked:900`. */
+/** The send hook encodes a throttle as message `cooldown:23`, `daily_limit:3600`, `locked:900` or `sms_cutoff:7200`. */
 function parseThrottle(message: string | undefined): Failure {
   const [kind, secs] = (message ?? "").split(":");
   const retryAfterSec = Number(secs);
-  const code = kind === "locked" || kind === "cooldown" || kind === "daily_limit" ? kind : "unknown";
+  const code =
+    kind === "locked" || kind === "cooldown" || kind === "daily_limit" || kind === "sms_cutoff" ? kind : "unknown";
   return Number.isFinite(retryAfterSec) && retryAfterSec > 0 ? { code, retryAfterSec } : { code };
 }
 

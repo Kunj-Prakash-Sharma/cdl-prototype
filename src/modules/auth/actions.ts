@@ -3,17 +3,28 @@
 // Server actions for the login screens. Thin: validate, apply limits, call Better Auth, map the result to a
 // typed `{ ok, code }` (UI contract in docs/specs/auth.md). Expected failures never throw.
 import { isAPIError } from "better-auth/api";
-import { headers } from "next/headers";
+import { randomBytes } from "node:crypto";
+import { cookies, headers } from "next/headers";
 import { z } from "zod";
 import { analytics } from "@/integrations/analytics";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { auth } from "./auth";
 import { mapSendFailure, mapVerifyFailure } from "./errors";
-import { LOCK_SEC, OTP_EXPIRES_SEC, OTP_MAX_ATTEMPTS, RESEND_COOLDOWN_SEC } from "./limits";
+import { LOCK_SEC, OTP_EXPIRES_SEC, OTP_MAX_ATTEMPTS, RESEND_COOLDOWN_SEC, deviceDailyCap } from "./limits";
 import { safeNextPath } from "./next-path";
 import { normalizePhone } from "./phone";
-import { findUserIdByPhone, getUserRole, lockNumber, peekSend, phoneHash, recordVerifyFail, setUserRole } from "./repo";
+import {
+  deviceKey,
+  findUserIdByPhone,
+  getUserRole,
+  lockNumber,
+  peekSend,
+  phoneHash,
+  recordVerifyFail,
+  reserveWindow,
+  setUserRole,
+} from "./repo";
 import { roleForPhone } from "./roles";
 import type { ActionResult, SendOtpOk, VerifyOtpOk } from "./types";
 
@@ -27,6 +38,26 @@ const verifySchema = z.object({
 // Funnel id for otp_* events: an HMAC prefix of the number, so events link up but never carry the number.
 const funnelId = (phone: string) => `otp-${phoneHash(phone).slice(0, 16)}`;
 
+// A random id in an httpOnly cookie marks one browser (D74). Only its HMAC is stored. Anyone can clear it, so this stops
+// one person hammering one browser, not a bot: the IP limit, the bot check and the spend cutoff cover that.
+const DEVICE_COOKIE = "device_id";
+const DEVICE_ID = /^[a-f0-9]{32}$/;
+
+async function deviceIdFor(): Promise<string> {
+  const jar = await cookies();
+  const existing = jar.get(DEVICE_COOKIE)?.value;
+  if (existing && DEVICE_ID.test(existing)) return existing;
+  const fresh = randomBytes(16).toString("hex");
+  jar.set(DEVICE_COOKIE, fresh, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: env.NODE_ENV === "production",
+    maxAge: 365 * 24 * 60 * 60,
+    path: "/",
+  });
+  return fresh;
+}
+
 export async function sendOtp(input: unknown): Promise<ActionResult<SendOtpOk>> {
   const parsed = sendSchema.safeParse(input);
   if (!parsed.success) return { ok: false, code: "invalid_input" };
@@ -36,6 +67,14 @@ export async function sendOtp(input: unknown): Promise<ActionResult<SendOtpOk>> 
   // Cheap read-only check first: a rejected resend must not replace the code the learner already has.
   const pre = await peekSend(phone, new Date());
   if (!pre.ok) return { ok: false, code: pre.code, retryAfterSec: pre.retryAfterSec };
+
+  // One browser may ask for only so many codes a day (D74). Counted before the bot check: the counter belongs to the
+  // caller's own cookie, so it cannot be used against anyone else.
+  const device = await reserveWindow(deviceKey(await deviceIdFor()), deviceDailyCap(env.NODE_ENV), new Date());
+  if (!device.ok) {
+    await analytics.track(funnelId(phone), "otp_sent", { result: "failed", attempt: 1 });
+    return { ok: false, code: "device_limit", retryAfterSec: device.retryAfterSec };
+  }
 
   // Goes through Better Auth's HTTP handler on purpose: the Turnstile check and the per-IP rate limit run
   // there and are skipped by direct `auth.api.*` calls.

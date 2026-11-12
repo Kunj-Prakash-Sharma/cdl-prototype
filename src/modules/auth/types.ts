@@ -8,6 +8,8 @@ export const AUTH_ERROR_CODES = [
   "cooldown",
   "daily_limit",
   "ip_limit",
+  "device_limit",
+  "sms_cutoff",
   "send_failed",
   "bad_code",
   "expired",

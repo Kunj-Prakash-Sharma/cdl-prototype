@@ -8,10 +8,10 @@ import { sms } from "@/integrations/sms";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
-import { IP_HOURLY_CAP, OTP_EXPIRES_SEC, OTP_LENGTH, OTP_MAX_ATTEMPTS, SESSION_SEC } from "./limits";
+import { IP_HOURLY_CAP, OTP_EXPIRES_SEC, OTP_LENGTH, OTP_MAX_ATTEMPTS, SESSION_SEC, smsDailyCap } from "./limits";
 import { SEND_FAILED, THROTTLED } from "./errors";
 import { normalizePhone } from "./phone";
-import { reserveSend } from "./repo";
+import { reserveSend, reserveWindow, SMS_TOTAL_KEY } from "./repo";
 import { roleForPhone } from "./roles";
 import { authAccount, authRateLimit, authSession, authUser, authVerification } from "./schema";
 
@@ -71,6 +71,15 @@ export const auth = betterAuth({
       // Runs after the bot check. Records the send against the per-number limits, then delivers the code.
       // Awaited on purpose: if the SMS provider fails, the learner sees `send_failed` (D64).
       sendOTP: async ({ phoneNumber: phone, code }) => {
+        // Spend cutoff first (D74): when the day's budget is used up, nobody gets a code, and the number's own count is not burned.
+        const budget = await reserveWindow(SMS_TOTAL_KEY, smsDailyCap(env.NODE_ENV, env.SMS_DAILY_CAP), new Date());
+        if (!budget.ok) {
+          logger.warn("sms daily cap reached: no codes are sent until the window ends");
+          throw APIError.from("TOO_MANY_REQUESTS", {
+            code: THROTTLED,
+            message: `sms_cutoff:${budget.retryAfterSec}`,
+          });
+        }
         const reserved = await reserveSend(phone, new Date());
         if (!reserved.ok) {
           throw APIError.from("TOO_MANY_REQUESTS", {

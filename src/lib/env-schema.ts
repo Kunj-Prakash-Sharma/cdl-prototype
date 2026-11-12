@@ -25,6 +25,9 @@ const schema = z
     // lead is still saved. Make it required in production once the client gives the address.
     CALLBACK_ALERT_EMAIL: z.email().optional(),
 
+    // Most OTP SMS we send in a rolling day, all learners together (D74). Production defaults to 5000; elsewhere it is off.
+    SMS_DAILY_CAP: z.coerce.number().int().positive().optional(),
+
     // Chat: inactivity before a session counts as lost (decision D58)
     CHAT_INACTIVITY_MINUTES: z.coerce.number().int().positive().default(30),
 

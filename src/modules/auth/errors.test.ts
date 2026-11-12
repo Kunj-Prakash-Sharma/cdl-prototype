@@ -15,6 +15,10 @@ describe("mapSendFailure", () => {
       code: "locked",
       retryAfterSec: 900,
     });
+    expect(mapSendFailure(429, { code: THROTTLED, message: "sms_cutoff:7200" })).toEqual({
+      code: "sms_cutoff",
+      retryAfterSec: 7200,
+    });
   });
   it("falls back to unknown for a garbled throttle message", () => {
     expect(mapSendFailure(429, { code: THROTTLED, message: "weird" })).toEqual({ code: "unknown" });

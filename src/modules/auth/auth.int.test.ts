@@ -93,6 +93,49 @@ describe("send", () => {
     expect(sentCodes).toHaveLength(1);
   });
 
+  it("stops a browser at its daily device cap, and keeps the counter under a hashed key", async () => {
+    // First send creates the cookie and the counter row; fill it to the (test) cap, as the daily-cap test does.
+    await sendOtp({ phone: LEARNER, captchaToken: CAPTCHA });
+    const deviceId = jar.get("device_id");
+    expect(deviceId).toMatch(/^[a-f0-9]{32}$/);
+    await db
+      .update(authOtpThrottle)
+      .set({ sendCount: 100 })
+      .where(sql`${authOtpThrottle.phoneHash} like 'dev:%'`);
+
+    const other = await sendOtp({ phone: "9876543211", captchaToken: CAPTCHA });
+    expect(other).toMatchObject({ ok: false, code: "device_limit" });
+    expect(sentCodes).toHaveLength(1);
+    expect(JSON.stringify(await db.select().from(authOtpThrottle))).not.toContain(deviceId!);
+
+    // Another browser (no cookie) is not affected.
+    jar.delete("device_id");
+    expect(await sendOtp({ phone: "9876543212", captchaToken: CAPTCHA })).toMatchObject({ ok: true });
+  });
+
+  it("ignores a forged device cookie and issues a fresh one", async () => {
+    jar.set("device_id", "not-a-valid-id");
+    await sendOtp({ phone: LEARNER, captchaToken: CAPTCHA });
+    expect(jar.get("device_id")).toMatch(/^[a-f0-9]{32}$/);
+  });
+
+  it("sends no code to anyone once the day's SMS budget is used up, and does not burn the number's count", async () => {
+    await sendOtp({ phone: LEARNER, captchaToken: CAPTCHA });
+    await db
+      .update(authOtpThrottle)
+      .set({ sendCount: 1_000_000 })
+      .where(sql`${authOtpThrottle.phoneHash} = 'sms:total'`);
+    jar.delete("device_id");
+
+    const blocked = await sendOtp({ phone: "9876543211", captchaToken: CAPTCHA });
+    expect(blocked).toMatchObject({ ok: false, code: "sms_cutoff" });
+    expect(blocked.ok === false && blocked.retryAfterSec).toBeGreaterThan(0);
+    expect(sentCodes).toHaveLength(1);
+    // The refused number has no throttle row of its own: nothing was counted against it.
+    const rows = await db.select().from(authOtpThrottle);
+    expect(rows.filter((r) => !r.phoneHash.startsWith("dev:") && r.phoneHash !== "sms:total")).toHaveLength(1);
+  });
+
   it("does not store the phone number in the throttle table", async () => {
     await sendOtp({ phone: LEARNER, captchaToken: CAPTCHA });
     const rows = await db.select().from(authOtpThrottle);

@@ -24,6 +24,10 @@ export function authMessage(code: AuthErrorCode, retryAfterSec?: number): string
       return "You have asked for too many codes today. Please try again tomorrow.";
     case "ip_limit":
       return `Too many attempts from this network. Try again in ${waitText(retryAfterSec)}.`;
+    case "device_limit":
+      return "You have asked for too many codes on this device today. Please try again tomorrow.";
+    case "sms_cutoff":
+      return "We cannot send codes right now. Please try again a little later.";
     case "send_failed":
       return "We could not send the SMS. Please try again.";
     case "bad_code":

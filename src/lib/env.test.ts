@@ -8,6 +8,11 @@ describe("parseEnv", () => {
     expect(env.SMS_PROVIDER).toBe("fake");
     expect(env.NODE_ENV).toBe("development");
   });
+  it("reads the optional SMS daily cap and rejects a bad one", () => {
+    expect(parseEnv({ DATABASE_URL: "x" }).SMS_DAILY_CAP).toBeUndefined();
+    expect(parseEnv({ DATABASE_URL: "x", SMS_DAILY_CAP: "500" }).SMS_DAILY_CAP).toBe(500);
+    expect(() => parseEnv({ DATABASE_URL: "x", SMS_DAILY_CAP: "0" })).toThrow(/SMS_DAILY_CAP/);
+  });
   it("fails fast with a readable message when required config is missing", () => {
     expect(() => parseEnv({})).toThrow(/DATABASE_URL/);
   });
