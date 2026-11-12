@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { finishAttempt, retake, retryStage, submitAnswer, submitName } from "@/modules/chat/actions";
 import type { ResultView } from "@/modules/chat/result";
@@ -47,6 +48,7 @@ export function ChatFlow({
   /** Set when the learner already finished: show the saved result instead of a quiz. */
   finished?: ResultView;
 }) {
+  const router = useRouter();
   const [attemptId, setAttemptId] = useState(initialAttemptId);
   // A learner who reloads with every question answered goes straight to finishing.
   const [view, setView] = useState<View>(
@@ -93,7 +95,8 @@ export function ChatFlow({
   /** Scores the attempt. State changes come after the server answers, never while rendering. */
   const finishNow = async (id: string) => {
     const res = await finishAttempt({ attemptId: id });
-    if (res.ok) return setView({ type: "finished", result: res.result });
+    // The report opens on its own (E4-S11). The finishing screen stays up until the report page replaces it.
+    if (res.ok) return router.replace("/discover/report");
     if (res.code === "stage_invalid" && res.stage) return setView({ type: "retry", stage: res.stage });
     // Missing answers or an out-of-date page: the server knows where the learner is, so reload.
     if (res.code === "incomplete" || res.code === "not_found" || res.code === "attempt_closed") return resync();
