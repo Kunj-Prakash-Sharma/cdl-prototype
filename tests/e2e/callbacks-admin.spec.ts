@@ -13,7 +13,6 @@ const sheetPhone = (national: string) => `91 ${national.slice(0, 5)} ${national.
 async function learnerAsksForCallback(page: Page): Promise<string> {
   const phone = await openChat(page);
   await finishQuiz(page); // first age answer: under 15, so a parent is the contact
-  await page.getByTestId("see-report").click();
   await page.getByTestId("callback-time-evening").click();
   await page.getByTestId("callback-consent").check();
   await page.getByTestId("callback-submit").click();

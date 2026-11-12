@@ -51,7 +51,11 @@ export async function answerWith(page: Page, button: Locator) {
   const beforeProgress = (await progress.textContent()) ?? "";
   const beforeQuestion = (await questionText.count()) ? ((await questionText.textContent()) ?? "") : null;
   await button.click();
-  const terminal = page.getByTestId("finishing").or(page.getByTestId("result")).or(page.getByTestId("retry"));
+  const terminal = page
+    .getByTestId("finishing")
+    .or(page.getByTestId("result"))
+    .or(page.getByTestId("report"))
+    .or(page.getByTestId("retry"));
   const moved = beforeQuestion
     ? questionText.filter({ hasNotText: exact(beforeQuestion) })
     : progress.filter({ hasNotText: exact(beforeProgress) });
@@ -87,5 +91,7 @@ export async function answerScored(page: Page, count: number, value: (i: number)
 export async function finishQuiz(page: Page, ageIndex = 0) {
   await finishBasics(page, "Asha", ageIndex);
   await answerScored(page, scoredCount, varied);
-  await expect(page.getByTestId("result")).toBeVisible({ timeout: 20_000 });
+  // Finishing opens the report by itself (E4-S11).
+  await expect(page).toHaveURL(/\/discover\/report$/, { timeout: 20_000 });
+  await expect(page.getByTestId("report")).toBeVisible();
 }

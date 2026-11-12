@@ -12,7 +12,6 @@ test.describe("report", () => {
     await openChat(page);
     await finishQuiz(page);
 
-    await page.getByTestId("see-report").click();
     await expect(page).toHaveURL(/\/discover\/report$/);
     await expect(page.getByTestId("report")).toBeVisible();
 
@@ -55,10 +54,26 @@ test.describe("report", () => {
     if (await link.first().isVisible()) await expect(link.first()).toHaveAttribute("href", "/discover/report");
   });
 
+  test("My SELF links to the saved report once the quiz is finished (E5-S4)", async ({ page }) => {
+    await openChat(page);
+    await page.goto("/my-self");
+    await expect(page.getByTestId("my-report-link")).toHaveAttribute("href", "/discover");
+
+    await page.goto("/discover");
+    await finishQuiz(page);
+    await page.goto("/my-self");
+    const link = page.getByTestId("my-report-link");
+    await expect(link).toHaveAttribute("href", "/discover/report");
+    // Hydration may not be done yet: retry the click until the report opens.
+    await expect(async () => {
+      await link.click();
+      await expect(page.getByTestId("report")).toBeVisible({ timeout: 3000 });
+    }).toPass({ timeout: 15_000 });
+  });
+
   test("a parent asks for a callback: the form needs consent, a repeat request keeps one lead", async ({ page }) => {
     const phone = await openChat(page);
     await finishQuiz(page); // the first age answer is under 15, so a parent is the contact
-    await page.getByTestId("see-report").click();
     await expect(page.getByTestId("callback-form")).toBeVisible();
 
     // The consent text is the parent or guardian wording, and the button waits for the tick.
@@ -86,7 +101,6 @@ test.describe("report", () => {
   test("an adult asks for a callback with the learner wording and no preferred time", async ({ page }) => {
     const phone = await openChat(page);
     await finishQuiz(page, 2); // "18 to 21"
-    await page.getByTestId("see-report").click();
     await expect(page.getByTestId("callback-form")).toBeVisible();
     await expect(page.getByTestId("callback")).not.toContainText("parent or guardian");
     await page.getByTestId("callback-consent").check();
@@ -99,7 +113,6 @@ test.describe("report", () => {
   test("the report's callback button jumps to the form", async ({ page }) => {
     await openChat(page);
     await finishQuiz(page);
-    await page.getByTestId("see-report").click();
     await page.getByTestId("report-callback-button").click();
     await expect(page).toHaveURL(/#callback$/);
     await expect(page.getByTestId("callback-form")).toBeInViewport();

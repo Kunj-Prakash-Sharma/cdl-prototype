@@ -53,7 +53,11 @@ async function answerWith(page: Page, button: Locator) {
   const beforeProgress = (await progress.textContent()) ?? "";
   const beforeQuestion = (await questionText.count()) ? ((await questionText.textContent()) ?? "") : null;
   await button.click();
-  const terminal = page.getByTestId("finishing").or(page.getByTestId("result")).or(page.getByTestId("retry"));
+  const terminal = page
+    .getByTestId("finishing")
+    .or(page.getByTestId("result"))
+    .or(page.getByTestId("report"))
+    .or(page.getByTestId("retry"));
   const moved = beforeQuestion
     ? questionText.filter({ hasNotText: exact(beforeQuestion) })
     : progress.filter({ hasNotText: exact(beforeProgress) });
@@ -86,13 +90,15 @@ async function answerScored(page: Page, count: number, value: (i: number) => num
 async function finishQuiz(page: Page) {
   await finishBasics(page);
   await answerScored(page, scoredCount, varied);
-  await expect(page.getByTestId("result")).toBeVisible({ timeout: 20_000 });
+  // Finishing opens the report by itself (E4-S11).
+  await expect(page).toHaveURL(/\/discover\/report$/, { timeout: 20_000 });
+  await expect(page.getByTestId("report")).toBeVisible();
 }
 
 test.describe("chat", () => {
   // Each question slides out and the next slides in (like the prototype), so a full quiz takes about half a minute.
   test.describe.configure({ timeout: 120_000 });
-  test("a learner answers every question and reaches the saved result", async ({ page }) => {
+  test("a learner answers every question and lands on their report", async ({ page }) => {
     await openChat(page);
     await expect(page.getByTestId("helpline")).toBeVisible();
 
@@ -100,12 +106,9 @@ test.describe("chat", () => {
     await expect(page.getByTestId("helpline")).toBeVisible();
     await answerScored(page, scoredCount, varied);
 
-    await expect(page.getByTestId("result")).toBeVisible({ timeout: 20_000 });
-    const parsed: unknown = JSON.parse((await page.getByTestId("result-json").textContent()) ?? "");
-    expect(parsed).toEqual(expect.any(Object));
-    expect(parsed).not.toBeNull();
-    expect(Array.isArray(parsed)).toBe(false);
-    await expect(page.getByTestId("helpline")).toBeVisible();
+    await expect(page).toHaveURL(/\/discover\/report$/, { timeout: 20_000 });
+    await expect(page.getByTestId("report")).toBeVisible();
+    await expect(page.getByTestId("report").getByTestId("helpline")).toBeVisible();
   });
 
   test("reloading in the middle shows the same question and progress", async ({ page }) => {
@@ -157,7 +160,7 @@ test.describe("chat", () => {
     await expect(page.getByTestId("name-input")).toBeVisible();
   });
 
-  test("all-same answers in the last part ask that part again, then the result appears", async ({ page }) => {
+  test("all-same answers in the last part ask that part again, then the report opens", async ({ page }) => {
     await openChat(page);
     await finishBasics(page);
     await answerScored(page, scoredCount - lastPartSize, varied);
@@ -171,15 +174,17 @@ test.describe("chat", () => {
     await expect(page.getByTestId("stage-header")).toContainText(`0/${lastPartSize} answered`);
 
     await answerScored(page, lastPartSize, varied);
-    await expect(page.getByTestId("result")).toBeVisible({ timeout: 20_000 });
+    await expect(page).toHaveURL(/\/discover\/report$/, { timeout: 20_000 });
   });
 
   test("after finishing, a reload shows the saved result and Take it again starts a new attempt", async ({ page }) => {
     await openChat(page);
     await finishQuiz(page);
 
-    await page.reload();
+    // The saved-result screen is what /discover shows after the report has opened.
+    await page.goto("/discover");
     await expect(page.getByTestId("result")).toBeVisible();
+    await expect(page.getByTestId("see-report")).toBeVisible();
     const retake = page.getByTestId("retake-button");
     await expect(retake).toBeVisible();
 
