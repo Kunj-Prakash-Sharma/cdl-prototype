@@ -94,6 +94,7 @@ Reuse and adapt prototype components in `src/components/discover/` (see [../prot
 - `results-report.tsx`: **rewrite** to the report in assessment.md section 8; print stylesheet; radar chart generalised to N axes (5 OCEAN + 6 RIASEC) or two charts.
 - **Delete** `aptitude-stage.tsx`, `values-stage.tsx` and aptitude/values/percentile code paths.
 - A "Try again" screen for `invalid` stages (copy: "Your answers were all the same. Want to try that part again?").
+- **Finish opens the report (E4-S11, 2026-11-06):** when the last answer is scored, `chat-flow.tsx` calls `router.replace("/discover/report")`; the finishing screen stays until the report loads. The saved-result screen (with "See my report" and "Take it again") is what `/discover` shows afterwards.
 - **A helpline link that is always visible** on every chat screen, the stop screen and the report (D70). It is the primary safety measure and does not depend on any text matching. Wording, number and link are data in `src/config/helpline.ts` (placeholder until the client supplies them).
 - The self-harm stop screen with the same helpline message (the name check is the backup; copy and link from the client; placeholder until then).
 

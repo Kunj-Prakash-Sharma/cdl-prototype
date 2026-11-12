@@ -41,11 +41,12 @@ A learner logs in with a phone number and an SMS code. The client team logs in t
 - Wrong codes: Better Auth allows 5 tries per code; we count them and lock the number for 15 minutes on the 5th wrong try.
 - The built-in `email` column holds a placeholder (`<phone>@phone.invalid`); the optional real email is `contactEmail`.
 - Per-IP limit is 10 per hour in production and 100 elsewhere (so dev and Playwright logins from one IP keep working).
+- **Device limit and SMS spend cutoff (D74, Nov 6):** device = random id in an httpOnly cookie `device_id` (kept only as an HMAC), checked in `sendOtp` after the per-number pre-check: 10 codes per device per day in production, 100 elsewhere. The spend cutoff is one shared counter (`SMS_DAILY_CAP` per rolling 24 hours, default 5000 in production) checked inside the send hook, after the bot check and before the per-number record. Both live in `auth_otp_throttle` under the keys `dev:<hmac>` and `sms:total`. A device limit does not stop a bot that drops cookies; the IP limit, Turnstile and the cutoff do.
 - **Deploy note:** behind the AWS load balancer, set `advanced.ipAddress.trustedProxies` so a client cannot spoof `x-forwarded-for` and dodge the IP limit.
 
 ## UI contract (so the frontend can change without backend rework)
 - Actions never throw for expected cases. They return `{ ok: true, ... }` or `{ ok: false, code, retryAfterSec? }`.
-- Codes (fixed list, exported as a type from `modules/auth`): `invalid_phone`, `captcha_failed`, `cooldown`, `daily_limit`, `ip_limit`, `send_failed`, `bad_code`, `expired`, `locked`, `unauthorized`, `forbidden`. The UI owns all wording.
+- Codes (fixed list, exported as a type from `modules/auth`): `invalid_phone`, `captcha_failed`, `cooldown`, `daily_limit`, `ip_limit`, `device_limit`, `sms_cutoff`, `send_failed`, `bad_code`, `expired`, `locked`, `unauthorized`, `forbidden`. The UI owns all wording.
 - `sendOtp` ok result: `{ ok: true, resendAfterSec, expiresInSec }`. `verifyOtp` ok result: `{ ok: true, isNewUser, next }`, where `next` is the safe return path.
 - Guards redirect to `/login?next=<path>`; `next` must be a same-site relative path (reject anything else).
 - `getSession()` returns a plain serialisable object (`{ userId, role, name, phoneMasked }`), never the raw phone.
@@ -66,7 +67,7 @@ A learner logs in with a phone number and an SMS code. The client team logs in t
 | 3 | Session length | 30 days |
 | 4 | Returning user | Sees the saved report; can retake (new attempt, old report stays until the new one completes) |
 | 5 | OTP rules | 6 digits, 5 min expiry, 5 tries, then locked 15 min |
-| 6 | Limits | Resend wait 30 s, 5 codes per number per day, 10 per IP per hour |
+| 6 | Limits | Resend wait 30 s, 5 codes per number per day, 10 per IP per hour. *Nov 6 (D74): IP limit raised to 60 per hour (shared mobile and campus IPs); plus 10 per device per day and a total SMS cutoff per day* |
 | 7 | Bot check fails | "Try again" message; no SMS sent |
 | 8 | Profile edits | Name editable (same check as chat); phone change needs a new OTP; email optional |
 | 9 | Admins | Allow-list of phone numbers set by us (`ADMIN_PHONES`); count to be fixed with the client (expect 2 to 4) |
