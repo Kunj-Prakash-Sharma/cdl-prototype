@@ -9,6 +9,8 @@ import {
   completedStage,
   computeNextStep,
   firstUnanswered,
+  isAway,
+  isExpired,
   progressOf,
   questionOrder,
   isReachable,
@@ -21,6 +23,7 @@ import { reportFor, type ReportView } from "./report";
 import { toResultRow, toResultView, type ResultView } from "./result";
 import * as repo from "./repo";
 import { scoreAttempt, scoreOcean, scoreRiasec, type StageProblem } from "./scoring";
+import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { validateName } from "./name-check";
 import type { ChatResult, Learner, NextStep } from "./types";
@@ -58,11 +61,23 @@ async function loadOwned(learner: Learner, attemptId: string): Promise<Owned | n
 const failed = (loaded: null | "unknown_set") =>
   ({ ok: false, code: loaded === null ? "not_found" : "unknown" }) as const;
 
+/**
+ * The learner's open attempt if it can still be continued. One that went `CHAT_RESUME_DAYS` without an answer has
+ * expired (D75): it is closed here, when it is read, so no background job is needed, and the caller sees "none".
+ */
+async function findLiveAttempt(userId: string): Promise<repo.AttemptRow | undefined> {
+  const attempt = await repo.findOpenAttempt(userId);
+  if (!attempt) return undefined;
+  if (!isExpired(attempt, new Date(), env.CHAT_RESUME_DAYS)) return attempt;
+  await repo.setAttemptStatus(attempt.id, "in_progress", "abandoned");
+  return undefined;
+}
+
 /** Resumes the learner's open attempt, or starts one. `resumed` says which. */
 export async function startOrResumeAttempt(
   learner: Learner,
 ): Promise<ChatResult<{ attemptId: string; resumed: boolean; next: NextStep }>> {
-  let attempt = await repo.findOpenAttempt(learner.userId);
+  let attempt = await findLiveAttempt(learner.userId);
   let resumed = true;
   if (!attempt) {
     resumed = false;
@@ -96,9 +111,40 @@ export async function retake(learner: Learner) {
   return res;
 }
 
-/** Does the learner have an unfinished attempt? (Read-only: unlike startOrResumeAttempt it never creates one.) */
+/** Does the learner have an unfinished attempt that can still be continued? (Never creates one.) */
 export async function hasOpenAttempt(userId: string): Promise<boolean> {
-  return (await repo.findOpenAttempt(userId)) !== undefined;
+  return (await findLiveAttempt(userId)) !== undefined;
+}
+
+export type ResumeOffer = { kind: "none" } | { kind: "offer"; attemptId: string; answered: number; total: number };
+
+/**
+ * E4-S12: should the learner be asked "Continue or start again"? Only for a returning learner: a live open attempt
+ * with an answer, untouched for `CHAT_INACTIVITY_MINUTES`. A quick refresh mid-quiz, or an empty attempt, simply
+ * resumes. Read-only (an expired attempt is closed, nothing is created).
+ */
+export async function getResumeOffer(learner: Learner): Promise<ResumeOffer> {
+  const attempt = await findLiveAttempt(learner.userId);
+  const set = attempt && getQuestionSet(attempt.setVersion);
+  if (!attempt || !set) return { kind: "none" };
+  if (!isAway(attempt, new Date(), env.CHAT_INACTIVITY_MINUTES)) return { kind: "none" };
+  const answers = await repo.listAnswers(attempt.id);
+  if (Object.keys(answers).length === 0) return { kind: "none" };
+  const { answered, total } = progressOf(set, answers, hasName(learner));
+  return { kind: "offer", attemptId: attempt.id, answered, total };
+}
+
+/**
+ * "Start again" on the welcome-back screen: ends THAT attempt for good (its answers stay, it is never resumed) and
+ * starts a new one. The screen names the attempt it was showing, so a stale tab cannot end a different one: if the
+ * attempt is already closed the answer is `attempt_closed` and the page reloads to the truth.
+ */
+export async function restartAttempt(learner: Learner, attemptId: string) {
+  const loaded = await loadOwned(learner, attemptId);
+  if (loaded === null || loaded === "unknown_set") return failed(loaded);
+  if (loaded.attempt.status !== "in_progress") return { ok: false, code: "attempt_closed" } as const;
+  await repo.setAttemptStatus(attemptId, "in_progress", "abandoned");
+  return startOrResumeAttempt(learner);
 }
 
 /** Where the learner is: the first question without an answer, recomputed from the saved answers every time. */

@@ -17,8 +17,11 @@ import {
   getLatestReport,
   getLatestResult,
   getNextStep,
+  getResumeOffer,
+  hasOpenAttempt,
   recordReportAction,
   trackReportViewed,
+  restartAttempt,
   retake,
   retryStage,
   startOrResumeAttempt,
@@ -822,5 +825,138 @@ describe("callback context (what the team needs before a call)", () => {
     await answerAll(learner, open);
     await finishAttempt(learner, open);
     expect(await getCallbackContextForAdmin(open)).toMatchObject({ attemptId: open, minor: true });
+  });
+});
+
+describe("continue or start again (E4-S12, D75)", () => {
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const backdate = (attemptId: string, days: number, column: "lastAnswerAt" | "startedAt" = "lastAnswerAt") =>
+    db
+      .update(chatAttempts)
+      .set({ [column]: new Date(Date.now() - days * DAY_MS) })
+      .where(eq(chatAttempts.id, attemptId));
+  const backdateMinutes = (attemptId: string, minutes: number) =>
+    db
+      .update(chatAttempts)
+      .set({ lastAnswerAt: new Date(Date.now() - minutes * 60 * 1000) })
+      .where(eq(chatAttempts.id, attemptId));
+  const firstBasic = set.basics[0]!;
+
+  it("offers nothing to a learner with no attempt, or an attempt with no answers (that one just resumes)", async () => {
+    const learner = await makeLearner();
+    expect(await getResumeOffer(learner)).toEqual({ kind: "none" });
+    await start(learner);
+    expect(await getResumeOffer(learner)).toEqual({ kind: "none" });
+  });
+
+  it("offers the choice to a returning learner, with how far they got", async () => {
+    const learner = await makeLearner("Asha");
+    const { attemptId } = await start(learner);
+    await submitAnswer(learner, attemptId, firstBasic.id, 0);
+    await backdateMinutes(attemptId, 31);
+    // The name (already on the profile) and the one basic answer count as answered.
+    expect(await getResumeOffer(learner)).toEqual({ kind: "offer", attemptId, answered: 2, total: order.length });
+  });
+
+  it("does not ask after a quick refresh: the learner answered a moment ago", async () => {
+    const learner = await makeLearner();
+    const { attemptId } = await start(learner);
+    await submitAnswer(learner, attemptId, firstBasic.id, 0);
+    expect(await getResumeOffer(learner)).toEqual({ kind: "none" });
+    await backdateMinutes(attemptId, 29);
+    expect(await getResumeOffer(learner)).toEqual({ kind: "none" });
+    expect(await hasOpenAttempt(learner.userId)).toBe(true); // still resumable, just not asked about
+  });
+
+  it("still offers it 29 days after the last answer", async () => {
+    const learner = await makeLearner();
+    const { attemptId } = await start(learner);
+    await submitAnswer(learner, attemptId, firstBasic.id, 0);
+    await backdate(attemptId, 29);
+    expect((await getResumeOffer(learner)).kind).toBe("offer");
+    expect(await hasOpenAttempt(learner.userId)).toBe(true);
+  });
+
+  it("expires an attempt 31 days after the last answer: closed when read, and the next start is fresh", async () => {
+    const learner = await makeLearner();
+    const { attemptId } = await start(learner);
+    await submitAnswer(learner, attemptId, firstBasic.id, 0);
+    await backdate(attemptId, 31);
+    expect(await getResumeOffer(learner)).toEqual({ kind: "none" });
+    expect((await attemptRow(attemptId)).status).toBe("abandoned");
+    const fresh = await start(learner);
+    expect(fresh.attemptId).not.toBe(attemptId);
+    expect(fresh.resumed).toBe(false);
+    expect(await answerRows(attemptId)).toHaveLength(1); // the old answers are kept
+  });
+
+  it("expires an empty attempt from its start time", async () => {
+    const learner = await makeLearner();
+    const { attemptId } = await start(learner);
+    await backdate(attemptId, 31, "startedAt");
+    const fresh = await start(learner);
+    expect(fresh.attemptId).not.toBe(attemptId);
+    expect((await attemptRow(attemptId)).status).toBe("abandoned");
+  });
+
+  it("does not hide a saved result behind an expired open attempt", async () => {
+    const learner = await makeLearner();
+    const done = await start(learner);
+    await answerAll(learner, done.attemptId);
+    await finishAttempt(learner, done.attemptId);
+    const again = await retake(learner);
+    if (!again.ok) throw new Error("retake failed");
+    await backdate(again.attemptId, 31, "startedAt");
+    expect(await hasOpenAttempt(learner.userId)).toBe(false);
+    expect((await getLatestResult(learner.userId))?.attemptId).toBe(done.attemptId);
+  });
+
+  it("start again closes the open attempt, keeps its answers and begins a new one at the first question", async () => {
+    const learner = await makeLearner("Asha");
+    const { attemptId } = await start(learner);
+    await submitAnswer(learner, attemptId, firstBasic.id, 0);
+    const res = await restartAttempt(learner, attemptId);
+    if (!res.ok) throw new Error(`restart failed: ${res.code}`);
+    expect(res.attemptId).not.toBe(attemptId);
+    expect(res.resumed).toBe(false);
+    expect(res.next).toMatchObject({ kind: "basics", id: firstBasic.id });
+    expect((await attemptRow(attemptId)).status).toBe("abandoned");
+    expect(await answerRows(attemptId)).toHaveLength(1);
+    expect(await getResumeOffer(learner)).toEqual({ kind: "none" });
+  });
+
+  it("start again on an attempt that is already closed changes nothing and says attempt_closed (a stale tab)", async () => {
+    const learner = await makeLearner("Asha");
+    const old = await start(learner);
+    await submitAnswer(learner, old.attemptId, firstBasic.id, 0);
+    const first = await restartAttempt(learner, old.attemptId); // tab B tapped Start again
+    if (!first.ok) throw new Error(first.code);
+    await submitAnswer(learner, first.attemptId, firstBasic.id, 0);
+
+    // Tab A still shows the old welcome-back screen and taps Start again too: the new attempt must survive.
+    expect(await restartAttempt(learner, old.attemptId)).toEqual({ ok: false, code: "attempt_closed" });
+    expect((await attemptRow(first.attemptId)).status).toBe("in_progress");
+    expect(await answerRows(first.attemptId)).toHaveLength(1);
+  });
+
+  it("start again refuses an unknown attempt id", async () => {
+    const learner = await makeLearner();
+    await start(learner);
+    expect(await restartAttempt(learner, "00000000-0000-4000-8000-000000000000")).toEqual({
+      ok: false,
+      code: "not_found",
+    });
+    expect(await restartAttempt(learner, "nope")).toEqual({ ok: false, code: "not_found" });
+  });
+
+  it("only ever touches the learner's own attempts", async () => {
+    const mine = await makeLearner();
+    const other = await makeLearner();
+    await start(mine);
+    const theirs = await start(other);
+    await submitAnswer(other, theirs.attemptId, firstBasic.id, 0);
+    // Someone else's attempt id looks like a missing one, and nothing of theirs changes.
+    expect(await restartAttempt(mine, theirs.attemptId)).toEqual({ ok: false, code: "not_found" });
+    expect((await attemptRow(theirs.attemptId)).status).toBe("in_progress");
   });
 });

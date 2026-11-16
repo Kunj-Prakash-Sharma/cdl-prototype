@@ -4,7 +4,7 @@ import { brand } from "@/config/brand";
 import { ChatFlow } from "@/components/discover/chat-flow";
 import { HelplineLink } from "@/components/discover/helpline-link";
 import { requireUser } from "@/modules/auth/service";
-import { getLatestResult, hasOpenAttempt, startOrResumeAttempt } from "@/modules/chat/service";
+import { getLatestResult, getResumeOffer, hasOpenAttempt, startOrResumeAttempt } from "@/modules/chat/service";
 
 export const metadata: Metadata = {
   title: `Chat with ${brand.guideName}`,
@@ -39,6 +39,8 @@ async function Discover() {
     );
   }
 
+  // A returning learner with an unfinished quiz is asked "Continue or start again" (E4-S12, D75).
+  const offer = await getResumeOffer(learner);
   const started = await startOrResumeAttempt(learner);
   if (!started.ok) {
     return (
@@ -49,5 +51,12 @@ async function Discover() {
       </div>
     );
   }
-  return <ChatFlow key={started.attemptId} attemptId={started.attemptId} initial={started.next} />;
+  return (
+    <ChatFlow
+      key={started.attemptId}
+      attemptId={started.attemptId}
+      initial={started.next}
+      resume={offer.kind === "offer" ? { answered: offer.answered, total: offer.total } : undefined}
+    />
+  );
 }

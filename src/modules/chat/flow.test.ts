@@ -5,6 +5,8 @@ import {
   completedStage,
   computeNextStep,
   firstUnanswered,
+  isAway,
+  isExpired,
   isReachable,
   progressOf,
   questionOrder,
@@ -240,5 +242,43 @@ describe("completedStage: which part did this answer finish?", () => {
     ).toBeNull();
     const done = fill(ids);
     expect(completedStage(progressOf(set, done, true), progressOf(set, done, true))).toBeNull();
+  });
+});
+
+describe("isExpired (the resume window, D75)", () => {
+  const now = new Date("2026-12-01T12:00:00Z");
+  const daysAgo = (days: number) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+  it("is live up to the window and expired just after it, judged from the last answer", () => {
+    expect(isExpired({ startedAt: daysAgo(90), lastAnswerAt: daysAgo(29) }, now, 30)).toBe(false);
+    expect(isExpired({ startedAt: daysAgo(90), lastAnswerAt: daysAgo(30) }, now, 30)).toBe(false);
+    expect(isExpired({ startedAt: daysAgo(90), lastAnswerAt: new Date(daysAgo(30).getTime() - 1) }, now, 30)).toBe(
+      true,
+    );
+  });
+
+  it("falls back to the start time when nothing was answered yet", () => {
+    expect(isExpired({ startedAt: daysAgo(31), lastAnswerAt: null }, now, 30)).toBe(true);
+    expect(isExpired({ startedAt: daysAgo(2), lastAnswerAt: null }, now, 30)).toBe(false);
+  });
+
+  it("reads the window from its argument, not a fixed number", () => {
+    expect(isExpired({ startedAt: daysAgo(10), lastAnswerAt: null }, now, 7)).toBe(true);
+    expect(isExpired({ startedAt: daysAgo(10), lastAnswerAt: null }, now, 14)).toBe(false);
+  });
+});
+
+describe("isAway (a returning learner, D75)", () => {
+  const now = new Date("2026-12-01T12:00:00Z");
+  const minutesAgo = (minutes: number) => new Date(now.getTime() - minutes * 60 * 1000);
+
+  it("is away from the window onward, judged from the last answer", () => {
+    expect(isAway({ startedAt: minutesAgo(500), lastAnswerAt: minutesAgo(29) }, now, 30)).toBe(false);
+    expect(isAway({ startedAt: minutesAgo(500), lastAnswerAt: minutesAgo(30) }, now, 30)).toBe(true);
+  });
+
+  it("falls back to the start time while nothing is answered", () => {
+    expect(isAway({ startedAt: minutesAgo(60), lastAnswerAt: null }, now, 30)).toBe(true);
+    expect(isAway({ startedAt: minutesAgo(1), lastAnswerAt: null }, now, 30)).toBe(false);
   });
 });

@@ -31,6 +31,9 @@ const schema = z
     // Chat: inactivity before a session counts as lost (decision D58)
     CHAT_INACTIVITY_MINUTES: z.coerce.number().int().positive().default(30),
 
+    // Chat: days without an answer before an unfinished attempt can no longer be continued (decision D75)
+    CHAT_RESUME_DAYS: z.coerce.number().int().positive().default(30),
+
     // Integration adapters (src/integrations). Add vendor names as adapters land.
     SMS_PROVIDER: provider([]),
     PAYMENTS_PROVIDER: provider([]),

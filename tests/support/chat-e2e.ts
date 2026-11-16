@@ -33,8 +33,15 @@ export async function requestCode(page: Page, phone: string): Promise<string> {
 export async function openChat(page: Page, phone: string = newLearnerPhone()): Promise<string> {
   await page.goto("/login?next=%2Fdiscover");
   const code = await requestCode(page, phone);
-  await page.getByLabel("6-digit code").fill(code);
-  await expect(page).toHaveURL(/\/discover$/);
+  // Six digits submit on their own, but not before React has hydrated: under load the first fill can do nothing, so
+  // type the code again until the login page has moved on.
+  const codeInput = page.getByLabel("6-digit code");
+  await expect(async () => {
+    await codeInput.fill("");
+    await codeInput.fill(code);
+    await expect(page).not.toHaveURL(/\/login/, { timeout: 2500 });
+  }).toPass({ timeout: 20_000 });
+  await expect(page).toHaveURL(/\/discover$/, { timeout: 15_000 });
   await expect(page.getByTestId("name-input")).toBeVisible();
   // The guide says what it is before asking anything (E4-S1: a virtual guide, not a human).
   await expect(page.getByText("virtual guide, not a human")).toBeVisible();

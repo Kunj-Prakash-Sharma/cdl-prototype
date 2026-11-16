@@ -42,6 +42,13 @@ export async function startAttempt() {
   return guarded(async () => chat.startOrResumeAttempt(await currentLearner()));
 }
 
+/** "Start again" on the continue-or-restart screen (D75): closes the attempt the screen showed and starts a new one. */
+export async function restartAttempt(input: unknown) {
+  const parsed = attemptSchema.safeParse(input);
+  if (!parsed.success) return invalid;
+  return guarded(async () => chat.restartAttempt(await currentLearner(), parsed.data.attemptId));
+}
+
 /** Retake: a new attempt, or the open one if there is one (no pile of empty attempts). */
 export async function retake() {
   return guarded(async () => chat.retake(await currentLearner()));

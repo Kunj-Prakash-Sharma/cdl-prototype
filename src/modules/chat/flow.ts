@@ -131,6 +131,24 @@ export function acknowledgementFor(set: QuestionSet, attemptId: string, question
   return set.acknowledgements[fnv1a(`${attemptId}\u0000${questionId}`) % set.acknowledgements.length]!;
 }
 
+const MINUTE_MS = 60 * 1000;
+const DAY_MS = 24 * 60 * MINUTE_MS;
+
+type Activity = { startedAt: Date; lastAnswerAt: Date | null };
+
+/** Time since the last answer, or since the start while nothing is answered (`lastAnswerAt` is null until then). */
+const idleMs = (attempt: Activity, now: Date) => now.getTime() - (attempt.lastAnswerAt ?? attempt.startedAt).getTime();
+
+/** Has an open attempt gone more than `days` without an answer? Then it can no longer be continued (D75). */
+export function isExpired(attempt: Activity, now: Date, days: number): boolean {
+  return idleMs(attempt, now) > days * DAY_MS;
+}
+
+/** Has the learner been away for at least `minutes`? Only a returning learner gets "Continue or start again" (D75). */
+export function isAway(attempt: Activity, now: Date, minutes: number): boolean {
+  return idleMs(attempt, now) >= minutes * MINUTE_MS;
+}
+
 /** The scored questions of one stage (what to clear when that stage is asked again). */
 export function stageQuestionIds(set: QuestionSet, stage: Stage): string[] {
   return set.items.filter((item) => item.stage === stage).map((item) => item.id);

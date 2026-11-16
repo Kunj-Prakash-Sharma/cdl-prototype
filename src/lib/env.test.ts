@@ -5,6 +5,7 @@ describe("parseEnv", () => {
   it("applies defaults and keeps providers on fake", () => {
     const env = parseEnv({ DATABASE_URL: "postgres://x" });
     expect(env.CHAT_INACTIVITY_MINUTES).toBe(30);
+    expect(env.CHAT_RESUME_DAYS).toBe(30);
     expect(env.SMS_PROVIDER).toBe("fake");
     expect(env.NODE_ENV).toBe("development");
   });

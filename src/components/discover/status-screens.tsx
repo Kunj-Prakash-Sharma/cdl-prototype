@@ -81,6 +81,52 @@ export function RetryScreen({
   );
 }
 
+/**
+ * A returning learner with an unfinished quiz (E4-S12, D75): carry on where they stopped, or throw it away and begin
+ * again. The counts come from the server, so nothing here knows how many questions there are.
+ */
+export function ResumeScreen({
+  answered,
+  total,
+  pending,
+  error,
+  onContinue,
+  onRestart,
+}: {
+  answered: number;
+  total: number;
+  pending: boolean;
+  error: string | null;
+  onContinue: () => void;
+  onRestart: () => void;
+}) {
+  return (
+    <div
+      className="rounded-3xl bg-white p-8 text-center shadow-soft ring-1 ring-slate-200/80 sm:p-12"
+      data-testid="resume"
+    >
+      <SageAvatar size="lg" className="mx-auto" />
+      <h1 className="mt-5 text-2xl font-bold text-ink">Welcome back</h1>
+      <p className="mx-auto mt-2 max-w-md text-slate-600">
+        {brand.guideName} saved your place. You have answered {answered} of {total} questions.
+      </p>
+      {error && (
+        <p role="alert" className="mt-4 text-sm font-medium text-red-600">
+          {error}
+        </p>
+      )}
+      <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+        <Button onClick={onContinue} disabled={pending} data-testid="resume-continue">
+          Continue
+        </Button>
+        <Button variant="secondary" onClick={onRestart} disabled={pending} data-testid="resume-restart">
+          Start again
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 /** The name was a self-harm phrase (decision D70): the quiz stops, the helpline is shown, nothing was saved. */
 export function StopScreen({
   pending,

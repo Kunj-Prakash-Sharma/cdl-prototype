@@ -3,7 +3,7 @@
 // Counts and stages are derived from CURRENT_QUESTION_SET, never hardcoded.
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { CURRENT_QUESTION_SET } from "../../src/modules/chat/question-set";
-import { latestOtp, newLearnerPhone } from "../support/e2e";
+import { awayFromChat, latestOtp, newLearnerPhone } from "../support/e2e";
 
 const items = CURRENT_QUESTION_SET.items;
 const lastStage = items[items.length - 1]!.stage;
@@ -33,14 +33,23 @@ async function requestCode(page: Page, phone: string): Promise<string> {
 }
 
 /** Logs in with a fresh number and opens the chat at the name step. */
-async function openChat(page: Page) {
+async function openChat(page: Page): Promise<string> {
+  const phone = newLearnerPhone();
   await page.goto("/login?next=%2Fdiscover");
-  const code = await requestCode(page, newLearnerPhone());
-  await page.getByLabel("6-digit code").fill(code);
-  await expect(page).toHaveURL(/\/discover$/);
+  const code = await requestCode(page, phone);
+  // Six digits submit on their own, but not before React has hydrated: under load the first fill can do nothing, so
+  // type the code again until the login page has moved on.
+  const codeInput = page.getByLabel("6-digit code");
+  await expect(async () => {
+    await codeInput.fill("");
+    await codeInput.fill(code);
+    await expect(page).not.toHaveURL(/\/login/, { timeout: 2500 });
+  }).toPass({ timeout: 20_000 });
+  await expect(page).toHaveURL(/\/discover$/, { timeout: 15_000 });
   await expect(page.getByTestId("name-input")).toBeVisible();
   // The guide says what it is before asking anything (E4-S1: a virtual guide, not a human).
   await expect(page.getByText("virtual guide, not a human")).toBeVisible();
+  return phone;
 }
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -124,6 +133,57 @@ test.describe("chat", () => {
     await expect(page.getByTestId("question-text")).toBeVisible();
     await expect(page.getByTestId("question-text")).toHaveText(text!);
     await expect(page.getByTestId("progress")).toHaveText(progress!);
+    // A quick reload just resumes: the welcome-back choice is only for someone who has been away (E4-S12).
+    await expect(page.getByTestId("resume")).toHaveCount(0);
+  });
+
+  test("coming back after a break asks Continue or Start again; Continue picks up the same question", async ({
+    page,
+  }) => {
+    const phone = await openChat(page);
+    await finishBasics(page);
+    await answerScored(page, 3, varied);
+    const text = await page.getByTestId("question-text").textContent();
+    const progress = await page.getByTestId("progress").textContent();
+
+    await awayFromChat(phone, 60);
+    await page.reload();
+    await expect(page.getByTestId("resume")).toBeVisible();
+    await expect(page.getByTestId("question-text")).toHaveCount(0);
+
+    // The page is server-rendered, so a click before React hydrates does nothing: retry until the screen moves.
+    const carryOn = page.getByTestId("resume-continue");
+    await expect(async () => {
+      if (await carryOn.isVisible()) await carryOn.click();
+      await expect(page.getByTestId("question-text")).toBeVisible({ timeout: 2000 });
+    }).toPass({ timeout: 15_000 });
+    await expect(page.getByTestId("question-text")).toHaveText(text!);
+    await expect(page.getByTestId("progress")).toHaveText(progress!);
+    await expect(page.getByTestId("resume")).toHaveCount(0);
+  });
+
+  test("coming back after a break and tapping Start again begins a new quiz from the first question", async ({
+    page,
+  }) => {
+    const phone = await openChat(page);
+    await finishBasics(page);
+    await answerScored(page, 2, varied);
+
+    await awayFromChat(phone, 60);
+    await page.reload();
+    const again = page.getByTestId("resume-restart");
+    await expect(again).toBeVisible();
+    await expect(async () => {
+      if (await again.isVisible()) await again.click();
+      await expect(page.getByTestId("choice-0")).toBeVisible({ timeout: 2000 });
+    }).toPass({ timeout: 15_000 });
+    await expect(page.getByTestId("question-text")).toHaveCount(0);
+    await expect(page.getByTestId("resume")).toHaveCount(0);
+
+    // The new attempt is the one the server resumes now, and a quick reload does not ask again.
+    await page.reload();
+    await expect(page.getByTestId("choice-0")).toBeVisible();
+    await expect(page.getByTestId("resume")).toHaveCount(0);
   });
 
   test("a self-harm phrase as the name stops the quiz and shows the helpline; start again begins anew", async ({

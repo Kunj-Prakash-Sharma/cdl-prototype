@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { finishAttempt, retake, retryStage, submitAnswer, submitName } from "@/modules/chat/actions";
+import { finishAttempt, restartAttempt, retake, retryStage, submitAnswer, submitName } from "@/modules/chat/actions";
 import type { ResultView } from "@/modules/chat/result";
 import type { ChatErrorCode, NextStep, Progress, StageId } from "@/modules/chat/types";
 import { ChatCard } from "./chat-card";
@@ -11,12 +11,13 @@ import { HelplineLink } from "./helpline-link";
 import { QuizStepper } from "./quiz-stepper";
 import { ScaleQuestion } from "./scale-question";
 import { StageHeader } from "./stage-header";
-import { FinishingScreen, ResultPlaceholder, RetryScreen, StopScreen } from "./status-screens";
+import { FinishingScreen, ResultPlaceholder, ResumeScreen, RetryScreen, StopScreen } from "./status-screens";
 
 type View =
   | { type: "step"; step: NextStep }
   | { type: "finishing"; error?: string }
   | { type: "finished"; result: ResultView }
+  | { type: "resume"; answered: number; total: number }
   | { type: "retry"; stage: string }
   | { type: "stopped" };
 
@@ -42,11 +43,14 @@ export function ChatFlow({
   attemptId: initialAttemptId,
   initial,
   finished,
+  resume,
 }: {
   attemptId: string;
   initial: NextStep;
   /** Set when the learner already finished: show the saved result instead of a quiz. */
   finished?: ResultView;
+  /** Set for a returning learner with an unfinished quiz (D75): ask "Continue or start again" before the quiz. */
+  resume?: { answered: number; total: number };
 }) {
   const router = useRouter();
   const [attemptId, setAttemptId] = useState(initialAttemptId);
@@ -54,9 +58,11 @@ export function ChatFlow({
   const [view, setView] = useState<View>(
     finished
       ? { type: "finished", result: finished }
-      : initial.kind === "done"
-        ? { type: "finishing" }
-        : { type: "step", step: initial },
+      : resume
+        ? { type: "resume", ...resume }
+        : initial.kind === "done"
+          ? { type: "finishing" }
+          : { type: "step", step: initial },
   );
   // The last progress the server sent, so the step bar stays on screen during finishing and the saved result.
   const [progress, setProgress] = useState<Progress | null>(finished ? null : initial.progress);
@@ -104,7 +110,7 @@ export function ChatFlow({
   };
 
   useEffect(() => {
-    if (initial.kind === "done" && !finished) run(() => finishNow(attemptId));
+    if (initial.kind === "done" && !finished && !resume) run(() => finishNow(attemptId));
     // Only on first load: later finishes are started by an answer.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -157,6 +163,19 @@ export function ChatFlow({
       await goTo(res.next, res.attemptId);
     });
 
+  /** "Continue": the server already sent where the learner stopped, so nothing is fetched. */
+  const continueQuiz = () => run(() => goTo(initial, attemptId));
+
+  /** "Start again" on the welcome-back screen: the server closes the old attempt and opens a new one. */
+  const startFresh = () =>
+    run(async () => {
+      const res = await restartAttempt({ attemptId });
+      if (!res.ok) return fail(res.code, retryAfter(res));
+      setAttemptId(res.attemptId);
+      setAck(null);
+      await goTo(res.next, res.attemptId);
+    });
+
   const step = view.type === "step" ? view.step : null;
   const finishing = view.type === "finishing" || view.type === "finished";
   const shown = progress && finishing ? asComplete(progress) : progress;
@@ -199,6 +218,16 @@ export function ChatFlow({
               setView({ type: "finishing" });
               run(() => finishNow(attemptId));
             }}
+          />
+        )}
+        {view.type === "resume" && (
+          <ResumeScreen
+            answered={view.answered}
+            total={view.total}
+            pending={pending}
+            error={error}
+            onContinue={continueQuiz}
+            onRestart={startFresh}
           />
         )}
         {view.type === "retry" && <RetryScreen pending={pending} error={error} onRetry={() => retry(view.stage)} />}
