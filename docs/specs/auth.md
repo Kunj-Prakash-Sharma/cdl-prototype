@@ -16,6 +16,12 @@ A learner logs in with a phone number and an SMS code. The client team logs in t
 - Funnel events `otp_sent`, `otp_verified`.
 - SMS via `@/integrations/sms` (`fake` in dev, prints a masked number).
 
+## Guest accounts (D78, D80, Nov 16, not built yet)
+- Better Auth `anonymous` plugin, inside `modules/auth` only. A guest user is made when the visitor taps Start (bot check and D74 limits apply), never on page load. Kept 7 days; a pg-boss job deletes older anonymous users and their unfinished attempts.
+- On phone-OTP success the plugin's `onLinkAccount` runs BEFORE it deletes the guest: it re-points the guest's `chat_attempts` and the pending name to the real user in one transaction (idempotent). If the number already has a report, the newest quiz wins.
+- `requireUser()` refuses anonymous users (leads, buying, paid video). `requireLearnerOrGuest()` is for the chat only. Admin user lists hide anonymous users.
+- Free lecture previews make no account (anonymous analytics id only, D66).
+
 ## Out of scope
 - Email/password or social login (B2B, later).
 - Real SMS adapter (MSG91): added when DLT registration is done; separate small PR.
@@ -63,7 +69,7 @@ A learner logs in with a phone number and an SMS code. The client team logs in t
 | # | Topic | Decision |
 |---|---|---|
 | 1 | Country codes | India +91 only. *Nov 2, 2026 (D65): login will also accept an email with the same OTP method; needs its own spec, not built yet* |
-| 2 | Login required | Before starting the chat, before buying, and for **paid video playback**. *Nov 2, 2026 (D66): free lecture previews need no login (this replaces the earlier "free first lesson needs login"; preview analytics use an anonymous session id).* Home page and course detail pages stay open |
+| 2 | Login required | *Nov 16 (D78): NOT before the chat any more; the quiz is open to guests and the phone OTP gates the report.* Before buying, and for **paid video playback**. *Nov 2, 2026 (D66): free lecture previews need no login (this replaces the earlier "free first lesson needs login"; preview analytics use an anonymous session id).* Home page and course detail pages stay open |
 | 3 | Session length | 30 days |
 | 4 | Returning user | Sees the saved report; can retake (new attempt, old report stays until the new one completes) |
 | 5 | OTP rules | 6 digits, 5 min expiry, 5 tries, then locked 15 min |
@@ -74,6 +80,17 @@ A learner logs in with a phone number and an SMS code. The client team logs in t
 | 10 | Terms tick | Yes, once the client's legal pages exist; no tick shown until then |
 | 11 | SMS registration late | Temporary fixed code for allow-listed invited numbers only. Needs its own guard (explicit env flag and number list), separate from `pickAdapter`. Must be removed before public launch |
 | 12 | Data deletion | Manual in Phase 1; document the steps |
+
+## Admin login with email + password (E3-S6, D77)
+A second way into `/admin` for the client team. Phone-OTP admins (`ADMIN_PHONES`) keep working: this is an addition, not a replacement. The client still has to confirm which method they want for admins.
+- **Accounts:** created ONLY by `npm run admin:create -- <email>` (no public sign-up: Better Auth `emailAndPassword.disableSignUp`). The script makes the user with role `admin`, an empty name and a **random 24-character password it prints once** (never stored in clear, never logged). `--reset` sets a new random password for an existing email-admin (the only way to reset: no email sending yet). It refuses an email that belongs to a phone account (`.invalid` placeholder emails) or to an existing non-admin. Email addresses are lowercased.
+- **Screen:** `/admin/login` (email, password, Turnstile) with a link "Log in with a phone number instead" to `/login?next=/admin`. It sits OUTSIDE the `(admin)` route group (that layout requires an admin, so the login page would redirect to itself) and is excluded from the `proxy.ts` matcher.
+- **Guards:** a logged-out visitor to `/admin/*` is sent to `/admin/login?next=...` (proxy and `requireAdmin`). A logged-in learner is still sent home. `requireAdmin()` stays the real check.
+- **Action `adminSignIn`:** zod input; look up the lock for this email (HMAC key `admin:<email>`, reuses `auth_otp_throttle`: 5 wrong passwords lock it for 15 minutes, same as OTP; the wrong-password count restarts when a lock starts and after every successful login, so one typo after a lock never locks again); call Better Auth through `auth.handler` so the Turnstile check and the per-IP limit (10 per minute in production) run; map failures to codes. **One code, `bad_credentials`, for an unknown email and a wrong password** (no account enumeration; Better Auth hashes a dummy password for unknown emails, so timing matches). The lock counts attempts for ANY email, known or not, so "locked" says nothing about whether an account exists. After a successful sign-in the role must be `admin`, otherwise that user's sessions are deleted (by user id, in the database) and the answer is `bad_credentials`.
+- **Codes added:** `bad_credentials`. Reused: `invalid_input`, `captcha_failed`, `ip_limit`, `locked`, `unknown`.
+- **No PII in logs or events:** the email is never logged; failures log the code only.
+- **Not built:** forgot-password and change-password screens, email verification, 2FA.
+- **Tests:** unit (code mapping), integration (script function: creates an admin who can sign in, refuses duplicates and phone placeholders, reset works, old password stops working; action: wrong password and unknown email look identical, lock after 5 failures, learner role refused), e2e (admin logs in with email + password, wrong password message, logged-out `/admin` goes to `/admin/login`, no redirect loop).
 
 ## Edge cases
 - Wrong code repeated: lock after N tries. Expired code: ask to resend.

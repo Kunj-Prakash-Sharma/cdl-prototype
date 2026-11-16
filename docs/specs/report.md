@@ -14,6 +14,9 @@ A logged-in learner who finished the chat reads a free report built only from th
 - Print stylesheet + "Save as PDF" button (browser print; no PDF library, D48).
 - My SELF shows a small card: "Open my report", or "Start the questions" if there is none (E5-S4).
 
+## Gate (D78, not built yet)
+A guest sees a fixed sample report behind a phone-OTP gate; the real report loads only after verification. Details in [chat.md](chat.md).
+
 ## Out of scope
 Aptitude, work values, fit %, salary (D72). Client-approved wording and career list. A "how we score" page. Real course mapping (E7, ticket #4665). Final design.
 

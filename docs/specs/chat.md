@@ -6,7 +6,7 @@
 - **Source of truth for items and scoring:** [../requirements/assessment.md](../requirements/assessment.md). This spec says how to build it; that doc says what the questions, keys, thresholds and examples are. If they disagree, fix the doc first.
 
 ## Goal
-A logged-in learner chats with Meera through about 26 quick-tap questions (4 basics, 10 OCEAN, 12 RIASEC), gets a saved report (OCEAN strengths and growth areas, RIASEC interest areas, example career families, suggested courses), and can reopen it, print it as PDF, or retake.
+A learner (a **guest is enough, D78**; phone OTP comes before the report) chats with Meera through about 26 quick-tap questions (4 basics, 10 OCEAN, 12 RIASEC), gets a saved report (OCEAN strengths and growth areas, RIASEC interest areas, example career families, suggested courses), and can reopen it, print it as PDF, or retake.
 
 ## Scope
 - Question-set config (versioned) with 2 to 3 variants per item and Meera acknowledgement lines.
@@ -18,13 +18,20 @@ A logged-in learner chats with Meera through about 26 quick-tap questions (4 bas
 - Funnel analytics (no PII), inactivity event (D58).
 - Docs-first changes already done: D62, modules.md, integrations.md, CLAUDE.md. Remaining doc updates are listed in "Cleanup" below.
 
+## Guest quiz and the report gate (D78, D80, Nov 16, not built yet)
+- Actions use `requireLearnerOrGuest()`; `/discover` leaves the proxy matcher. Attempts belong to the guest user until the OTP re-points them (auth.md).
+- The typed name stays pending on the guest attempt and moves to the profile on claim. No chat text is stored (D18).
+- `finishAttempt` works for guests and saves the score. `getLatestReport` for a guest returns `{ ok: false, code: "verify_required" }` and the page shows ONE fixed sample report behind the gate: made-up numbers, generic text, same design, same for everyone, nothing from the learner (no name, no Holland code). The real report is fetched only after the OTP succeeds.
+- Gate text: the report will be linked to this number (no word "account"). Verified learners skip the gate, also after a retake. `REPORT_GATE` config holds the position.
+- Funnel events (codes only): `guest_started`, `report_gate_shown`, `otp_verified` with `from_guest`, `guest_claimed`; `visitor_id` is a random id, never PII.
+
 ## Out of scope
 - Callback request and consent: belongs to the `leads` spec; report only has a button that links to it.
 - Share links, certificates, aptitude, values, percentile, salary, % fit (not Phase 1).
 - My SELF dashboard card for the report (later; link only).
 - Hindi/other languages (config supports it; no copy now).
 - Real client wording: drafts in assessment.md until approved. Build with the drafts.
-- Under-13 stop or any age gate (client choice; lawyer review stays open).
+- Under-13 stop or any age gate, and any minor/parent flow (D79; lawyer review stays open).
 - AI of any kind.
 
 ## Files and interfaces
@@ -56,7 +63,9 @@ Scoring is per stage; a stage that is `invalid` or `incomplete` blocks the repor
 
 ### `service.ts` (public to other modules and pages)
 Functions take a `Learner` (`{ userId, name }`, built by the caller from auth's `requireUser()`) and return `{ ok: true, ... }` or `{ ok: false, code }` (never throw for expected cases). Codes: `invalid_input`, `not_found` (missing **or someone else's** attempt, the same answer), `attempt_closed`, `out_of_order`, `incomplete`, `stage_invalid`, `not_allowed`, `unknown`. Every attempt function checks ownership and loads the question set from the attempt's own `set_version`.
-- `startOrResumeAttempt(learner)`: resumes the open attempt, else creates one (race-safe through the unique index). Returns `{ attemptId, resumed, next }`.
+- `startOrResumeAttempt(learner)`: resumes the open attempt, else creates one (race-safe through the unique index). An open attempt older than `CHAT_RESUME_DAYS` (D75) is marked `abandoned` first, so a fresh one is created. Returns `{ attemptId, resumed, next }`.
+- `getResumeOffer(learner)` (E4-S12, D75): `{ kind: "none" }`, or `{ kind: "offer", attemptId, answered, total }` when there is a live open attempt with at least one saved answer that has been untouched for `CHAT_INACTIVITY_MINUTES` (a quick refresh just resumes). Read-only: never creates or closes anything. The page shows "Continue or start again" for an offer.
+- `restartAttempt(learner, attemptId)` (E4-S12): "Start again": marks THAT attempt `abandoned` (answers kept) and starts a new one. The screen names the attempt it showed, so a stale tab cannot end a different one: an attempt that is already closed gives `attempt_closed` (the page reloads), a missing or foreign id gives `not_found`. Same return shape as `startOrResumeAttempt`.
 - `getNextStep(learner, attemptId)`: the first question without a saved answer, recomputed each time (no stored counter). A `NextStep` carries text, scale labels and progress for the UI, never keys, scores or sources: `{ kind: "name" | "basics" | "question" | "done", ... }`.
 - `submitAnswer(learner, attemptId, questionId, value)`: upsert; rejects unknown questions, values outside the scale or option list, the name, and questions not reached yet (`out_of_order`; earlier ones can be changed). The server picks and stores the variant. Returns `{ next, acknowledgement }`.
 - `finishAttempt(learner, attemptId)`: scores with the attempt's own set, stores result + status in **one transaction**; idempotent; `incomplete` or `stage_invalid` (with the stage) when it cannot score.
@@ -115,6 +124,7 @@ Reuse and adapt prototype components in `src/components/discover/` (see [../prot
 - Name fails format, mixes scripts or uses a script that is not allowed: ask again (`name_format`). Name is an abuse word: ask again, no helpline, the attempt stays open (`name_format`). Name hits the self-harm list: stop screen with the helpline, attempt marked `abandoned`, no name saved, no further questions (`name_blocked`).
 - Straight-lining: stage `invalid`, offer retry of that stage; the attempt does not complete until fixed (rows for that stage cleared on retry).
 - Incomplete (abandoned after D58 inactivity): `chat_exited` fires; the attempt stays resumable; it never produces a report until complete.
+- Returning to an open attempt (D75): with at least one answer and away for `CHAT_INACTIVITY_MINUTES` or more, the learner chooses Continue or Start again (a quick refresh just resumes). After `CHAT_RESUME_DAYS` (default 30) without an answer the attempt expires: it is marked `abandoned` and a new one starts (a learner with a saved result sees it with the retake button, not a silent new attempt).
 - Question set version changes mid-attempt: the attempt keeps its `set_version`; score against that version (keep old set configs in the repo, never delete).
 - Flat RIASEC: no Holland code; the report shows the "broad interests" message and suggests courses by the basics' goal only if the catalog supports it (else just "browse courses").
 - Report opened with no completed attempt: empty state.
