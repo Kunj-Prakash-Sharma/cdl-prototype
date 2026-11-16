@@ -1,4 +1,5 @@
 // Helpers for the Playwright tests. They talk to the TEST database only (assertTestDbUrl refuses anything else).
+import { execFileSync } from "node:child_process";
 import { randomInt } from "node:crypto";
 import { Pool } from "pg";
 import { assertTestDbUrl } from "./test-db";
@@ -68,4 +69,31 @@ export async function leadsFor(nationalNumber: string): Promise<LeadRow[]> {
     [`+91${nationalNumber}`],
   );
   return rows;
+}
+
+/**
+ * Pretends the learner's last answer was `minutes` ago, so a reload looks like a return after a break (E4-S12). The
+ * server measures the break from the saved time, so this is the same as really waiting.
+ */
+export async function awayFromChat(nationalNumber: string, minutes: number): Promise<void> {
+  await db().query(
+    `update chat_attempts set last_answer_at = now() - make_interval(mins => $2)
+     where status = 'in_progress' and user_id = (select id from auth_user where "phoneNumber" = $1)`,
+    [`+91${nationalNumber}`, minutes],
+  );
+}
+
+/**
+ * Makes an email + password admin the way the team does: by running `npm run admin:create`, against the TEST database.
+ * Returns the address (random, so tests never collide) and the password the script printed.
+ */
+export function createEmailAdmin(): { email: string; password: string } {
+  const email = `e2e-admin-${randomInt(0, 1_000_000_000)}@example.com`;
+  const output = execFileSync("npx", ["tsx", "--env-file-if-exists=.env", "scripts/create-admin.ts", email], {
+    env: { ...process.env, DATABASE_URL: assertTestDbUrl(process.env.TEST_DATABASE_URL) },
+    encoding: "utf8",
+  });
+  const password = /Password \(shown once\): (\S+)/.exec(output)?.[1];
+  if (!password) throw new Error("create-admin printed no password");
+  return { email, password };
 }

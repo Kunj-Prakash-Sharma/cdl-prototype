@@ -3,6 +3,7 @@
 // Server actions for the login screens. Thin: validate, apply limits, call Better Auth, map the result to a
 // typed `{ ok, code }` (UI contract in docs/specs/auth.md). Expected failures never throw.
 import { isAPIError } from "better-auth/api";
+import { parseSetCookieHeader, toCookieOptions } from "better-auth/cookies";
 import { randomBytes } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { z } from "zod";
@@ -10,13 +11,22 @@ import { analytics } from "@/integrations/analytics";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { auth } from "./auth";
-import { mapSendFailure, mapVerifyFailure } from "./errors";
-import { LOCK_SEC, OTP_EXPIRES_SEC, OTP_MAX_ATTEMPTS, RESEND_COOLDOWN_SEC, deviceDailyCap } from "./limits";
+import { mapSendFailure, mapSignInFailure, mapVerifyFailure } from "./errors";
+import {
+  ADMIN_LOGIN_MAX_FAILS,
+  LOCK_SEC,
+  OTP_EXPIRES_SEC,
+  OTP_MAX_ATTEMPTS,
+  RESEND_COOLDOWN_SEC,
+  deviceDailyCap,
+} from "./limits";
 import { safeNextPath } from "./next-path";
 import { normalizePhone } from "./phone";
 import {
   deviceKey,
   findUserIdByPhone,
+  clearVerifyFails,
+  deleteSessionsForUser,
   getUserRole,
   lockNumber,
   peekSend,
@@ -150,6 +160,82 @@ export async function verifyOtp(input: unknown): Promise<ActionResult<VerifyOtpO
     await analytics.track(funnelId(phone), "otp_verified", { result: "failed", attempt });
     return { ok: false, ...failure };
   }
+}
+
+const adminSignInSchema = z.object({
+  email: z.string().max(254),
+  password: z.string().min(1).max(128),
+  captchaToken: z.string().min(1).max(4096),
+  next: z.string().max(512).optional(),
+});
+
+// Where an admin lands when `?next=` is missing or unsafe.
+const DEFAULT_AFTER_ADMIN_LOGIN = "/admin/callbacks";
+
+/**
+ * Admin login with email + password (D77). The same answer for an unknown email and a wrong password; five wrong
+ * passwords lock that email for 15 minutes (counted for any email, so "locked" says nothing about who has an account).
+ * Goes through Better Auth's HTTP handler like sendOtp, so the Turnstile check and the per-IP limit run.
+ */
+export async function adminSignIn(input: unknown): Promise<ActionResult<{ next: string }>> {
+  const parsed = adminSignInSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, code: "invalid_input" };
+  const email = parsed.data.email.trim().toLowerCase();
+  if (!z.email().safeParse(email).success) return { ok: false, code: "invalid_input" };
+
+  // The lock reuses the OTP lock table under its own key (an HMAC, never the email itself).
+  const lockId = `admin:${email}`;
+  const pre = await peekSend(lockId, new Date());
+  if (!pre.ok && pre.code === "locked") return { ok: false, code: "locked", retryAfterSec: pre.retryAfterSec };
+
+  const h = await headers();
+  const response = await auth.handler(
+    new Request(`${env.APP_URL}/api/auth/sign-in/email`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: env.APP_URL,
+        "x-captcha-response": parsed.data.captchaToken,
+        "x-forwarded-for": h.get("x-forwarded-for") ?? "127.0.0.1",
+        "user-agent": h.get("user-agent") ?? "",
+      },
+      body: JSON.stringify({ email, password: parsed.data.password }),
+    }),
+  );
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    const failure = mapSignInFailure(response.status, body, response.headers.get("x-retry-after"));
+    if (failure.code === "bad_credentials") {
+      const attempt = await recordVerifyFail(lockId);
+      if (attempt >= ADMIN_LOGIN_MAX_FAILS) {
+        await lockNumber(lockId, new Date());
+        return { ok: false, code: "locked", retryAfterSec: LOCK_SEC };
+      }
+    }
+    if (failure.code === "unknown") logger.error("admin sign-in failed", { status: response.status });
+    return { ok: false, ...failure };
+  }
+
+  // Only admins may use this door. A password account is only ever made for an admin, so this is a second lock.
+  const sessionCookies = parseSetCookieHeader(response.headers.get("set-cookie") ?? "");
+  const body = (await response.json().catch(() => null)) as { user?: { id?: string } } | null;
+  const userId = body?.user?.id;
+  if (!userId || (await getUserRole(userId)) !== "admin") {
+    // End the session by user id, straight in the database, so it cannot survive a cookie that does not round-trip.
+    if (userId) await deleteSessionsForUser(userId);
+    else {
+      const cookie = [...sessionCookies].map(([name, attr]) => `${name}=${encodeURIComponent(attr.value)}`).join("; ");
+      await auth.api.signOut({ headers: new Headers({ cookie }) }).catch(() => undefined);
+    }
+    return { ok: false, code: "bad_credentials" };
+  }
+  await clearVerifyFails(lockId);
+  // Calls through auth.handler skip the nextCookies plugin (it only acts on direct auth.api calls), so the session
+  // cookie is passed on here, after the admin check, exactly as Better Auth built it.
+  const jar = await cookies();
+  for (const [name, attr] of sessionCookies) jar.set(name, attr.value, toCookieOptions(attr));
+  return { ok: true, next: safeNextPath(parsed.data.next, DEFAULT_AFTER_ADMIN_LOGIN) };
 }
 
 export async function logout(): Promise<ActionResult> {

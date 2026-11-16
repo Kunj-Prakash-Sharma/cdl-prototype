@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SEND_FAILED, THROTTLED, mapSendFailure, mapVerifyFailure } from "./errors";
+import { SEND_FAILED, THROTTLED, mapSendFailure, mapSignInFailure, mapVerifyFailure } from "./errors";
 
 describe("mapSendFailure", () => {
   it("decodes our throttle messages with the wait time", () => {
@@ -57,5 +57,19 @@ describe("mapVerifyFailure", () => {
   });
   it("handles an empty body", () => {
     expect(mapVerifyFailure(null).code).toBe("unknown");
+  });
+});
+
+describe("mapSignInFailure", () => {
+  it("gives an unknown email and a wrong password the same code", () => {
+    expect(mapSignInFailure(401, { code: "INVALID_EMAIL_OR_PASSWORD" })).toEqual({ code: "bad_credentials" });
+    expect(mapSignInFailure(400, { code: "INVALID_EMAIL" })).toEqual({ code: "bad_credentials" });
+  });
+  it("maps a failed bot check, the per-IP limit and anything else", () => {
+    expect(mapSignInFailure(403, { code: "VERIFICATION_FAILED" }).code).toBe("captcha_failed");
+    expect(mapSignInFailure(429, null, "42")).toEqual({ code: "ip_limit", retryAfterSec: 42 });
+    expect(mapSignInFailure(429, null).code).toBe("ip_limit");
+    expect(mapSignInFailure(500, { code: "SOMETHING_ELSE" }).code).toBe("unknown");
+    expect(mapSignInFailure(500, null).code).toBe("unknown");
   });
 });

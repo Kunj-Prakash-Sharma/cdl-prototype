@@ -34,6 +34,19 @@ export function mapSendFailure(status: number, body: Body, retryAfterHeader?: st
   return { code: "unknown" };
 }
 
+/** A failed call to sign-in/email (through auth.handler). An unknown email and a wrong password are the same answer. */
+export function mapSignInFailure(status: number, body: Body, retryAfterHeader?: string | null): Failure {
+  if (body?.code && CAPTCHA_CODES.has(body.code)) return { code: "captcha_failed" };
+  if (body?.code === "INVALID_EMAIL_OR_PASSWORD" || body?.code === "INVALID_EMAIL") return { code: "bad_credentials" };
+  if (status === 429) {
+    const retryAfterSec = Number(retryAfterHeader);
+    return Number.isFinite(retryAfterSec) && retryAfterSec > 0
+      ? { code: "ip_limit", retryAfterSec }
+      : { code: "ip_limit" };
+  }
+  return { code: "unknown" };
+}
+
 /** A failed call to verify. */
 export function mapVerifyFailure(body: Body): Failure {
   switch (body?.code) {

@@ -22,7 +22,7 @@ vi.mock("@/integrations/sms", () => ({
 
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { sendOtp } from "./actions";
+import { adminSignIn, sendOtp } from "./actions";
 
 beforeEach(async () => {
   sentCodes.length = 0;
@@ -42,5 +42,14 @@ it("rejects a failed bot check, sends no SMS and does not burn the number's dail
       sql`select count(*)::int as n from auth_otp_throttle where "sendCount" > 0 and "phoneHash" not like 'dev:%'`,
     )
     .then((r) => r.rows);
+  expect(row.n).toBe(0);
+});
+
+it("rejects a failed bot check on the admin password sign-in too, and does not count it against the email", async () => {
+  expect(
+    await adminSignIn({ email: "team@client.com", password: "any-password", captchaToken: "any-token" }),
+  ).toMatchObject({ ok: false, code: "captcha_failed" });
+  // Nobody can lock an admin out without passing the bot check: nothing was counted.
+  const [row] = await db.execute(sql`select count(*)::int as n from auth_otp_throttle`).then((r) => r.rows);
   expect(row.n).toBe(0);
 });

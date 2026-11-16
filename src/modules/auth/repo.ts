@@ -13,7 +13,7 @@ import {
   type Throttle,
   type WindowDecision,
 } from "./limits";
-import { authOtpThrottle, authUser } from "./schema";
+import { authOtpThrottle, authSession, authUser } from "./schema";
 
 /** HMAC of the number: lets us count per number without keeping the number in this table. */
 export function phoneHash(phone: string): string {
@@ -92,6 +92,14 @@ export async function recordVerifyFail(phone: string): Promise<number> {
   return row?.n ?? 1;
 }
 
+/** A successful login forgets earlier wrong attempts, so typos made months apart never add up to a lock. */
+export async function clearVerifyFails(phone: string): Promise<void> {
+  await db
+    .update(authOtpThrottle)
+    .set({ verifyFails: 0, updatedAt: new Date() })
+    .where(eq(authOtpThrottle.phoneHash, phoneHash(phone)));
+}
+
 export async function verifyFailCount(phone: string): Promise<number> {
   const [row] = await db
     .select({ n: authOtpThrottle.verifyFails })
@@ -109,7 +117,8 @@ export async function lockNumber(phone: string, now: Date): Promise<void> {
     const next = applyLock(toThrottle(row), now);
     await tx
       .update(authOtpThrottle)
-      .set({ lockedUntil: next.lockedUntil, updatedAt: now })
+      // The wrong-attempt count starts again with the lock: once it runs out, the next typo must not lock again.
+      .set({ lockedUntil: next.lockedUntil, verifyFails: 0, updatedAt: now })
       .where(eq(authOtpThrottle.phoneHash, key));
   });
 }
@@ -126,6 +135,11 @@ export async function getUserRole(userId: string): Promise<string | null> {
 
 export async function setUserRole(userId: string, role: "learner" | "admin"): Promise<void> {
   await db.update(authUser).set({ role, updatedAt: new Date() }).where(eq(authUser.id, userId));
+}
+
+/** Ends every session of a user (used when an admin password is reset). */
+export async function deleteSessionsForUser(userId: string): Promise<void> {
+  await db.delete(authSession).where(eq(authSession.userId, userId));
 }
 
 export async function setUserName(userId: string, name: string): Promise<void> {

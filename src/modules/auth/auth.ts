@@ -8,7 +8,16 @@ import { sms } from "@/integrations/sms";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
-import { IP_HOURLY_CAP, OTP_EXPIRES_SEC, OTP_LENGTH, OTP_MAX_ATTEMPTS, SESSION_SEC, smsDailyCap } from "./limits";
+import {
+  ADMIN_PASSWORD_MIN_LENGTH,
+  ADMIN_SIGNIN_IP_PER_MIN,
+  IP_HOURLY_CAP,
+  OTP_EXPIRES_SEC,
+  OTP_LENGTH,
+  OTP_MAX_ATTEMPTS,
+  SESSION_SEC,
+  smsDailyCap,
+} from "./limits";
 import { SEND_FAILED, THROTTLED } from "./errors";
 import { normalizePhone } from "./phone";
 import { reserveSend, reserveWindow, SMS_TOTAL_KEY } from "./repo";
@@ -31,6 +40,10 @@ export const auth = betterAuth({
 
   session: { expiresIn: SESSION_SEC, updateAge: 24 * 60 * 60 },
 
+  // Admin email + password (D77). Sign-up is OFF: accounts are made only by scripts/create-admin.ts, so nobody can
+  // register themselves. Learners never have a password.
+  emailAndPassword: { enabled: true, disableSignUp: true, minPasswordLength: ADMIN_PASSWORD_MIN_LENGTH },
+
   user: {
     additionalFields: {
       // PII: optional real email. The built-in `email` column holds a placeholder (see getTempEmail).
@@ -46,6 +59,7 @@ export const auth = betterAuth({
       // Real cap in production; loose in dev/test so repeated manual and Playwright logins from one IP still work.
       "/phone-number/send-otp": { window: 60 * 60, max: env.NODE_ENV === "production" ? IP_HOURLY_CAP : 100 },
       "/phone-number/verify": { window: 60, max: 20 },
+      "/sign-in/email": { window: 60, max: env.NODE_ENV === "production" ? ADMIN_SIGNIN_IP_PER_MIN : 100 },
     },
   },
 
@@ -101,11 +115,11 @@ export const auth = betterAuth({
       },
     }),
     admin({ defaultRole: "learner", adminRoles: ["admin"] }),
-    // Bot check on OTP send only. The default endpoint list (sign-up/sign-in/password reset) does not cover it.
+    // Bot check on OTP send and on the admin password sign-in. The default endpoint list does not cover phone OTP.
     captcha({
       provider: "cloudflare-turnstile",
       secretKey: env.TURNSTILE_SECRET_KEY ?? "",
-      endpoints: ["/phone-number/send-otp"],
+      endpoints: ["/phone-number/send-otp", "/sign-in/email"],
     }),
     nextCookies(), // must be last: lets server actions set the session cookie
   ],

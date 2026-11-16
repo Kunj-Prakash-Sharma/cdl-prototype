@@ -46,8 +46,10 @@ vi.mock("@/integrations/sms", () => ({
 
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { logout, sendOtp, verifyOtp } from "./actions";
-import { authOtpThrottle, authUser } from "./schema";
+import { adminSignIn, logout, sendOtp, verifyOtp } from "./actions";
+import { createEmailAdmin, resetEmailAdminPassword } from "./admin-accounts";
+import { auth } from "./auth";
+import { authAccount, authOtpThrottle, authSession, authUser } from "./schema";
 import {
   getSession,
   listUsersForAdmin,
@@ -317,5 +319,238 @@ describe("admin users list", () => {
     const second = await listUsersForAdmin(filters({ page: "2" }));
     expect(second.rows).toHaveLength(5);
     expect((await listUsersForAdmin(filters({ page: "99" }))).rows).toHaveLength(0);
+  });
+});
+
+describe("admin login with email + password (D77)", () => {
+  const EMAIL = "team@client.com";
+  const CAPTCHA_OK = { captchaToken: CAPTCHA };
+  const signIn = (email: string, password: string, next?: string) =>
+    adminSignIn({ email, password, next, ...CAPTCHA_OK });
+  const must = async (email = EMAIL) => {
+    const made = await createEmailAdmin(email);
+    if (!made.ok) throw new Error(made.code);
+    return made.password;
+  };
+  const sessionsFor = (email: string) =>
+    db
+      .select({ id: authSession.id })
+      .from(authSession)
+      .innerJoin(authUser, sql`${authUser.id} = ${authSession.userId}`)
+      .where(sql`${authUser.email} = ${email}`);
+
+  describe("making and resetting the accounts", () => {
+    it("creates an admin with a random password that is stored only as a hash", async () => {
+      const made = await createEmailAdmin("  Team@Client.COM ");
+      expect(made).toMatchObject({ ok: true, email: EMAIL });
+      const password = made.ok ? made.password : "";
+      expect(password).toMatch(/^[A-Za-z0-9_-]{24}$/);
+
+      const [user] = await db
+        .select()
+        .from(authUser)
+        .where(sql`${authUser.email} = ${EMAIL}`);
+      expect(user).toMatchObject({ role: "admin", name: "team", emailVerified: true, phoneNumber: null });
+      const accounts = await db
+        .select()
+        .from(authAccount)
+        .where(sql`${authAccount.userId} = ${user!.id}`);
+      expect(accounts).toHaveLength(1);
+      expect(accounts[0]).toMatchObject({ providerId: "credential", accountId: user!.id });
+      expect(accounts[0]!.password).toBeTruthy();
+      expect(accounts[0]!.password).not.toContain(password);
+    });
+
+    it("refuses a bad address, a phone placeholder address and an email that already has an account", async () => {
+      expect(await createEmailAdmin("nope")).toEqual({ ok: false, code: "invalid_email" });
+      expect(await createEmailAdmin("919876543210@phone.invalid")).toEqual({ ok: false, code: "invalid_email" });
+      await must();
+      expect(await createEmailAdmin("TEAM@client.com")).toEqual({ ok: false, code: "exists" });
+      // A phone learner's placeholder email is some other address, but a real learner email is still "exists".
+      await sendOtp({ phone: LEARNER, captchaToken: CAPTCHA });
+      await verifyOtp({ phone: LEARNER, code: lastCode() });
+      const [learner] = await db
+        .select()
+        .from(authUser)
+        .where(sql`${authUser.phoneNumber} = '+919876543210'`);
+      await db
+        .update(authUser)
+        .set({ email: "real@client.com" })
+        .where(sql`${authUser.id} = ${learner!.id}`);
+      expect(await createEmailAdmin("real@client.com")).toEqual({ ok: false, code: "exists" });
+    });
+
+    it("resets with a new password: the old one stops working and every session ends", async () => {
+      const oldPassword = await must();
+      expect(await signIn(EMAIL, oldPassword)).toMatchObject({ ok: true });
+      expect(await sessionsFor(EMAIL)).toHaveLength(1);
+
+      const reset = await resetEmailAdminPassword(EMAIL);
+      expect(reset.ok).toBe(true);
+      const newPassword = reset.ok ? reset.password : "";
+      expect(newPassword).not.toBe(oldPassword);
+      expect(await sessionsFor(EMAIL)).toHaveLength(0);
+
+      jar.clear();
+      expect(await signIn(EMAIL, oldPassword)).toEqual({ ok: false, code: "bad_credentials" });
+      expect(await signIn(EMAIL, newPassword)).toMatchObject({ ok: true });
+    });
+
+    it("resets only an existing email admin", async () => {
+      expect(await resetEmailAdminPassword(EMAIL)).toEqual({ ok: false, code: "not_found" });
+      // A phone admin has no password account, so there is nothing to reset.
+      await sendOtp({ phone: "9000000001", captchaToken: CAPTCHA });
+      await verifyOtp({ phone: "9000000001", code: lastCode() });
+      const [phoneAdmin] = await db
+        .select()
+        .from(authUser)
+        .where(sql`${authUser.phoneNumber} = '+919000000001'`);
+      await db
+        .update(authUser)
+        .set({ email: "phone-admin@client.com" })
+        .where(sql`${authUser.id} = ${phoneAdmin!.id}`);
+      expect(await resetEmailAdminPassword("phone-admin@client.com")).toEqual({ ok: false, code: "not_found" });
+      expect(await resetEmailAdminPassword("bad")).toEqual({ ok: false, code: "invalid_email" });
+    });
+  });
+
+  describe("signing in", () => {
+    it("logs the admin in: a real session, the admin role, and the callbacks page by default", async () => {
+      const password = await must();
+      expect(await signIn(EMAIL, password)).toEqual({ ok: true, next: "/admin/callbacks" });
+      expect(await getSession()).toMatchObject({ role: "admin", name: "team" });
+      await expect(requireAdmin("/admin")).resolves.toMatchObject({ role: "admin" });
+    });
+
+    it("ignores the case of the email", async () => {
+      const password = await must();
+      expect(await signIn("  TEAM@Client.com ", password)).toMatchObject({ ok: true });
+    });
+
+    it("honours a safe next and ignores an unsafe one", async () => {
+      const password = await must();
+      expect(await signIn(EMAIL, password, "/admin/users?page=2")).toEqual({ ok: true, next: "/admin/users?page=2" });
+      jar.clear();
+      expect(await signIn(EMAIL, password, "https://evil.example")).toEqual({ ok: true, next: "/admin/callbacks" });
+      jar.clear();
+      expect(await signIn(EMAIL, password, "/admin/login")).toEqual({ ok: true, next: "/admin/callbacks" });
+    });
+
+    it("gives an unknown email and a wrong password exactly the same answer", async () => {
+      const password = await must();
+      const wrong = await signIn(EMAIL, `${password}x`);
+      const unknown = await signIn("nobody@client.com", password);
+      expect(wrong).toEqual({ ok: false, code: "bad_credentials" });
+      expect(unknown).toEqual(wrong);
+      expect(await getSession()).toBeNull();
+    });
+
+    it("rejects bad input before touching anything", async () => {
+      expect(await signIn("not-an-email", "x")).toEqual({ ok: false, code: "invalid_input" });
+      expect(await signIn(EMAIL, "")).toEqual({ ok: false, code: "invalid_input" });
+      expect(await adminSignIn({ email: EMAIL, password: "x", captchaToken: "" })).toEqual({
+        ok: false,
+        code: "invalid_input",
+      });
+      expect(await db.select().from(authOtpThrottle)).toHaveLength(0);
+    });
+
+    it("locks the email after 5 wrong passwords, even for the right one, and the same for an unknown email", async () => {
+      const password = await must();
+      for (let i = 1; i <= 4; i++) {
+        expect(await signIn(EMAIL, `wrong-${i}`)).toEqual({ ok: false, code: "bad_credentials" });
+      }
+      expect(await signIn(EMAIL, "wrong-5")).toMatchObject({ ok: false, code: "locked", retryAfterSec: 900 });
+      expect(await signIn(EMAIL, password)).toMatchObject({ ok: false, code: "locked" });
+      expect(await getSession()).toBeNull();
+
+      // "locked" must not reveal which emails have accounts: an unknown email locks the same way.
+      for (let i = 1; i <= 4; i++) await signIn("nobody@client.com", `wrong-${i}`);
+      expect(await signIn("nobody@client.com", "wrong-5")).toMatchObject({ ok: false, code: "locked" });
+    });
+
+    it("gives a fresh 5 tries once a lock has run out (one typo does not lock again)", async () => {
+      const password = await must();
+      for (let i = 1; i <= 5; i++) await signIn(EMAIL, `wrong-${i}`);
+      expect(await signIn(EMAIL, password)).toMatchObject({ code: "locked" });
+
+      await db.update(authOtpThrottle).set({ lockedUntil: new Date(Date.now() - 1000) }); // the 15 minutes passed
+      expect(await signIn(EMAIL, "typo")).toEqual({ ok: false, code: "bad_credentials" });
+      expect(await signIn(EMAIL, password)).toMatchObject({ ok: true });
+    });
+
+    it("forgets earlier typos after a successful login", async () => {
+      const password = await must();
+      for (let i = 1; i <= 4; i++) await signIn(EMAIL, `wrong-${i}`);
+      expect(await signIn(EMAIL, password)).toMatchObject({ ok: true });
+      jar.clear();
+      for (let i = 1; i <= 4; i++) {
+        expect(await signIn(EMAIL, `again-${i}`)).toEqual({ ok: false, code: "bad_credentials" });
+      }
+      expect(await signIn(EMAIL, "again-5")).toMatchObject({ code: "locked" });
+    });
+
+    it("does not let the lock of one email affect another admin", async () => {
+      const password = await must();
+      const other = await must("second@client.com");
+      for (let i = 1; i <= 5; i++) await signIn(EMAIL, `wrong-${i}`);
+      expect(await signIn(EMAIL, password)).toMatchObject({ code: "locked" });
+      expect(await signIn("second@client.com", other)).toMatchObject({ ok: true });
+    });
+
+    it("keeps the email out of the lock table (only an HMAC key)", async () => {
+      await signIn(EMAIL, "wrong");
+      const rows = await db.select().from(authOtpThrottle);
+      expect(rows).toHaveLength(1);
+      expect(JSON.stringify(rows)).not.toContain("team@client.com");
+    });
+
+    it("refuses a password account that is not an admin, and leaves no session behind", async () => {
+      const ctx = await auth.$context;
+      const user = await ctx.internalAdapter.createUser(
+        { email: "learner-pw@client.com", name: "L" },
+        { method: "admin" },
+      );
+      await ctx.internalAdapter.linkAccount({
+        userId: user.id,
+        providerId: "credential",
+        accountId: user.id,
+        password: await ctx.password.hash("learner-password-123"),
+      });
+      expect(await signIn("learner-pw@client.com", "learner-password-123")).toEqual({
+        ok: false,
+        code: "bad_credentials",
+      });
+      expect(await sessionsFor("learner-pw@client.com")).toHaveLength(0);
+      expect(await getSession()).toBeNull();
+    });
+
+    it("cannot be used to register: there is no sign-up", async () => {
+      const response = await auth.handler(
+        new Request("http://localhost:3000/api/auth/sign-up/email", {
+          method: "POST",
+          headers: { "content-type": "application/json", origin: "http://localhost:3000" },
+          body: JSON.stringify({ email: "self@client.com", password: "a-long-password-123", name: "Me" }),
+        }),
+      );
+      expect(response.ok).toBe(false);
+      expect(
+        await db
+          .select()
+          .from(authUser)
+          .where(sql`${authUser.email} = 'self@client.com'`),
+      ).toHaveLength(0);
+    });
+  });
+
+  describe("the guard", () => {
+    it("sends a logged-out visitor to the admin login page with a safe next", async () => {
+      await expect(requireAdmin("/admin/users")).rejects.toMatchObject({
+        digest: expect.stringContaining("/admin/login?next=%2Fadmin%2Fusers"),
+      });
+      await expect(requireAdmin("https://evil.example")).rejects.toMatchObject({
+        digest: expect.stringMatching(/;\/admin\/login;/),
+      });
+    });
   });
 });

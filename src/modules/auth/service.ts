@@ -40,9 +40,16 @@ export async function requireUser(returnTo?: string): Promise<SessionView> {
   return session;
 }
 
-/** Pages: like requireUser, and sends non-admins home. */
+/** Admin pages: a logged-out visitor goes to the admin login page (email + password, with a link to the phone login). */
+function adminLoginUrl(returnTo?: string): string {
+  const next = returnTo ? safeNextPath(returnTo, "") : "";
+  return next ? `/admin/login?next=${encodeURIComponent(next)}` : "/admin/login";
+}
+
+/** Pages: like requireUser (but to the admin login page), and sends non-admins home. */
 export async function requireAdmin(returnTo?: string): Promise<SessionView> {
-  const session = await requireUser(returnTo);
+  const session = await getSession();
+  if (!session) redirect(adminLoginUrl(returnTo));
   if (session.role !== "admin") redirect("/");
   return session;
 }

@@ -26,7 +26,14 @@ async function requestCode(page: Page, phone: string): Promise<string> {
 async function signIn(page: Page, phone: string, next?: string) {
   await page.goto(next ? `/login?next=${encodeURIComponent(next)}` : "/login");
   const code = await requestCode(page, phone);
-  await page.getByLabel("6-digit code").fill(code); // six digits submit on their own
+  // Six digits submit on their own, but not before React has hydrated: under load the first fill can do nothing, so
+  // type the code again until the login page has moved on.
+  const codeInput = page.getByLabel("6-digit code");
+  await expect(async () => {
+    await codeInput.fill("");
+    await codeInput.fill(code);
+    await expect(page).not.toHaveURL(/\/login/, { timeout: 2500 });
+  }).toPass({ timeout: 20_000 });
 }
 
 /** Desktop has an account menu; the phone layout has the hamburger menu. */
@@ -59,7 +66,13 @@ test.describe("login", () => {
     await page.goto("/my-self");
     await expect(page).toHaveURL(/\/login\?next=%2Fmy-self$/);
     const code = await requestCode(page, newLearnerPhone());
-    await page.getByLabel("6-digit code").fill(code);
+    // Six digits submit on their own, but not before React has hydrated: type the code again until the page moves on.
+    const codeInput = page.getByLabel("6-digit code");
+    await expect(async () => {
+      await codeInput.fill("");
+      await codeInput.fill(code);
+      await expect(page).not.toHaveURL(/\/login/, { timeout: 2500 });
+    }).toPass({ timeout: 20_000 });
     await expect(page).toHaveURL(/\/my-self$/);
   });
 
@@ -98,8 +111,12 @@ test.describe("login", () => {
     const wrong = real === "000000" ? "111111" : "000000";
     const codeInput = page.getByLabel("6-digit code");
 
-    await codeInput.fill(wrong);
-    await expect(page.getByText("That code is not right")).toBeVisible();
+    // Before React hydrates a typed code does nothing (the page is server-rendered), so type it again until it answers.
+    await expect(async () => {
+      await codeInput.fill("");
+      await codeInput.fill(wrong);
+      await expect(page.getByText("That code is not right")).toBeVisible({ timeout: 2500 });
+    }).toPass({ timeout: 20_000 });
     await expect(page).toHaveURL(/\/login/);
 
     for (let i = 0; i < 4; i++) {

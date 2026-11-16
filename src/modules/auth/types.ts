@@ -12,6 +12,7 @@ export const AUTH_ERROR_CODES = [
   "sms_cutoff",
   "send_failed",
   "bad_code",
+  "bad_credentials",
   "expired",
   "locked",
   "unauthorized",

@@ -10,6 +10,11 @@ export const DAY_SEC = 24 * 60 * 60;
 // colleges or offices on one Wi-Fi share an IP, and real learners must not be blocked on launch day.
 export const IP_HOURLY_CAP = 60;
 export const SESSION_SEC = 30 * 24 * 60 * 60;
+// D77, admin email + password. Wrong passwords per email before a lock (same lock time as OTP, LOCK_SEC), and sign-in
+// attempts per IP per minute (Better Auth's limiter; loose outside production like the other IP limits).
+export const ADMIN_LOGIN_MAX_FAILS = 5;
+export const ADMIN_SIGNIN_IP_PER_MIN = 10;
+export const ADMIN_PASSWORD_MIN_LENGTH = 12;
 // D74. Codes per browser (cookie) per day, and total SMS codes per rolling day. Loose outside production so dev and
 // Playwright logins from one machine keep working (same idea as the IP limit).
 export const DEVICE_DAILY_CAP = 10;
