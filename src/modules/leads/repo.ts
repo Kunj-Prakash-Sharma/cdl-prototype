@@ -1,5 +1,5 @@
 // PRIVATE to modules/leads: database access only. No rules live here (those are in service.ts).
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { leads } from "./schema";
 
@@ -66,6 +66,21 @@ export async function updateStatus(id: string, status: LeadRow["status"], now: D
 export async function getLead(id: string): Promise<LeadRow | undefined> {
   const [row] = await db.select().from(leads).where(eq(leads.id, id));
   return row;
+}
+
+/** Leads whose team email never went out, created inside the window `[newerThan, olderThan]`, oldest first. */
+export async function findUnalertedLeadIds(window: {
+  olderThan: Date;
+  newerThan: Date;
+  limit: number;
+}): Promise<string[]> {
+  const rows = await db
+    .select({ id: leads.id })
+    .from(leads)
+    .where(and(isNull(leads.alertedAt), lte(leads.createdAt, window.olderThan), gte(leads.createdAt, window.newerThan)))
+    .orderBy(asc(leads.createdAt))
+    .limit(window.limit);
+  return rows.map((row) => row.id);
 }
 
 /** Notes that the team email went out. Only the first call counts (a repeat changes nothing). */

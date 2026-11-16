@@ -23,7 +23,7 @@ import {
 export type { ConsentRole } from "./consent-copy";
 export type { ContactRole, LeadErrorCode, LeadResult, LeadStatus, LeadView, PreferredTime } from "./types";
 export { LEAD_ERROR_CODES, LEAD_STATUSES, PREFERRED_TIMES } from "./types";
-export { CALLBACK_ALERT_JOB, callbackAlertHandler } from "./jobs";
+export { ALERT_SWEEP_CRON, ALERT_SWEEP_JOB, CALLBACK_ALERT_JOB, alertSweepHandler, callbackAlertHandler } from "./jobs";
 export { EXPORT_LIMIT, LEADS_PAGE_SIZE, parseLeadFilters, type LeadFilters, type StatusFilter } from "./admin-leads";
 
 /** Injected by the caller (actions pass auth's getLearnerPhone), so leads never imports auth and tests need no login stack. */

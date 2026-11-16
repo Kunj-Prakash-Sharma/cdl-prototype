@@ -41,6 +41,12 @@ export class PgBossQueue implements QueueProvider {
     });
   }
 
+  async schedule(job: string, cron: string) {
+    await this.start();
+    await this.ensureQueue(job);
+    await this.boss.schedule(job, cron);
+  }
+
   async register(job: string, handler: JobHandler) {
     await this.ensureQueue(job);
     await this.boss.work(job, async (jobs) => {

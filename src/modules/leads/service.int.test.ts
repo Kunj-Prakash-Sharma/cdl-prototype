@@ -13,7 +13,7 @@ import {
   type NextStep,
 } from "@/modules/chat/service";
 import { CURRENT_CONSENT } from "./consent-copy";
-import { sendCallbackAlert } from "./jobs";
+import { sendCallbackAlert, sweepUnalertedLeads } from "./jobs";
 import { leads } from "./schema";
 import { authUser } from "@/modules/auth/schema";
 import { LEADS_PAGE_SIZE, type LeadFilters } from "./admin-leads";
@@ -494,5 +494,95 @@ describe("the team email job", () => {
     await sendCallbackAlert({ leadId: "nope" }, { to: TEAM, send });
     await sendCallbackAlert(null, { to: TEAM, send });
     expect(send).not.toHaveBeenCalled();
+  });
+});
+
+describe("the alert sweep (D76)", () => {
+  const NOW = new Date("2026-11-12T12:00:00Z");
+  const minutesAgo = (minutes: number) => new Date(NOW.getTime() - minutes * 60 * 1000);
+  const DAY_MIN = 24 * 60;
+
+  /** A lead created `ageMin` minutes before NOW, optionally already alerted. */
+  async function leadAged(ageMin: number, alerted = false) {
+    const learner = await makeLearner();
+    await finishReport(learner);
+    const made = ok(await createCallback(learner, { consent: true }, phoneOf(PHONE)));
+    await db
+      .update(leads)
+      .set({ createdAt: minutesAgo(ageMin), alertedAt: alerted ? minutesAgo(ageMin - 1) : null })
+      .where(eq(leads.id, made.lead.id));
+    return made.lead.id;
+  }
+  const sweep = async (enqueue: (id: string) => Promise<void> = async () => {}) => {
+    const queued: string[] = [];
+    const count = await sweepUnalertedLeads({
+      enqueue: async (id) => {
+        await enqueue(id);
+        queued.push(id);
+      },
+      now: () => NOW,
+    });
+    return { queued, count };
+  };
+
+  it("queues the alert for a lead that was never alerted", async () => {
+    const id = await leadAged(10);
+    const { queued, count } = await sweep();
+    expect(queued).toContain(id);
+    expect(count).toBe(queued.length);
+  });
+
+  it("leaves a lead alone while it is younger than 5 minutes (its own alert job may still be running)", async () => {
+    const id = await leadAged(4);
+    expect((await sweep()).queued).not.toContain(id);
+  });
+
+  it("leaves a lead that is already alerted", async () => {
+    const id = await leadAged(30, true);
+    expect((await sweep()).queued).not.toContain(id);
+  });
+
+  it("gives up on a lead older than 3 days, but still takes one just inside the window", async () => {
+    const old = await leadAged(3 * DAY_MIN + 5);
+    const inside = await leadAged(3 * DAY_MIN - 5);
+    const { queued } = await sweep();
+    expect(queued).not.toContain(old);
+    expect(queued).toContain(inside);
+  });
+
+  it("queues the oldest first", async () => {
+    const newer = await leadAged(20);
+    const older = await leadAged(60);
+    const { queued } = await sweep();
+    expect(queued.indexOf(older)).toBeLessThan(queued.indexOf(newer));
+  });
+
+  it("keeps going when one lead cannot be queued, and counts only the ones that were", async () => {
+    const first = await leadAged(60);
+    const second = await leadAged(30);
+    const failing = vi.fn(async (id: string) => {
+      if (id === first) throw new Error("queue down +919876543210");
+    });
+    const { queued, count } = await sweep(failing);
+    expect(failing).toHaveBeenCalledWith(first);
+    expect(queued).toContain(second);
+    expect(queued).not.toContain(first);
+    expect(count).toBe(queued.length);
+  });
+
+  it("is harmless to run twice: the alert job still sends one email", async () => {
+    const id = await leadAged(10);
+    const send = vi.fn(async () => {});
+    const run = async () => {
+      await sweepUnalertedLeads({
+        enqueue: (leadId) => sendCallbackAlert({ leadId }, { to: "team@example.com", send }),
+        now: () => NOW,
+      });
+    };
+    await run();
+    await run();
+    expect(
+      send.mock.calls.filter((call) => (call as unknown as [string, string, { leadId: string }])[2].leadId === id),
+    ).toHaveLength(1);
   });
 });

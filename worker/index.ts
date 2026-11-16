@@ -1,12 +1,17 @@
 import { queue } from "@/integrations/queue";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
-import { handlers } from "./handlers";
+import { handlers, schedules } from "./handlers";
 
 async function main() {
   await queue.start();
   for (const [job, handler] of Object.entries(handlers)) await queue.register(job, handler);
-  logger.info("worker started", { jobs: Object.keys(handlers), nodeEnv: env.NODE_ENV });
+  for (const [job, cron] of Object.entries(schedules)) await queue.schedule(job, cron);
+  logger.info("worker started", {
+    jobs: Object.keys(handlers),
+    scheduled: Object.keys(schedules),
+    nodeEnv: env.NODE_ENV,
+  });
 
   const stop = async (signal: string) => {
     logger.info("worker stopping", { signal });

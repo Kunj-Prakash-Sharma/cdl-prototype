@@ -4,6 +4,7 @@ import type { EnqueueOptions, JobHandler, QueueProvider } from "./types";
 export class FakeQueue implements QueueProvider {
   private handlers = new Map<string, JobHandler>();
   readonly enqueued: { job: string; payload: object; options?: EnqueueOptions }[] = [];
+  readonly scheduled = new Map<string, string>();
 
   async start() {}
   async stop() {}
@@ -13,5 +14,9 @@ export class FakeQueue implements QueueProvider {
   }
   async register(job: string, handler: JobHandler) {
     this.handlers.set(job, handler);
+  }
+  /** Only records the schedule: tests run the job themselves. */
+  async schedule(job: string, cron: string) {
+    this.scheduled.set(job, cron);
   }
 }
