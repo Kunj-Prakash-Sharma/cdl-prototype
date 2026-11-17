@@ -1,11 +1,10 @@
 "use server";
 
-// Server actions for the quiz screens. Thin: zod-validate the input, require a login (requireUser sends a logged-out
-// visitor to /login), rate-limit, call the service, return a typed `{ ok, code }`. Expected failures never throw, and
+// Server actions for the quiz screens. Thin: zod-validate the input, accept a guest or a learner (a visitor with no session is sent back to /discover), rate-limit, call the service, return a typed `{ ok, code }`. Expected failures never throw, and
 // ownership of the attempt is checked inside the service on every call (a stranger's attempt id gets `not_found`).
 import { z } from "zod";
 import { logger } from "@/lib/logger";
-import { requireUser, updateProfileName } from "@/modules/auth/service";
+import { requireLearnerOrGuest, requireUser, updateProfileName } from "@/modules/auth/service";
 import { ANSWER_LIMIT_PER_MINUTE, ANSWER_LIMIT_WINDOW_MS, createLimiter } from "./limits";
 import * as chat from "./service";
 import type { ChatResult, Learner } from "./types";
@@ -22,8 +21,9 @@ const stageSchema = attemptSchema.extend({ stage: z.string().min(1).max(32) });
 const invalid = { ok: false, code: "invalid_input" } as const;
 
 async function currentLearner(): Promise<Learner> {
-  const session = await requireUser("/discover");
-  return { userId: session.userId, name: session.name };
+  // A guest is enough for the quiz (D78); everything else (callbacks, buying, video) still needs a verified learner.
+  const visitor = await requireLearnerOrGuest();
+  return { userId: visitor.userId, name: visitor.name };
 }
 
 /** A crash in the database layer must not leak details to the browser: log it, answer "unknown". */
@@ -95,5 +95,9 @@ const reportActionSchema = z.object({ action: z.enum(chat.REPORT_ACTIONS) });
 export async function trackReportAction(input: unknown) {
   const parsed = reportActionSchema.safeParse(input);
   if (!parsed.success) return invalid;
-  return guarded(async () => chat.recordReportAction(await currentLearner(), parsed.data.action));
+  return guarded(async () => {
+    // Only a verified learner has a report to click on (a guest sees the fixed sample behind the gate).
+    const session = await requireUser("/discover/report");
+    return chat.recordReportAction({ userId: session.userId, name: session.name }, parsed.data.action);
+  });
 }

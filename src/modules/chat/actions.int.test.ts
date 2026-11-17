@@ -19,6 +19,13 @@ vi.mock("@/modules/auth/service", async () => {
       const rows = await db.execute<{ name: string }>(sql`select name from auth_user where id = ${login.userId}`);
       return { userId: login.userId, role: "learner", name: rows.rows[0]!.name, phoneMasked: "" };
     },
+    // A guest or a learner (D78); with nobody there it redirects to /discover, where Start makes the guest.
+    requireLearnerOrGuest: async () => {
+      if (!login.userId) throw Object.assign(new Error("NEXT_REDIRECT"), { digest: "NEXT_REDIRECT;replace;/discover" });
+      const rows = await db.execute<{ name: string }>(sql`select name from auth_user where id = ${login.userId}`);
+      return { userId: login.userId, isGuest: false, name: rows.rows[0]!.name };
+    },
+    linkedGuestIds: async () => [],
     updateProfileName: async (userId: string, name: string) => {
       await db.execute(sql`update auth_user set name = ${name} where id = ${userId}`);
       return { ok: true };
@@ -51,8 +58,8 @@ const started = async () => {
   return res;
 };
 
-describe("a logged-out visitor", () => {
-  it("is sent to login by every action (a redirect, never a quiz result)", async () => {
+describe("a visitor with no session", () => {
+  it("is sent back to /discover by every action (a redirect, never a quiz result)", async () => {
     const id = "00000000-0000-4000-8000-000000000000";
     const calls = [
       () => actions.startAttempt(),
@@ -62,7 +69,8 @@ describe("a logged-out visitor", () => {
       () => actions.finishAttempt({ attemptId: id }),
       () => actions.retryStage({ attemptId: id, stage: "riasec" }),
     ];
-    for (const call of calls) await expect(call()).rejects.toMatchObject({ digest: expect.stringContaining("/login") });
+    for (const call of calls)
+      await expect(call()).rejects.toMatchObject({ digest: expect.stringContaining("/discover") });
     expect(await db.select().from(chatAttempts)).toEqual(
       (await db.select().from(chatAttempts)).filter((a) => !a.userId.startsWith("chat-test-act-")),
     );

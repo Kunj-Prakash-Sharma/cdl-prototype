@@ -269,3 +269,8 @@ export async function exportLeadsCsv(
     truncated: total > rows.length,
   };
 }
+
+/** Users (of these ids) that have a lead. The guest clean-up (D80) never deletes one of them, even if a guest somehow got a lead. */
+export async function userIdsWithLeads(userIds: string[]): Promise<string[]> {
+  return repo.findUserIdsWithLeads(userIds);
+}

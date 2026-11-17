@@ -1,5 +1,5 @@
 // PRIVATE to modules/chat: database access only. No rules live here (those are in service.ts and flow.ts).
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { chatAnswers, chatAttempts, chatResults } from "./schema";
 
@@ -105,4 +105,40 @@ export async function latestCompleted(userId: string): Promise<{ attempt: Attemp
     .orderBy(desc(chatAttempts.completedAt))
     .limit(1);
   return row;
+}
+
+/**
+ * Moves every attempt of a guest to the real user it became (D80): the same rows, so answers, results and the attempt id
+ * (the analytics session) carry over. One transaction, and a lock per user so two requests cannot claim at once.
+ * Idempotent: a second run finds nothing to move. The database allows ONE open attempt per user, so when both have one,
+ * the older is abandoned first (the newest quiz wins). Returns how many attempts moved.
+ */
+export async function claimGuestAttempts(guestId: string, userId: string): Promise<number> {
+  if (guestId === userId) return 0;
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
+    const mine = await tx
+      .select()
+      .from(chatAttempts)
+      .where(and(eq(chatAttempts.userId, guestId)));
+    if (mine.length === 0) return 0;
+    const open = mine.find((a) => a.status === "in_progress");
+    if (open) {
+      const [theirs] = await tx
+        .select()
+        .from(chatAttempts)
+        .where(and(eq(chatAttempts.userId, userId), eq(chatAttempts.status, "in_progress")));
+      if (theirs) {
+        const stamp = (a: AttemptRow) => (a.lastAnswerAt ?? a.startedAt).getTime();
+        const loser = stamp(open) >= stamp(theirs) ? theirs : open;
+        await tx.update(chatAttempts).set({ status: "abandoned" }).where(eq(chatAttempts.id, loser.id));
+      }
+    }
+    const moved = await tx
+      .update(chatAttempts)
+      .set({ userId })
+      .where(eq(chatAttempts.userId, guestId))
+      .returning({ id: chatAttempts.id });
+    return moved.length;
+  });
 }

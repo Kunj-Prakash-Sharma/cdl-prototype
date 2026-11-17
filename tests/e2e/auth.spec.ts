@@ -133,10 +133,16 @@ test.describe("login", () => {
 });
 
 test.describe("guards", () => {
+  // /discover is open to guests (D78): there is nothing to protect there, so it is not in the list below.
+  test("a visitor with no session can open /discover and sees the Start screen, not a login page", async ({ page }) => {
+    await page.goto("/discover");
+    await expect(page).toHaveURL(/\/discover$/);
+    await expect(page.getByTestId("guest-start")).toBeVisible();
+  });
+
   // The proxy only checks that a session cookie EXISTS. A forged one must still never reveal a protected page.
   const protectedPages = [
     { path: "/my-self", secret: "Pick up right where you left off." },
-    { path: "/discover", secret: "all on this page" },
     { path: "/admin/users", secret: "newest first" },
   ];
 

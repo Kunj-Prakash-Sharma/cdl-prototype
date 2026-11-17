@@ -3,7 +3,10 @@ import type { Metadata } from "next";
 import { brand } from "@/config/brand";
 import { ChatFlow } from "@/components/discover/chat-flow";
 import { HelplineLink } from "@/components/discover/helpline-link";
-import { requireUser } from "@/modules/auth/service";
+import { redirect } from "next/navigation";
+import { GuestStart } from "@/components/discover/guest-start";
+import { env } from "@/lib/env";
+import { getVisitor } from "@/modules/auth/service";
 import { getLatestResult, getResumeOffer, hasOpenAttempt, startOrResumeAttempt } from "@/modules/chat/service";
 
 export const metadata: Metadata = {
@@ -12,8 +15,8 @@ export const metadata: Metadata = {
 };
 
 // Reading the session and the database is request-time work, so it sits in its own Suspense boundary (Cache
-// Components: next dev reports "blocking-prerender-dynamic" when a page does this outside one). The learner layout has
-// already called requireUser(); the call in `Discover` is cheap and gives us the learner's id and name.
+// Components: next dev reports "blocking-prerender-dynamic" when a page does this outside one). Anyone can take the
+// quiz (D78): a verified learner, or a guest. A visitor with no session sees the Start screen, which makes the guest.
 export default function DiscoverPage() {
   return (
     <Suspense fallback={<div className="min-h-[60vh]" aria-busy="true" />}>
@@ -23,8 +26,20 @@ export default function DiscoverPage() {
 }
 
 async function Discover() {
-  const session = await requireUser("/discover");
-  const learner = { userId: session.userId, name: session.name };
+  const visitor = await getVisitor();
+  if (!visitor) {
+    // REPORT_GATE=before_chat keeps the old rule: log in first.
+    if (env.REPORT_GATE === "before_chat") redirect("/login?next=%2Fdiscover");
+    return (
+      <GuestStart
+        siteKey={env.TURNSTILE_SITE_KEY ?? "1x00000000000000000000BB"}
+        title={`Chat with ${brand.guideName}`}
+        lead="A few quick questions, then your personal career report."
+        button="Start"
+      />
+    );
+  }
+  const learner = { userId: visitor.userId, name: visitor.name };
 
   // A learner who finished and has nothing open sees the saved result (with a retake button), not a new empty attempt.
   const latest = await getLatestResult(learner.userId);

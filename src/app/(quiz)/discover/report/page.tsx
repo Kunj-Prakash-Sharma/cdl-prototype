@@ -4,8 +4,11 @@ import { HelplineLink } from "@/components/discover/helpline-link";
 import { CallbackForm } from "@/components/report/callback-form";
 import { ReportView } from "@/components/report/report-view";
 import { ButtonLink } from "@/components/ui/button";
-import { requireUser } from "@/modules/auth/service";
-import { getLatestReport, trackReportViewed } from "@/modules/chat/service";
+import { redirect } from "next/navigation";
+import { ReportGate } from "@/components/report/report-gate";
+import { env } from "@/lib/env";
+import { getSession, getVisitor } from "@/modules/auth/service";
+import { getReportForVisitor, trackReportViewed } from "@/modules/chat/service";
 import { getConsentWording } from "@/modules/leads/service";
 
 export const metadata: Metadata = {
@@ -22,9 +25,11 @@ export default function ReportPage() {
 }
 
 async function Report() {
-  // The learner can only ever see their own newest report: it is looked up by their user id, never by an id in the URL.
-  const session = await requireUser("/discover/report");
-  const result = await getLatestReport(session.userId);
+  // Whoever is here sees only their own: a guest gets the fixed sample behind the phone gate (their real scores never
+  // leave the server), a verified learner gets the newest report, looked up by their user id and never by an id in the URL.
+  const visitor = await getVisitor();
+  if (!visitor) redirect("/discover");
+  const result = await getReportForVisitor(visitor);
 
   if (!result.ok) {
     return (
@@ -36,7 +41,11 @@ async function Report() {
     );
   }
 
-  if (!result.latest) {
+  if (result.gated && result.finished) {
+    return <ReportGate sample={result.sample} siteKey={env.TURNSTILE_SITE_KEY ?? "1x00000000000000000000BB"} />;
+  }
+
+  if (result.gated || !result.latest) {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center" data-testid="report-empty">
         <h1 className="text-2xl font-bold text-ink">Your report is not ready yet</h1>
@@ -51,10 +60,11 @@ async function Report() {
 
   // The page fires the view event itself (the lookup has no side effects, so My SELF and callbacks do not inflate it).
   trackReportViewed(result.latest.attemptId, result.latest.report);
-  const wording = await getConsentWording(session.userId);
+  const session = await getSession(); // a verified learner here (a guest never reaches this line)
+  const wording = session ? await getConsentWording(session.userId) : null;
   return (
     <ReportView report={result.latest.report}>
-      {wording && <CallbackForm wording={wording} phoneMasked={session.phoneMasked} />}
+      {wording && session && <CallbackForm wording={wording} phoneMasked={session.phoneMasked} />}
     </ReportView>
   );
 }

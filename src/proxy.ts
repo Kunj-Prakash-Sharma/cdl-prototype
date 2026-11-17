@@ -14,5 +14,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/discover/:path*", "/my-self/:path*", "/admin/:path*"],
+  matcher: ["/my-self/:path*", "/admin/:path*"], // /discover is open to guests (D78)
 };

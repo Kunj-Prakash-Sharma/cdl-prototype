@@ -34,6 +34,10 @@ const schema = z
     // Chat: days without an answer before an unfinished attempt can no longer be continued (decision D75)
     CHAT_RESUME_DAYS: z.coerce.number().int().positive().default(30),
 
+    // Where the phone check sits (D78): "before_report" = anyone can take the quiz and the report is behind the phone gate;
+    // "before_chat" = login first, as before. One value, so the position can follow the design.
+    REPORT_GATE: z.enum(["before_report", "before_chat"]).default("before_report"),
+
     // Integration adapters (src/integrations). Add vendor names as adapters land.
     SMS_PROVIDER: provider([]),
     PAYMENTS_PROVIDER: provider([]),

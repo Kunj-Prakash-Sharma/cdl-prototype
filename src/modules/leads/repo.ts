@@ -1,5 +1,5 @@
 // PRIVATE to modules/leads: database access only. No rules live here (those are in service.ts).
-import { and, asc, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { leads } from "./schema";
 
@@ -89,4 +89,11 @@ export async function markAlerted(id: string, now: Date): Promise<void> {
     .update(leads)
     .set({ alertedAt: now })
     .where(and(eq(leads.id, id), isNull(leads.alertedAt)));
+}
+
+/** Which of these users have at least one lead (any status)? Used so a clean-up never deletes someone who asked for a call. */
+export async function findUserIdsWithLeads(userIds: string[]): Promise<string[]> {
+  if (userIds.length === 0) return [];
+  const rows = await db.selectDistinct({ userId: leads.userId }).from(leads).where(inArray(leads.userId, userIds));
+  return rows.map((row) => row.userId);
 }

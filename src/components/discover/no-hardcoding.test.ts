@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 
 const root = path.resolve(__dirname, "../../..");
 const uiDir = path.join(root, "src/components/discover");
-const pageFile = path.join(root, "src/app/(learner)/discover/page.tsx");
+const pageFile = path.join(root, "src/app/(quiz)/discover/page.tsx");
 
 // results-report.tsx is the old prototype report: it still uses the legacy aptitude/values code and is rewritten in
 // the report block (docs/specs/chat.md, 4d). Remove it from this list when that file goes.

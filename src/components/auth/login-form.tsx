@@ -10,7 +10,16 @@ import { useTurnstile } from "./use-turnstile";
 
 type Step = "phone" | "code";
 
-export function LoginForm({ next, siteKey }: { next: string; siteKey: string }) {
+/** Optional wording, for the phone gate in front of the report (D78). The login page uses the defaults. */
+export type LoginCopy = { title: string; lead: string; footnote: string };
+
+const LOGIN_COPY: LoginCopy = {
+  title: "Log in with your phone",
+  lead: "We will text you a 6-digit code. No password needed.",
+  footnote: "Your number is only used to log you in.",
+};
+
+export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; siteKey: string; copy?: LoginCopy }) {
   const router = useRouter();
   const { container, getToken } = useTurnstile(siteKey);
   const [step, setStep] = useState<Step>("phone");
@@ -73,8 +82,8 @@ export function LoginForm({ next, siteKey }: { next: string; siteKey: string }) 
           <span className="grid size-12 place-items-center rounded-2xl bg-brand-50 text-brand-700">
             <Smartphone className="size-6" aria-hidden />
           </span>
-          <h1 className="mt-5 text-2xl font-extrabold tracking-tight text-ink">Log in with your phone</h1>
-          <p className="mt-2 text-slate-600">We will text you a 6-digit code. No password needed.</p>
+          <h1 className="mt-5 text-2xl font-extrabold tracking-tight text-ink">{copy.title}</h1>
+          <p className="mt-2 text-slate-600">{copy.lead}</p>
 
           <label htmlFor="phone" className="mt-6 block text-sm font-semibold text-ink">
             Mobile number
@@ -182,7 +191,7 @@ export function LoginForm({ next, siteKey }: { next: string; siteKey: string }) 
 
       <p className="mt-6 flex items-center gap-2 text-xs text-slate-500">
         <ShieldCheck className="size-4 shrink-0 text-brand-600" aria-hidden />
-        Your number is only used to log you in.
+        {copy.footnote}
       </p>
     </div>
   );

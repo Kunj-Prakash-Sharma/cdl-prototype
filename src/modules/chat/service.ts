@@ -18,8 +18,10 @@ import {
 } from "./flow";
 import { CURRENT_QUESTION_SET, getQuestionSet, type QuestionSet, type Stage } from "./question-set";
 import { secondsBetween, trackChat } from "./events";
+import { linkedGuestIds } from "@/modules/auth/service";
 import { coursesForInterests, type CourseSuggestion } from "@/modules/catalog/service";
 import { reportFor, type ReportView } from "./report";
+import { SAMPLE_REPORT } from "./sample-report";
 import { toResultRow, toResultView, type ResultView } from "./result";
 import * as repo from "./repo";
 import { scoreAttempt, scoreOcean, scoreRiasec, type StageProblem } from "./scoring";
@@ -62,6 +64,22 @@ const failed = (loaded: null | "unknown_set") =>
   ({ ok: false, code: loaded === null ? "not_found" : "unknown" }) as const;
 
 /**
+ * Guests who verified a phone and became this learner hand their quiz over here (D80): the attempts are re-pointed to
+ * the real user (the same rows, so answers and results carry over; the newest quiz wins). Lazy and idempotent: called at
+ * the top of every entry point that reads a learner's attempts, so it works whether they verified at the report gate
+ * or on /login, and a second call changes nothing. For a plain learner or a guest it finds no linked guests.
+ */
+export async function claimLinkedGuests(userId: string): Promise<number> {
+  let moved = 0;
+  for (const guestId of await linkedGuestIds(userId)) {
+    const count = await repo.claimGuestAttempts(guestId, userId);
+    if (count > 0) trackChat(guestId, "guest_claimed", { attempts: count });
+    moved += count;
+  }
+  return moved;
+}
+
+/**
  * The learner's open attempt if it can still be continued. One that went `CHAT_RESUME_DAYS` without an answer has
  * expired (D75): it is closed here, when it is read, so no background job is needed, and the caller sees "none".
  */
@@ -77,6 +95,7 @@ async function findLiveAttempt(userId: string): Promise<repo.AttemptRow | undefi
 export async function startOrResumeAttempt(
   learner: Learner,
 ): Promise<ChatResult<{ attemptId: string; resumed: boolean; next: NextStep }>> {
+  await claimLinkedGuests(learner.userId);
   let attempt = await findLiveAttempt(learner.userId);
   let resumed = true;
   if (!attempt) {
@@ -113,6 +132,7 @@ export async function retake(learner: Learner) {
 
 /** Does the learner have an unfinished attempt that can still be continued? (Never creates one.) */
 export async function hasOpenAttempt(userId: string): Promise<boolean> {
+  await claimLinkedGuests(userId);
   return (await findLiveAttempt(userId)) !== undefined;
 }
 
@@ -124,6 +144,7 @@ export type ResumeOffer = { kind: "none" } | { kind: "offer"; attemptId: string;
  * resumes. Read-only (an expired attempt is closed, nothing is created).
  */
 export async function getResumeOffer(learner: Learner): Promise<ResumeOffer> {
+  await claimLinkedGuests(learner.userId);
   const attempt = await findLiveAttempt(learner.userId);
   const set = attempt && getQuestionSet(attempt.setVersion);
   if (!attempt || !set) return { kind: "none" };
@@ -344,6 +365,7 @@ export async function abandonAttempt(learner: Learner, attemptId: string): Promi
 
 /** The result of the learner's newest completed attempt, or null. */
 export async function getLatestResult(userId: string): Promise<ResultView | null> {
+  await claimLinkedGuests(userId);
   const latest = await repo.latestCompleted(userId);
   if (!latest || !latest.attempt.completedAt) return null;
   return toResultView(latest.result, latest.attempt.completedAt);
@@ -362,6 +384,7 @@ export type LatestReport = ReportView & { courses: CourseSuggestion[]; coursesAr
 export async function getLatestReport(
   userId: string,
 ): Promise<ChatResult<{ latest: { report: LatestReport; attemptId: string } | null }>> {
+  await claimLinkedGuests(userId);
   const stored = await repo.latestCompleted(userId);
   if (!stored || !stored.attempt.completedAt) return { ok: true, latest: null };
   const built = reportFor(toResultView(stored.result, stored.attempt.completedAt));
@@ -373,6 +396,35 @@ export async function getLatestReport(
   return {
     ok: true,
     latest: { report: { ...built.report, courses, coursesAreFallback: fallback }, attemptId: stored.attempt.id },
+  };
+}
+
+/** What a report page gets: the real report, or (for a guest) the fixed sample behind the phone gate. */
+export type VisitorReport =
+  | { gated: false; latest: { report: LatestReport; attemptId: string } | null }
+  | { gated: true; finished: boolean; sample: LatestReport };
+
+/**
+ * The report for whoever is on the page (D78). A VERIFIED learner gets their real report. A GUEST gets only the fixed
+ * sample and whether they finished the quiz: their real scores never leave the server, so a blurred screen hides nothing
+ * that dev tools could reveal. `finished` is false when the guest has no completed quiz (the page shows "not ready").
+ */
+export async function getReportForVisitor(visitor: {
+  userId: string;
+  isGuest: boolean;
+}): Promise<ChatResult<VisitorReport>> {
+  if (!visitor.isGuest) {
+    const real = await getLatestReport(visitor.userId);
+    return real.ok ? { ok: true, gated: false, latest: real.latest } : real;
+  }
+  const stored = await repo.latestCompleted(visitor.userId);
+  if (stored) trackChat(stored.attempt.id, "report_gate_shown", {});
+  const { courses, fallback } = coursesForInterests(SAMPLE_REPORT.hollandLetters);
+  return {
+    ok: true,
+    gated: true,
+    finished: stored !== undefined,
+    sample: { ...SAMPLE_REPORT, courses, coursesAreFallback: fallback },
   };
 }
 
