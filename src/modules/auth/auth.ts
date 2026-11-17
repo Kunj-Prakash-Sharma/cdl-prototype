@@ -3,7 +3,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
-import { admin, captcha, phoneNumber } from "better-auth/plugins";
+import { admin, anonymous, captcha, phoneNumber } from "better-auth/plugins";
 import { sms } from "@/integrations/sms";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
@@ -11,6 +11,7 @@ import { logger } from "@/lib/logger";
 import {
   ADMIN_PASSWORD_MIN_LENGTH,
   ADMIN_SIGNIN_IP_PER_MIN,
+  GUEST_IP_PER_HOUR,
   IP_HOURLY_CAP,
   OTP_EXPIRES_SEC,
   OTP_LENGTH,
@@ -20,7 +21,7 @@ import {
 } from "./limits";
 import { SEND_FAILED, THROTTLED } from "./errors";
 import { normalizePhone } from "./phone";
-import { reserveSend, reserveWindow, SMS_TOTAL_KEY } from "./repo";
+import { linkGuest, reserveSend, reserveWindow, SMS_TOTAL_KEY } from "./repo";
 import { roleForPhone } from "./roles";
 import { authAccount, authRateLimit, authSession, authUser, authVerification } from "./schema";
 
@@ -60,6 +61,7 @@ export const auth = betterAuth({
       "/phone-number/send-otp": { window: 60 * 60, max: env.NODE_ENV === "production" ? IP_HOURLY_CAP : 100 },
       "/phone-number/verify": { window: 60, max: 20 },
       "/sign-in/email": { window: 60, max: env.NODE_ENV === "production" ? ADMIN_SIGNIN_IP_PER_MIN : 100 },
+      "/sign-in/anonymous": { window: 60 * 60, max: env.NODE_ENV === "production" ? GUEST_IP_PER_HOUR : 100 },
     },
   },
 
@@ -68,8 +70,10 @@ export const auth = betterAuth({
       create: {
         // Allow-listed numbers become admins at sign-up; verifyOtp re-syncs the role on every login.
         before: async (user) => {
-          const phone = (user as { phoneNumber?: string }).phoneNumber;
-          return { data: { ...user, role: roleForPhone(phone) } };
+          const { phoneNumber: phone, isAnonymous } = user as { phoneNumber?: string; isAnonymous?: boolean };
+          // The anonymous plugin turns an empty name into "Anonymous"; a guest has NO name until the quiz asks for it,
+          // or the quiz would skip its name step and "Anonymous" would be copied onto the real profile (D80).
+          return { data: { ...user, role: roleForPhone(phone), ...(isAnonymous ? { name: "" } : {}) } };
         },
       },
     },
@@ -114,12 +118,21 @@ export const auth = betterAuth({
         getTempName: () => "", // the name is collected in the chat (profile), not at login
       },
     }),
+    // Guests (D80). The guest row is NOT deleted when it links (disableDeleteAnonymousUser): other modules re-point their
+    // rows to the real user first, and the worker deletes old guests later. The name is "" like a new phone user.
+    anonymous({
+      generateName: () => "",
+      disableDeleteAnonymousUser: true,
+      onLinkAccount: async ({ anonymousUser, newUser }) => {
+        await linkGuest(anonymousUser.user.id, newUser.user.id);
+      },
+    }),
     admin({ defaultRole: "learner", adminRoles: ["admin"] }),
-    // Bot check on OTP send and on the admin password sign-in. The default endpoint list does not cover phone OTP.
+    // Bot check on OTP send, the admin password sign-in and the guest sign-in. The default endpoint list does not cover phone OTP.
     captcha({
       provider: "cloudflare-turnstile",
       secretKey: env.TURNSTILE_SECRET_KEY ?? "",
-      endpoints: ["/phone-number/send-otp", "/sign-in/email"],
+      endpoints: ["/phone-number/send-otp", "/sign-in/email", "/sign-in/anonymous"],
     }),
     nextCookies(), // must be last: lets server actions set the session cookie
   ],

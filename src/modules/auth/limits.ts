@@ -92,3 +92,8 @@ export function decideWindow(state: Throttle | null, now: Date, cap: number): Wi
 export function applyLock(state: Throttle | null, now: Date): Throttle {
   return { ...(state ?? emptyThrottle), lockedUntil: new Date(now.getTime() + LOCK_SEC * 1000) };
 }
+
+// D80, guests. A guest account is made at the first Start tap: per IP per hour (Better Auth's limiter; loose outside
+// production like the other IP limits), and kept this many days before the worker deletes it.
+export const GUEST_IP_PER_HOUR = 30;
+export const GUEST_TTL_DAYS = 7;

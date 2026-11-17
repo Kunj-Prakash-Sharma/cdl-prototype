@@ -142,9 +142,30 @@ export async function deleteSessionsForUser(userId: string): Promise<void> {
   await db.delete(authSession).where(eq(authSession.userId, userId));
 }
 
+/**
+ * A guest verified a phone (D80): remember which real user it became, and hand over the name the guest typed in the quiz
+ * (the newest name wins). Only a guest can be linked, and never to itself; running it twice changes nothing more.
+ */
+export async function linkGuest(guestId: string, userId: string): Promise<void> {
+  if (guestId === userId) return;
+  await db.transaction(async (tx) => {
+    const [guest] = await tx
+      .select({ name: authUser.name, isAnonymous: authUser.isAnonymous })
+      .from(authUser)
+      .where(eq(authUser.id, guestId));
+    if (!guest?.isAnonymous) return;
+    await tx.update(authUser).set({ linkedUserId: userId, updatedAt: new Date() }).where(eq(authUser.id, guestId));
+    if (guest.name)
+      await tx.update(authUser).set({ name: guest.name, updatedAt: new Date() }).where(eq(authUser.id, userId));
+  });
+}
+
 export async function setUserName(userId: string, name: string): Promise<void> {
   await db.update(authUser).set({ name, updatedAt: new Date() }).where(eq(authUser.id, userId));
 }
+
+// Guests (anonymous users, D80) are not "users" for the admin lists and counts.
+const notGuest = sql`coalesce(${authUser.isAnonymous}, false) = false`;
 
 function userWhere(filters: Pick<UserFilters, "q" | "role">): SQL | undefined {
   const role =
@@ -155,7 +176,7 @@ function userWhere(filters: Pick<UserFilters, "q" | "role">): SQL | undefined {
         : undefined;
   const pattern = `%${escapeLike(filters.q)}%`;
   const text = filters.q ? or(ilike(authUser.name, pattern), ilike(authUser.phoneNumber, pattern)) : undefined;
-  return and(role, text);
+  return and(notGuest, role, text);
 }
 
 export type UserListRow = {
@@ -205,7 +226,8 @@ export async function userCounts(
       named: sql<number>`(count(*) filter (where ${authUser.name} <> ''))::int`,
       newThisWeek: sql<number>`(count(*) filter (where ${authUser.createdAt} >= ${weekAgo}))::int`,
     })
-    .from(authUser);
+    .from(authUser)
+    .where(notGuest);
   return row ?? { total: 0, admins: 0, named: 0, newThisWeek: 0 };
 }
 
@@ -221,4 +243,36 @@ export async function findNamesByUserIds(userIds: string[]): Promise<Map<string,
     .from(authUser)
     .where(inArray(authUser.id, userIds));
   return new Map(rows.map((row) => [row.id, row.name]));
+}
+
+/** Guests that became this real user (D80). Other modules re-point their rows from each of these ids to `userId`. */
+export async function findLinkedGuestIds(userId: string): Promise<string[]> {
+  const rows = await db
+    .select({ id: authUser.id })
+    .from(authUser)
+    .where(and(eq(authUser.linkedUserId, userId), eq(authUser.isAnonymous, true)));
+  return rows.map((row) => row.id);
+}
+
+/** Guests created before `cutoff` (oldest first), with the real user each became (null if it never verified a phone). */
+export async function findGuestsCreatedBefore(
+  cutoff: Date,
+  limit: number,
+): Promise<{ id: string; linkedUserId: string | null }[]> {
+  return db
+    .select({ id: authUser.id, linkedUserId: authUser.linkedUserId })
+    .from(authUser)
+    .where(and(eq(authUser.isAnonymous, true), sql`${authUser.createdAt} < ${cutoff}`))
+    .orderBy(authUser.createdAt)
+    .limit(limit);
+}
+
+/** Deletes guests only (the `isAnonymous` check is in the query itself, so a wrong id can never remove a real user). */
+export async function deleteGuestUsers(ids: string[]): Promise<number> {
+  if (ids.length === 0) return 0;
+  const gone = await db
+    .delete(authUser)
+    .where(and(inArray(authUser.id, ids), eq(authUser.isAnonymous, true)))
+    .returning({ id: authUser.id });
+  return gone.length;
 }

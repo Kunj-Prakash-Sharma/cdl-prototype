@@ -238,6 +238,48 @@ export async function adminSignIn(input: unknown): Promise<ActionResult<{ next: 
   return { ok: true, next: safeNextPath(parsed.data.next, DEFAULT_AFTER_ADMIN_LOGIN) };
 }
 
+const guestSchema = z.object({ captchaToken: z.string().min(1).max(4096) });
+
+/**
+ * Makes a GUEST session (D80) when a visitor taps Start on the quiz. Never called on page load. Anyone who already has a
+ * session (guest or learner) gets ok and nothing new is made. Goes through Better Auth's HTTP handler like sendOtp, so the
+ * Turnstile check and the per-IP limit run, and the cookie is passed on by hand because nextCookies skips handler calls.
+ */
+export async function startGuestSession(input: unknown): Promise<ActionResult> {
+  const parsed = guestSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, code: "invalid_input" };
+  const h = await headers();
+  if (await auth.api.getSession({ headers: h })) return { ok: true };
+
+  const response = await auth.handler(
+    new Request(`${env.APP_URL}/api/auth/sign-in/anonymous`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: env.APP_URL,
+        "x-captcha-response": parsed.data.captchaToken,
+        "x-forwarded-for": h.get("x-forwarded-for") ?? "127.0.0.1",
+        "user-agent": h.get("user-agent") ?? "",
+      },
+      body: "{}",
+    }),
+  );
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    const failure = mapSendFailure(response.status, body, response.headers.get("x-retry-after"));
+    if (failure.code === "unknown") logger.error("guest sign-in failed", { status: response.status });
+    return { ok: false, ...failure };
+  }
+  const jar = await cookies();
+  for (const [name, attr] of parseSetCookieHeader(response.headers.get("set-cookie") ?? "")) {
+    jar.set(name, attr.value, toCookieOptions(attr));
+  }
+  // Funnel: the session id is the guest's random id (no personal data); the quiz attempt id takes over from here.
+  const created = (await response.json().catch(() => null)) as { user?: { id?: string } } | null;
+  if (created?.user?.id) await analytics.track(created.user.id, "guest_started", {});
+  return { ok: true };
+}
+
 export async function logout(): Promise<ActionResult> {
   try {
     await auth.api.signOut({ headers: await headers() });

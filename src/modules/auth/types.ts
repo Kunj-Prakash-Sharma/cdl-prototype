@@ -34,6 +34,9 @@ export type SessionView = {
   phoneMasked: string;
 };
 
+/** Who is on the page: a verified learner, or a guest (D80). A guest is NOT logged in for anything but the quiz. */
+export type VisitorView = { userId: string; isGuest: boolean; name: string };
+
 export type SendOtpOk = { resendAfterSec: number; expiresInSec: number };
 export type VerifyOtpOk = { isNewUser: boolean; next: string };
 

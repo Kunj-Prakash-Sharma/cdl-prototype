@@ -5,6 +5,12 @@
 export interface EventMap {
   home_viewed: { trafficSource?: string; deviceType?: string };
   chat_started: { source?: string };
+  /** A visitor tapped Start and got a guest session (D80). The session id is the guest's random id: no personal data. */
+  guest_started: Record<string, never>;
+  /** A guest finished the quiz and was shown the phone gate with the fixed sample report (D78). */
+  report_gate_shown: Record<string, never>;
+  /** A guest verified a phone and the quiz moved to the real learner (D80). `attempts` is a count. */
+  guest_claimed: { attempts: number };
   otp_sent: { result: "ok" | "failed"; attempt: number };
   otp_verified: { result: "ok" | "failed"; attempt: number };
   chat_step: {
