@@ -56,7 +56,6 @@ export async function sendCallbackAlert(payload: unknown, deps: AlertDeps): Prom
       reportId: lead.attemptId,
       phone: phoneForScreen(lead.phone),
       requestedAt: lead.createdAt.toISOString(),
-      speakTo: lead.contactRole,
       preferredTime: lead.preferredTime,
       age: context?.age ?? null,
       topInterests: context?.topInterests ?? [],

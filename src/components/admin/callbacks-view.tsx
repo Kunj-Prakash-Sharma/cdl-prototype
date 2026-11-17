@@ -91,9 +91,6 @@ export function CallbacksView({ view, filters }: { view: AdminLeadsView; filters
                   Phone
                 </th>
                 <th scope="col" className={th}>
-                  Speak to
-                </th>
-                <th scope="col" className={th}>
                   About them
                 </th>
                 <th scope="col" className={th}>
@@ -118,16 +115,6 @@ export function CallbacksView({ view, filters }: { view: AdminLeadsView; filters
                     <a href={`tel:${row.phone.replaceAll(" ", "")}`} className="text-brand-700 hover:underline">
                       {row.phone}
                     </a>
-                  </td>
-                  <td className={td}>
-                    <span
-                      className={cn(
-                        "inline-block rounded-full px-2.5 py-1 text-xs font-bold",
-                        row.contactRole === "parent" ? "bg-sun-100 text-sun-700" : "bg-slate-100 text-slate-700",
-                      )}
-                    >
-                      {row.contactRole === "parent" ? "Parent or guardian" : "The learner"}
-                    </span>
                   </td>
                   <td className={cn(td, "text-slate-600")}>
                     {[row.age, row.studying, row.goal].filter(Boolean).join(" · ") || "—"}

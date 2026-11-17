@@ -6,7 +6,7 @@ import { index, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "driz
 import { authUser } from "@/modules/auth/schema";
 
 export const leadStatus = pgEnum("lead_status", ["new", "contacted", "closed"]);
-/** Who the team speaks to. Derived from the learner's age answer, never asked (D71): under 18 means a parent or guardian. */
+/** Not used since D79 (no minor flow): every lead is "learner". The column and the value "parent" stay so no migration drops data. */
 export const leadContactRole = pgEnum("lead_contact_role", ["learner", "parent"]);
 export const leadPreferredTime = pgEnum("lead_preferred_time", ["morning", "afternoon", "evening"]);
 
@@ -20,7 +20,7 @@ export const leads = pgTable(
     // The chat attempt whose report the request came from. No foreign key: leads never import chat's schema.
     attemptId: uuid("attempt_id").notNull(),
     phone: text("phone").notNull(), // PII. E.164, the number the learner consented to be called on
-    contactRole: leadContactRole("contact_role").notNull(),
+    contactRole: leadContactRole("contact_role").notNull().default("learner"),
     preferredTime: leadPreferredTime("preferred_time"),
     consentAt: timestamp("consent_at", { withTimezone: true }).notNull(),
     // Which consent wording was shown (consent-copy.ts). The role says which of its two texts the learner saw.

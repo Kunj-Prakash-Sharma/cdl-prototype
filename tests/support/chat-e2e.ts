@@ -76,7 +76,7 @@ export async function sendName(page: Page, name: string) {
 
 /**
  * Name and the tap questions, ending on the first scored question. `ageIndex` is the position of the answer to the
- * first tap question (age): 0 and 1 are the two under-18 answers, 2 and above are adults.
+ * first tap question (age). Every age takes the same path (D79).
  */
 export async function finishBasics(page: Page, name = "Asha", ageIndex = 0) {
   await sendName(page, name);

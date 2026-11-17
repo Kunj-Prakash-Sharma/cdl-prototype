@@ -9,10 +9,10 @@ import { e2eAdminPhone, leadsFor } from "../support/e2e";
 const screenPhone = (national: string) => `+91 ${national.slice(0, 5)} ${national.slice(5)}`;
 const sheetPhone = (national: string) => `91 ${national.slice(0, 5)} ${national.slice(5)}`;
 
-/** A learner under 18 finishes the quiz and asks for a callback in the evening. Returns their number. */
+/** A learner finishes the quiz and asks for a callback in the evening. Returns their number. */
 async function learnerAsksForCallback(page: Page): Promise<string> {
   const phone = await openChat(page);
-  await finishQuiz(page); // first age answer: under 15, so a parent is the contact
+  await finishQuiz(page);
   await page.getByTestId("callback-time-evening").click();
   await page.getByTestId("callback-consent").check();
   await page.getByTestId("callback-submit").click();
@@ -40,7 +40,7 @@ test.describe("admin callbacks", () => {
     const row = admin.getByTestId("callbacks-row").filter({ hasText: screenPhone(phone) });
     await expect(row).toHaveCount(1);
     await expect(row).toContainText("Asha"); // the profile name, read live
-    await expect(row).toContainText("Parent or guardian");
+    await expect(row).not.toContainText("Parent or guardian"); // no minor flow (D79)
     await expect(row).toContainText("Best time: Evening");
     await expect(row.getByTestId("lead-status")).toHaveValue("new");
 
@@ -75,10 +75,10 @@ test.describe("admin callbacks", () => {
     expect(file.suggestedFilename()).toMatch(/^callbacks-\d{4}-\d{2}-\d{2}\.csv$/);
     const csv = readFileSync((await file.path())!, "utf8");
     expect(csv.charCodeAt(0)).toBe(0xfeff);
-    expect(csv).toContain("Requested at,Status,Name,Phone,Speak to,Preferred time");
+    expect(csv).toContain("Requested at,Status,Name,Phone,Preferred time");
     const line = csv.split("\r\n").find((l) => l.includes(sheetPhone(phone)));
     expect(line, "the request is in the file").toBeDefined();
-    expect(line).toContain(`,Contacted,Asha,${sheetPhone(phone)},Parent,Evening,`);
+    expect(line).toContain(`,Contacted,Asha,${sheetPhone(phone)},Evening,`);
     await expect(admin.getByTestId("callbacks-download-note")).toContainText("Downloaded");
     await admin.context().close();
   });

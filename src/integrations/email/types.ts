@@ -10,8 +10,6 @@ export interface EmailTemplates {
     reportId: string;
     phone: string;
     requestedAt: string;
-    /** Who to ask for on the call: the learner, or a parent or guardian when the learner is under 18 (D71). */
-    speakTo: "learner" | "parent";
     preferredTime: string | null;
     age: string | null;
     topInterests: string[];

@@ -7,8 +7,8 @@ import { cn } from "@/lib/format";
 import { requestCallback } from "@/modules/leads/actions";
 
 // The callback request form on the report (E6-S1, E5-S5). TEMPORARY layout; the logic (consent first, one request per
-// learner, a message per error code) stays when the design changes. The consent text comes from the server and depends
-// on the age answer: a learner under 18 sees the parent or guardian wording (D71).
+// learner, a message per error code) stays when the design changes. The consent text comes from the server (D79: one
+// wording, no minor flow).
 
 type Time = "morning" | "afternoon" | "evening";
 const TIMES: { value: Time; label: string }[] = [
@@ -17,7 +17,7 @@ const TIMES: { value: Time; label: string }[] = [
   { value: "evening", label: "Evening" },
 ];
 
-export type CallbackWording = { role: "learner" | "parent"; text: string; version: string; draft: boolean };
+export type CallbackWording = { text: string; version: string; draft: boolean };
 
 const MESSAGES: Record<string, string> = {
   consent_required: "Please tick the box so we know it is fine to call.",
@@ -72,10 +72,8 @@ export function CallbackForm({ wording, phoneMasked }: { wording: CallbackWordin
       ) : (
         <form onSubmit={submit} className="mt-3 space-y-5" data-testid="callback-form">
           <p className="text-sm text-slate-600">
-            {wording.role === "parent"
-              ? "A short call to talk about this report and the courses. As the learner is under 18, we will speak to a parent or guardian."
-              : "A short call to talk about your report and the courses."}{" "}
-            We will call <span className="font-semibold text-ink">{phoneMasked}</span>.
+            A short call to talk about your report and the courses. We will call{" "}
+            <span className="font-semibold text-ink">{phoneMasked}</span>.
           </p>
 
           <fieldset>

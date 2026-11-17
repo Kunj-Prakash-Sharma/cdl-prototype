@@ -445,13 +445,12 @@ export async function recordReportAction(learner: Learner, action: ReportAction)
 }
 
 /**
- * What the team needs to know before a callback (D71): the learner's tap answers about themselves, as the labels the
- * question set shows, and their top interest areas. No name and no phone (those stay in auth). `minor` is true when
- * the age answer means under 18, so a parent or guardian is the contact.
+ * What the team needs to know before a callback: the learner's tap answers about themselves, as the labels the
+ * question set shows, and their top interest areas. No name and no phone (those stay in auth). There is no minor
+ * flag any more (D79): the age answer is plain information for the team.
  */
 export type CallbackContext = {
   attemptId: string;
-  minor: boolean;
   age: string | null;
   status: string | null;
   goal: string | null;
@@ -461,7 +460,7 @@ export type CallbackContext = {
 const answerLabel = (set: QuestionSet, answers: Record<string, number>, questionId: string) => {
   const question = set.basics.find((basic) => basic.id === questionId);
   const option = question?.options[answers[questionId] ?? -1];
-  return { label: option?.label ?? null, minor: option?.minor === true };
+  return { label: option?.label ?? null };
 };
 
 /** Builds the context of one completed attempt, or null if its question set or report wording is missing. */
@@ -473,7 +472,6 @@ async function contextOf(attempt: repo.AttemptRow, resultRow: repo.ResultRow): P
   const age = answerLabel(set, answers, "b-age");
   return {
     attemptId: attempt.id,
-    minor: age.minor,
     age: age.label,
     status: answerLabel(set, answers, "b-status").label,
     goal: answerLabel(set, answers, "b-goal").label,

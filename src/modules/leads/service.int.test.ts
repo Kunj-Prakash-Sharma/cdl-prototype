@@ -78,7 +78,7 @@ describe("requesting a callback", () => {
     const now = new Date("2026-11-05T10:00:00Z");
     const res = ok(await createCallback(learner, { consent: true, preferredTime: "evening" }, phoneOf(PHONE), { now }));
     expect(res.created).toBe(true);
-    expect(res.lead).toMatchObject({ status: "new", contactRole: "learner", preferredTime: "evening" });
+    expect(res.lead).toMatchObject({ status: "new", preferredTime: "evening" });
     const [row] = await rows(learner.userId);
     expect(row).toMatchObject({
       userId: learner.userId,
@@ -99,14 +99,13 @@ describe("requesting a callback", () => {
     expect(res.lead.preferredTime).toBeNull();
   });
 
-  it("derives the contact role from the age answer: a parent for under 18, the learner otherwise", async () => {
-    const [kid, teen, adult] = [await makeLearner(), await makeLearner(), await makeLearner()];
+  it("treats every age the same (D79): the contact is always the learner, whatever the age answer", async () => {
+    const [kid, adult] = [await makeLearner(), await makeLearner()];
     await finishReport(kid, 0);
-    await finishReport(teen, 1);
     await finishReport(adult, 3);
-    expect(ok(await createCallback(kid, { consent: true }, phoneOf(PHONE))).lead.contactRole).toBe("parent");
-    expect(ok(await createCallback(teen, { consent: true }, phoneOf(PHONE))).lead.contactRole).toBe("parent");
-    expect(ok(await createCallback(adult, { consent: true }, phoneOf(PHONE))).lead.contactRole).toBe("learner");
+    ok(await createCallback(kid, { consent: true }, phoneOf(PHONE)));
+    ok(await createCallback(adult, { consent: true }, phoneOf(PHONE)));
+    for (const learner of [kid, adult]) expect((await rows(learner.userId))[0]!.contactRole).toBe("learner");
   });
 
   it("refuses without the consent tick, and saves nothing", async () => {
@@ -189,19 +188,18 @@ describe("repeat taps make one lead (idempotent)", () => {
 });
 
 describe("consent wording for the form", () => {
-  it("shows the parent or guardian text to a learner under 18 and the learner text to an adult, with the version", async () => {
+  it("shows the same wording to every age, with the version, and none to someone without a report", async () => {
     const [kid, adult, none] = [await makeLearner(), await makeLearner(), await makeLearner()];
     await finishReport(kid, 0);
     await finishReport(adult, 2);
     const forKid = await getConsentWording(kid.userId);
     const forAdult = await getConsentWording(adult.userId);
     expect(forKid).toEqual({
-      role: "parent",
-      text: CURRENT_CONSENT.texts.parent,
+      text: CURRENT_CONSENT.text,
       version: CURRENT_CONSENT.version,
       draft: CURRENT_CONSENT.draft,
     });
-    expect(forAdult).toMatchObject({ role: "learner", text: CURRENT_CONSENT.texts.learner });
+    expect(forAdult).toEqual(forKid);
     expect(await getConsentWording(none.userId)).toBeNull();
   });
 });
@@ -261,13 +259,13 @@ describe("admin callback list", () => {
     expect(mine[0]).toMatchObject({
       status: "new",
       name: "Asha",
-      contactRole: "parent",
       age: "Under 15",
       preferredTime: null,
       consentVersion: CURRENT_CONSENT.version,
     });
     expect(mine[0]!.topInterests.length).toBeLessThanOrEqual(3);
-    expect(mine[1]).toMatchObject({ contactRole: "learner", preferredTime: "morning", age: "18 to 21" });
+    expect(mine[1]).toMatchObject({ preferredTime: "morning", age: "18 to 21" });
+    expect(mine[0]).not.toHaveProperty("contactRole");
   });
 
   it("reads the name live, so an edited profile name shows at once (nothing is copied into the lead)", async () => {
@@ -365,10 +363,10 @@ describe("CSV download", () => {
     const res = ok(await exportLeadsCsv(admin, "new", namesFromDb, new Date("2026-11-05T10:00:00Z")));
     expect(res.filename).toBe("callbacks-2026-11-05.csv");
     expect(res.truncated).toBe(false);
-    expect(res.csv.startsWith("\uFEFFRequested at,Status,Name,Phone,Speak to,")).toBe(true);
+    expect(res.csv.startsWith("\uFEFFRequested at,Status,Name,Phone,Preferred time,")).toBe(true);
     const line = res.csv.split("\r\n").find((l) => l.includes("91 66666 66666"));
     expect(line).toBeDefined();
-    expect(line).toContain(",Asha,91 66666 66666,Parent,Afternoon,15 to 17,");
+    expect(line).toContain(",Asha,91 66666 66666,Afternoon,15 to 17,");
     expect(line).not.toContain("+91");
     expect(res.count).toBe(res.csv.split("\r\n").length - 2); // minus the header and the trailing break
   });
@@ -438,7 +436,7 @@ describe("the team email job", () => {
     return { learner, id: made.lead.id };
   };
 
-  it("sends one email to the team with the phone, who to ask for, the time and what Meera learned, and no name", async () => {
+  it("sends one email to the team with the phone, the time and what Meera learned, and no name", async () => {
     const { id, learner } = await lead(1);
     const send = vi.fn(async () => {});
     const now = new Date("2026-11-05T12:00:00Z");
@@ -450,7 +448,6 @@ describe("the team email job", () => {
     expect(data).toMatchObject({
       leadId: id,
       phone: "+91 98765 43210",
-      speakTo: "parent",
       preferredTime: "evening",
       age: "15 to 17",
     });

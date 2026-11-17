@@ -7,21 +7,19 @@ import { logger } from "@/lib/logger";
 import type { SessionView } from "@/modules/auth/service";
 import { getCallbackContext, getCallbackContextForAdmin } from "@/modules/chat/service";
 import { EXPORT_LIMIT, LEADS_PAGE_SIZE, pageCountFor, type LeadFilters, type StatusFilter } from "./admin-leads";
-import { CURRENT_CONSENT, type ConsentRole } from "./consent-copy";
+import { CURRENT_CONSENT } from "./consent-copy";
 import { dateIst, dateTimeIst, phoneForScreen, phoneForSheet, toCsv } from "./csv";
 import * as repo from "./repo";
 import {
   LEAD_STATUSES,
   PREFERRED_TIMES,
-  type ContactRole,
   type LeadResult,
   type LeadStatus,
   type LeadView,
   type PreferredTime,
 } from "./types";
 
-export type { ConsentRole } from "./consent-copy";
-export type { ContactRole, LeadErrorCode, LeadResult, LeadStatus, LeadView, PreferredTime } from "./types";
+export type { LeadErrorCode, LeadResult, LeadStatus, LeadView, PreferredTime } from "./types";
 export { LEAD_ERROR_CODES, LEAD_STATUSES, PREFERRED_TIMES } from "./types";
 export { ALERT_SWEEP_CRON, ALERT_SWEEP_JOB, CALLBACK_ALERT_JOB, alertSweepHandler, callbackAlertHandler } from "./jobs";
 export { EXPORT_LIMIT, LEADS_PAGE_SIZE, parseLeadFilters, type LeadFilters, type StatusFilter } from "./admin-leads";
@@ -32,12 +30,9 @@ export type PhoneReader = (userId: string) => Promise<string | null>;
 const toView = (row: repo.LeadRow): LeadView => ({
   id: row.id,
   status: row.status,
-  contactRole: row.contactRole,
   preferredTime: row.preferredTime,
   createdAt: row.createdAt.toISOString(),
 });
-
-const roleFor = (minor: boolean): ConsentRole => (minor ? "parent" : "learner");
 
 /**
  * Called once for a NEW lead, never for a repeat tap. Injected by the caller (actions pass a queue enqueue), so the
@@ -46,14 +41,13 @@ const roleFor = (minor: boolean): ConsentRole => (minor ? "parent" : "learner");
 export type LeadNotifier = (leadId: string) => Promise<void>;
 
 /** What the callback form must show: the consent text for this learner, its version, and whether it is still draft. */
-export type ConsentWording = { role: ConsentRole; text: string; version: string; draft: boolean };
+export type ConsentWording = { text: string; version: string; draft: boolean };
 
 /** The consent tick text for this learner, or null when they have no report yet (so no callback form). */
 export async function getConsentWording(userId: string): Promise<ConsentWording | null> {
   const context = await getCallbackContext(userId);
   if (!context) return null;
-  const role = roleFor(context.minor);
-  return { role, text: CURRENT_CONSENT.texts[role], version: CURRENT_CONSENT.version, draft: CURRENT_CONSENT.draft };
+  return { text: CURRENT_CONSENT.text, version: CURRENT_CONSENT.version, draft: CURRENT_CONSENT.draft };
 }
 
 export type CreateCallbackInput = { consent: boolean; preferredTime?: PreferredTime | null };
@@ -81,12 +75,10 @@ export async function createCallback(
   const phone = await getPhone(learner.userId);
   if (!phone) return { ok: false, code: "no_phone" };
 
-  const contactRole: ContactRole = roleFor(context.minor);
   const created = await repo.insertLeadIfNoNew({
     userId: learner.userId,
     attemptId: context.attemptId,
     phone,
-    contactRole,
     preferredTime: input.preferredTime ?? null,
     consentAt: now,
     consentVersion: CURRENT_CONSENT.version,
@@ -126,7 +118,6 @@ export type AdminLeadRow = {
   requestedAt: string; // ISO date
   name: string; // "" when the learner never gave one
   phone: string; // PII, shown as "+91 98765 43210"
-  contactRole: ContactRole;
   preferredTime: PreferredTime | null;
   age: string | null;
   studying: string | null;
@@ -155,7 +146,6 @@ async function toAdminRows(rows: repo.LeadRow[], getNames: NameReader): Promise<
     requestedAt: row.createdAt.toISOString(),
     name: names.get(row.userId) ?? "",
     phone: phoneForScreen(row.phone),
-    contactRole: row.contactRole,
     preferredTime: row.preferredTime,
     age: contexts[i]?.age ?? null,
     studying: contexts[i]?.status ?? null,
@@ -219,7 +209,6 @@ const CSV_HEADERS = [
   "Status",
   "Name",
   "Phone",
-  "Speak to",
   "Preferred time",
   "Age",
   "Studying or working",
@@ -251,7 +240,6 @@ export async function exportLeadsCsv(
       cap(row.status),
       row.name,
       phoneForSheet(rows[i]!.phone),
-      cap(row.contactRole),
       row.preferredTime ? cap(row.preferredTime) : "",
       row.age ?? "",
       row.studying ?? "",

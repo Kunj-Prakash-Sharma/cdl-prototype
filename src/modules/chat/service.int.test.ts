@@ -790,21 +790,19 @@ describe("callback context (what the team needs before a call)", () => {
     const learner = await makeLearner("Zorbaxian");
     const attemptId = await finishWithAge(learner, 3); // "22 to 25"
     const context = await getCallbackContext(learner.userId);
-    expect(context).toMatchObject({ attemptId, minor: false, age: "22 to 25" });
+    expect(context).toMatchObject({ attemptId, age: "22 to 25" });
     expect(context!.status).toBe(set.basics[1]!.options[0]!.label);
     expect(context!.goal).toBe(set.basics[2]!.options[0]!.label);
     expect(context!.topInterests.length).toBeLessThanOrEqual(3);
     expect(JSON.stringify(context)).not.toContain("Zorbaxian");
   });
 
-  it("marks a learner under 18 as a minor (so a parent is the contact) and an adult as not", async () => {
-    const [young, teen, adult] = [await makeLearner(), await makeLearner(), await makeLearner()];
+  it("has no minor flag for any age (D79): the age is just a label for the team", async () => {
+    const young = await makeLearner();
     await finishWithAge(young, 0); // under 15
-    await finishWithAge(teen, 1); // 15 to 17
-    await finishWithAge(adult, 2); // 18 to 21
-    expect((await getCallbackContext(young.userId))!.minor).toBe(true);
-    expect((await getCallbackContext(teen.userId))!.minor).toBe(true);
-    expect((await getCallbackContext(adult.userId))!.minor).toBe(false);
+    const context = await getCallbackContext(young.userId);
+    expect(context).toMatchObject({ age: "Under 15" });
+    expect(context).not.toHaveProperty("minor");
   });
 
   it("follows the newest finished attempt after a retake", async () => {
@@ -813,7 +811,7 @@ describe("callback context (what the team needs before a call)", () => {
     await retake(learner);
     const second = await finishWithAge(learner, 4);
     const context = await getCallbackContext(learner.userId);
-    expect(context).toMatchObject({ attemptId: second, minor: false, age: "26 or older" });
+    expect(context).toMatchObject({ attemptId: second, age: "26 or older" });
   });
 
   it("gives the admin the context of one attempt, and nothing for an open or unknown attempt", async () => {
@@ -824,7 +822,7 @@ describe("callback context (what the team needs before a call)", () => {
     await submitAnswer(learner, open, "b-age", 1);
     await answerAll(learner, open);
     await finishAttempt(learner, open);
-    expect(await getCallbackContextForAdmin(open)).toMatchObject({ attemptId: open, minor: true });
+    expect(await getCallbackContextForAdmin(open)).toMatchObject({ attemptId: open, age: "15 to 17" });
   });
 });
 

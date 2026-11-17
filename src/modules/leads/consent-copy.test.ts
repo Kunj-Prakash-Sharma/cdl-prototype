@@ -3,10 +3,9 @@ import { CONSENT_COPIES, CURRENT_CONSENT, getConsentCopy } from "./consent-copy"
 
 describe("consent wording", () => {
   for (const copy of Object.values(CONSENT_COPIES)) {
-    it(`${copy.version}: has a learner text and a parent or guardian text`, () => {
-      expect(copy.texts.learner.trim()).not.toBe("");
-      expect(copy.texts.parent).toMatch(/parent or guardian/i);
-      expect(copy.texts.learner).not.toMatch(/parent|guardian/i);
+    it(`${copy.version}: has one text, in the learner's own voice (no minor flow, D79)`, () => {
+      expect(copy.text.trim()).not.toBe("");
+      expect(copy.text).not.toMatch(/parent|guardian/i);
     });
   }
 

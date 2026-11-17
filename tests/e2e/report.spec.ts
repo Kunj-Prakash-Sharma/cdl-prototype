@@ -71,13 +71,13 @@ test.describe("report", () => {
     }).toPass({ timeout: 15_000 });
   });
 
-  test("a parent asks for a callback: the form needs consent, a repeat request keeps one lead", async ({ page }) => {
+  test("a learner asks for a callback: the form needs consent, a repeat request keeps one lead", async ({ page }) => {
     const phone = await openChat(page);
-    await finishQuiz(page); // the first age answer is under 15, so a parent is the contact
+    await finishQuiz(page); // the first age answer is under 15: still the same flow (D79)
     await expect(page.getByTestId("callback-form")).toBeVisible();
 
-    // The consent text is the parent or guardian wording, and the button waits for the tick.
-    await expect(page.getByTestId("callback")).toContainText("parent or guardian");
+    // One consent wording for every age, and the button waits for the tick.
+    await expect(page.getByTestId("callback")).not.toContainText("parent or guardian");
     await expect(page.getByTestId("callback-submit")).toBeDisabled();
     await page.getByTestId("callback-time-evening").click();
     await page.getByTestId("callback-consent").check();
@@ -87,7 +87,7 @@ test.describe("report", () => {
 
     const [first, ...others] = await leadsFor(phone);
     expect(others).toHaveLength(0);
-    expect(first).toMatchObject({ status: "new", contact_role: "parent", preferred_time: "evening" });
+    expect(first).toMatchObject({ status: "new", contact_role: "learner", preferred_time: "evening" });
     expect(first!.consent_version).toContain("draft");
 
     // Asking again (a nervous second tap, or a new visit) gives the same confirmation and still one lead.
@@ -98,7 +98,7 @@ test.describe("report", () => {
     expect(await leadsFor(phone)).toHaveLength(1);
   });
 
-  test("an adult asks for a callback with the learner wording and no preferred time", async ({ page }) => {
+  test("an adult asks for a callback with no preferred time", async ({ page }) => {
     const phone = await openChat(page);
     await finishQuiz(page, 2); // "18 to 21"
     await expect(page.getByTestId("callback-form")).toBeVisible();

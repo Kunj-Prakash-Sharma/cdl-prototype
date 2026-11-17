@@ -20,13 +20,11 @@ export const LEAD_STATUSES = ["new", "contacted", "closed"] as const;
 export type LeadStatus = (typeof LEAD_STATUSES)[number];
 export const PREFERRED_TIMES = ["morning", "afternoon", "evening"] as const;
 export type PreferredTime = (typeof PREFERRED_TIMES)[number];
-export type ContactRole = "learner" | "parent";
 
 /** What the learner gets back: no phone, no ids of anyone else. */
 export type LeadView = {
   id: string;
   status: LeadStatus;
-  contactRole: ContactRole;
   preferredTime: PreferredTime | null;
   createdAt: string; // ISO date
 };
