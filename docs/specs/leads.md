@@ -9,7 +9,7 @@ A learner asks the team to call from the report. The team is emailed once, sees 
 
 ## Scope
 - Callback form on the report: number from the account (not retyped), required consent tick, optional preferred time (morning, afternoon, evening), confirmation message.
-- `leads` table: user, attempt, phone snapshot (PII), contact role, preferred time, consent time and consent-text version, status `new | contacted | closed`, `alerted_at`.
+- `leads` table: user, attempt, phone snapshot (PII), preferred time, consent time and consent-text version, status `new | contacted | closed`, `alerted_at`.
 - Team email through a pg-boss job (`leads.callback_alert`), once per new lead.
 - **Alert sweep (D76):** a scheduled job `leads.alert_sweep` (every 5 minutes) re-queues the alert for any lead with `alerted_at` empty that is at least 5 minutes old and at most 3 days old (oldest first, 50 per run), with the lead id as the singleton key. The alert job itself skips a lead that is already alerted, so running it twice never sends two emails. It covers a failed queueing at request time and an alert job that ran out of retries.
 - `/admin/callbacks`: newest first, status tabs, paging, change status, **Download CSV**.
@@ -20,7 +20,7 @@ CRM webhook (E6-S6), Turnstile on the form (login stands in), audit log (E1-S5),
 ## Rules and invariants (D71, D73)
 - A callback needs a finished report (`no_report`).
 - At most ONE `new` lead per learner (partial unique index). A repeat tap returns the same lead (`created: false`). After the team marks it `contacted` or `closed`, a new request is allowed. Moving a lead back to `new` is refused (`conflict`) while the learner has another new one.
-- **D79 (Nov 16): no minor flow.** Contact role comes from one `contactRole()` function that always returns "learner"; the age answer is not used and the `minor` flag is removed from leads, the team email, admin and CSV. One consent wording. *To change in code: the old age-derived role and parent wording (D71) are removed.*
+- **D79 (Nov 16): no minor flow, built.** No contact role in code: the question set has no `minor` flag, the consent wording is one text, and the team email, admin list and CSV have no "speak to" field. The column `leads.contact_role` stays in the database with the default `learner` (migration 0006; nothing is dropped). The age answer is shown to the team as plain information.
 - A guest (anonymous user, D80) cannot create a lead: `requireUser()` refuses anonymous users.
 - Consent wording is versioned (`leads/consent-copy.ts`, DRAFT, lawyer review open).
 - 5 requests per hour per learner (per app instance).

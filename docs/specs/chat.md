@@ -18,8 +18,9 @@ A learner (a **guest is enough, D78**; phone OTP comes before the report) chats 
 - Funnel analytics (no PII), inactivity event (D58).
 - Docs-first changes already done: D62, modules.md, integrations.md, CLAUDE.md. Remaining doc updates are listed in "Cleanup" below.
 
-## Guest quiz and the report gate (D78, D80, Nov 16, not built yet)
-- Actions use `requireLearnerOrGuest()`; `/discover` leaves the proxy matcher. Attempts belong to the guest user until the OTP re-points them (auth.md).
+## Guest quiz and the report gate (D78, D80, Nov 16, built)
+- Actions use `requireLearnerOrGuest()`; `/discover` leaves the proxy matcher and moves to the `(quiz)` route group (no login guard). A visitor with no session sees `GuestStart` (Start button, bot check) which calls auth's `startGuestSession`; `REPORT_GATE=before_chat` keeps the old login-first rule.
+- `claimLinkedGuests(userId)` (chat service) re-points a linked guest's attempts to the learner in one transaction under an advisory lock; called at the top of every entry point that reads attempts; when both have an open attempt the older is abandoned. `getReportForVisitor` returns the real report for a learner and, for a guest, only `SAMPLE_REPORT` (`sample-report.ts`, constants only) plus `finished`. The `ReportGate` component shows it blurred with the OTP form. The worker job `auth.guest_cleanup` (daily) claims, then deletes guests older than 7 days, never one with a lead. Attempts belong to the guest user until the OTP re-points them (auth.md).
 - The typed name stays pending on the guest attempt and moves to the profile on claim. No chat text is stored (D18).
 - `finishAttempt` works for guests and saves the score. `getLatestReport` for a guest returns `{ ok: false, code: "verify_required" }` and the page shows ONE fixed sample report behind the gate: made-up numbers, generic text, same design, same for everyone, nothing from the learner (no name, no Holland code). The real report is fetched only after the OTP succeeds.
 - Gate text: the report will be linked to this number (no word "account"). Verified learners skip the gate, also after a retake. `REPORT_GATE` config holds the position.

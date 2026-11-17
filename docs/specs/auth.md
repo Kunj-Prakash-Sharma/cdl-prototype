@@ -18,7 +18,9 @@ A learner logs in with a phone number and an SMS code. The client team logs in t
 
 ## Guest accounts (D78, D80, Nov 16, not built yet)
 - Better Auth `anonymous` plugin, inside `modules/auth` only. A guest user is made when the visitor taps Start (bot check and D74 limits apply), never on page load. Kept 7 days; a pg-boss job deletes older anonymous users and their unfinished attempts.
-- On phone-OTP success the plugin's `onLinkAccount` runs BEFORE it deletes the guest: it re-points the guest's `chat_attempts` and the pending name to the real user in one transaction (idempotent). If the number already has a report, the newest quiz wins.
+- On phone-OTP success the plugin's `onLinkAccount` calls `linkGuest`: it sets `auth_user.linkedUserId` on the guest and copies the typed name to the real user. The guest row is KEPT (`disableDeleteAnonymousUser`). The chat re-points its own rows lazily (`linkedGuestIds(userId)` in the auth service) and the worker deletes guests after 7 days (`expiredGuestIds`, `deleteGuests`). If the number already has a report, the newest quiz wins (chat side).
+- `startGuestSession({captchaToken})` goes through the Better Auth handler (Turnstile + per-IP limit `/sign-in/anonymous`, 30 an hour in production); a visitor who already has a session gets ok and no new guest.
+- `getSession()` returns null for guests; `getVisitor()` / `requireLearnerOrGuest()` are for the quiz only. Admin lists and counts hide guests. Migration 0005 adds `isAnonymous`, `linkedUserId`.
 - `requireUser()` refuses anonymous users (leads, buying, paid video). `requireLearnerOrGuest()` is for the chat only. Admin user lists hide anonymous users.
 - Free lecture previews make no account (anonymous analytics id only, D66).
 
