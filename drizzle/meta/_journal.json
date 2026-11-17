@@ -36,6 +36,20 @@
       "when": 1793877379454,
       "tag": "0004_last_mikhail_rasputin",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794832760645,
+      "tag": "0005_neat_meteorite",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794834536124,
+      "tag": "0006_common_bulldozer",
+      "breakpoints": true
     }
   ]
 }

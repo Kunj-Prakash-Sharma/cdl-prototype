@@ -1,0 +1,1 @@
+ALTER TABLE "leads" ALTER COLUMN "contact_role" SET DEFAULT 'learner';
