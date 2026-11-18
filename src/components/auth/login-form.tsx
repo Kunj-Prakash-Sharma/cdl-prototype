@@ -110,7 +110,7 @@ export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; 
               placeholder="98765 43210"
               maxLength={10}
               value={digits}
-              onChange={(e) => setDigits(e.target.value.replace(/D/g, "").slice(0, 10))}
+              onChange={(e) => setDigits(e.target.value.replace(/\D/g, "").slice(0, 10))}
               className="autofill-paper min-h-12 min-w-0 flex-1 bg-transparent py-3 pr-4 pl-2 text-[15px] text-ink outline-none"
               aria-describedby={error ? "login-error" : undefined}
             />
@@ -157,7 +157,7 @@ export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; 
             maxLength={6}
             value={code}
             onChange={(e) => {
-              const value = e.target.value.replace(/D/g, "").slice(0, 6);
+              const value = e.target.value.replace(/\D/g, "").slice(0, 6);
               setCode(value);
               if (value.length === 6 && !pending) verify(value);
             }}
