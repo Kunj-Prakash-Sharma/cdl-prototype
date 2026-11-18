@@ -39,7 +39,11 @@ test.describe("report", () => {
     await expect(page.getByRole("banner")).toBeHidden();
     await expect(page.getByTestId("report-print")).toBeHidden();
     await expect(page.getByTestId("report-callback-button")).toBeHidden();
-    await expect(page.getByTestId("report-interests")).toBeVisible();
+    // For print the screen report gives way to the A4 print document (V5 PDF design), which is hidden on screen.
+    await expect(page.getByTestId("report")).toBeHidden();
+    await expect(page.getByTestId("report-print-doc")).toBeVisible();
+    await page.emulateMedia({ media: "screen" });
+    await expect(page.getByTestId("report-print-doc")).toBeHidden();
   });
 
   test("a learner with no finished attempt sees the empty state", async ({ page }) => {
