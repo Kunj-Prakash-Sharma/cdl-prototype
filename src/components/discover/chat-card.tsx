@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import { brand } from "@/config/brand";
-import { SageAvatar } from "@/components/ui/misc";
-import { cn } from "@/lib/format";
 import type { NextStep } from "@/modules/chat/types";
-import { AiBubble, Typing } from "./chat-bubbles";
+import { AiBubble, GuideAvatar, Typing } from "./chat-bubbles";
 
 type CardStep = Extract<NextStep, { kind: "name" | "basics" }>;
 
@@ -21,9 +19,10 @@ function useRevealed(key: string) {
   return revealedKey === key;
 }
 
-/** The name question and the tap questions about the learner, in the prototype's chat look. */
+/** The name question and the tap questions about the learner, in the V5 chat card. */
 export function ChatCard({
   step,
+  meta,
   ack,
   error,
   pending,
@@ -31,6 +30,8 @@ export function ChatCard({
   onChoose,
 }: {
   step: CardStep;
+  /** The line under the guide's name: which part this is (from the server's progress). */
+  meta: string;
   ack: string | null;
   error: string | null;
   pending: boolean;
@@ -44,37 +45,33 @@ export function ChatCard({
     if (revealed && step.kind === "basics") region.current?.focus({ preventScroll: true });
   }, [revealed, step.kind]);
   return (
-    <section className="overflow-hidden rounded-3xl bg-white shadow-soft ring-1 ring-slate-200/80">
-      <header className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
-        <SageAvatar />
-        <div>
-          <p className="font-bold text-ink">{brand.guideName}</p>
-          <p className="flex items-center gap-1.5 text-xs text-emerald-600">
-            <span className="size-1.5 rounded-full bg-emerald-500" /> Your career guide
-          </p>
+    <section className="flex min-h-120 flex-col overflow-hidden rounded-[28px] border border-line bg-white shadow-glow sm:min-h-140 sm:rounded-[32px]">
+      <header className="flex items-center gap-3.5 border-b border-mist px-5 py-5 sm:px-8">
+        <GuideAvatar />
+        <div className="leading-snug">
+          <h1 className="text-[17px] font-medium text-ink">{brand.guideName}</h1>
+          <p className="text-[13px] text-muted">{meta}</p>
         </div>
       </header>
 
-      <div ref={region} tabIndex={-1} className="min-h-44 space-y-3 px-4 py-6 outline-none sm:px-6" aria-live="polite">
+      <div ref={region} tabIndex={-1} className="flex-1 space-y-3 px-5 py-6 outline-none sm:px-8" aria-live="polite">
         {!revealed ? (
           <Typing />
         ) : (
           <>
-            {ack && <AiBubble first>{ack}</AiBubble>}
+            {ack && <AiBubble>{ack}</AiBubble>}
             {step.kind === "name" && (
               <>
-                <AiBubble first={!ack}>{`Hi, I'm ${brand.guideName}.`}</AiBubble>
+                <AiBubble>{`Hi, I'm ${brand.guideName}.`}</AiBubble>
                 <AiBubble delay={0.2}>{"I'm a virtual guide, not a human."}</AiBubble>
               </>
             )}
-            <AiBubble delay={step.kind === "name" ? 0.4 : 0.2} first={step.kind === "basics" && !ack}>
-              {step.prompt}
-            </AiBubble>
+            <AiBubble delay={step.kind === "name" ? 0.4 : 0.2}>{step.prompt}</AiBubble>
           </>
         )}
       </div>
 
-      <div className="border-t border-slate-100 bg-paper/60 p-4 sm:p-5">
+      <div className="border-t border-mist px-5 pt-4 pb-5 sm:px-8 sm:pb-6">
         {revealed &&
           (step.kind === "name" ? (
             <NameInput pending={pending} onSubmit={onName} />
@@ -82,7 +79,7 @@ export function ChatCard({
             <ChoiceChips options={step.options} pending={pending} onChoose={onChoose} />
           ))}
         {error && (
-          <p role="alert" className="mt-3 text-sm font-medium text-red-600">
+          <p role="alert" className="mt-3 text-sm font-medium text-sun-600">
             {error}
           </p>
         )}
@@ -100,7 +97,7 @@ function NameInput({ pending, onSubmit }: { pending: boolean; onSubmit: (name: s
         event.preventDefault();
         if (clean && !pending) onSubmit(clean);
       }}
-      className="flex items-center gap-2 rounded-full bg-white p-1.5 pl-5 ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-brand-400"
+      className="flex items-center gap-2 rounded-full border-[1.5px] border-line bg-paper p-1.5 pl-5 transition focus-within:border-brand-600 focus-within:bg-white focus-within:shadow-focus"
     >
       <input
         autoFocus
@@ -111,17 +108,17 @@ function NameInput({ pending, onSubmit }: { pending: boolean; onSubmit: (name: s
         // Only a size hint for the browser: the server decides what a valid name is.
         maxLength={100}
         autoComplete="given-name"
-        className="min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-slate-400"
+        className="min-w-0 flex-1 bg-transparent py-2.5 text-[15px] text-ink outline-none placeholder:text-muted/70"
         data-testid="name-input"
       />
       <button
         type="submit"
         disabled={!clean || pending}
         aria-label="Send"
-        className="grid size-11 place-items-center rounded-full bg-brand-600 text-white transition hover:bg-brand-700 disabled:opacity-40"
+        className="grid size-11 shrink-0 place-items-center rounded-full bg-brand-600 text-white transition hover:bg-brand-800 disabled:bg-brand-200"
         data-testid="name-send"
       >
-        <Send className="size-4" />
+        <ArrowUp className="size-5" strokeWidth={2.2} />
       </button>
     </form>
   );
@@ -145,9 +142,7 @@ function ChoiceChips({
           disabled={pending}
           onClick={() => onChoose(option.index)}
           data-testid={`choice-${option.index}`}
-          className={cn(
-            "min-h-11 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 ring-1 ring-slate-200 transition-all hover:-translate-y-0.5 hover:text-brand-700 hover:ring-brand-300 disabled:opacity-60 motion-reduce:hover:translate-y-0",
-          )}
+          className="min-h-11 rounded-full border-[1.5px] border-brand-200 bg-white px-4 py-2.5 text-[15px] font-semibold text-brand-700 transition-colors hover:border-brand-600 hover:bg-brand-50 disabled:opacity-60"
         >
           {option.label}
         </button>

@@ -37,7 +37,7 @@ Radii: pills and buttons `rounded-full`; cards `rounded-[20px]` (22 for large); 
 - **Header (`site/navbar.tsx`):** white, bottom `line` border, sticky; star logo (`LogoMark`) plus the product name in Outfit with wide tracking; links Career Discovery, Courses, My Learning, then Log in or the account menu; ink, current and hover `brand-600`. Below `md` the links move into the phone menu.
 - **Offer bar (`site/offer-bar.tsx`):** `ink` (same near-black as the footer), white text, `brand-200` highlight, a dashed white code chip that copies on tap (`site/copy-code.tsx`). Its offer is sample content (`sampleOffer` in `src/content/samples.ts`, D82); set it to `null` to hide the bar. No real coupon: checkout prices come from the server.
 - **Footer (`site/footer.tsx`):** the dark single-row form: `ink` background, product name, links, "© year name · India". Privacy, Terms and Refunds links are added with those pages.
-- **Chat:** guide bubbles left, learner bubbles right in `brand-600`; quick replies are `brand-200`-bordered pills, solid when chosen.
+- **Chat (ported, row 4):** guide bubbles left in soft `brand-50` with a square bottom-left corner; a violet `GuideAvatar` heads the card; the composer is a pill with a 44px send button; quick replies are `brand-200`-bordered pills. Quiz buttons are round 1-to-n buttons, selected = `brand-600` fill with a soft ring.
 - **Course card:** coloured top band per category with image, play button, "Free preview" and lesson-count tags; body with title, description, meta, price row and Buy button.
 - **Tabs / filter chips:** pills, white with `line-strong` border; selected = `brand-600` fill.
 - **FAQ:** white cards, round chevron that turns `brand-600` and rotates when open.

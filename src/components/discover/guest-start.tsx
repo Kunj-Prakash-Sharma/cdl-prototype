@@ -8,7 +8,7 @@ import { useTurnstile } from "@/components/auth/use-turnstile";
 import { Button } from "@/components/ui/button";
 
 // The first screen for a visitor with no session (D78). A guest session is made only when they tap Start (behind the
-// bot check), never on page load. TEMPORARY layout until the new design lands; wording comes from the props.
+// bot check), never on page load. Wording comes from the props.
 export function GuestStart({
   siteKey,
   title,
@@ -38,10 +38,10 @@ export function GuestStart({
 
   return (
     <div className="mx-auto max-w-xl px-4 py-16 text-center" data-testid="guest-start">
-      <h1 className="text-3xl font-extrabold tracking-tight text-ink">{title}</h1>
-      <p className="mt-3 text-slate-600">{lead}</p>
+      <h1 className="font-display text-[28px] font-normal tracking-[-1px] text-ink sm:text-[34px]">{title}</h1>
+      <p className="mt-3 text-body">{lead}</p>
       {error && (
-        <p role="alert" className="mt-4 text-sm font-medium text-red-600">
+        <p role="alert" className="mt-4 text-sm font-medium text-sun-600">
           {error}
         </p>
       )}

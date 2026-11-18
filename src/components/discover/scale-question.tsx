@@ -8,12 +8,9 @@ import { AiBubble } from "./chat-bubbles";
 
 type QuestionStep = Extract<NextStep, { kind: "question" }>;
 
-// Circle sizes grow from the middle button outwards (the prototype's look). One entry per distance from the middle.
-const CIRCLE = ["size-9 sm:size-10", "size-11 sm:size-12", "size-14 sm:size-16"];
-
 /**
- * One scored question as a row of round buttons. The statement, the labels and the number of buttons all come from the
- * step: this file knows nothing about which question it is or what the scale is called.
+ * One scored question as a row of round buttons (V5). The statement, the labels and the number of buttons all come
+ * from the step: this file knows nothing about which question it is or what the scale is called.
  */
 export function ScaleQuestion({
   step,
@@ -32,12 +29,11 @@ export function ScaleQuestion({
   onChoose: (value: number) => void;
 }) {
   // The pick is remembered with its question, so it clears itself when the next question arrives. This component is not
-  // remounted per question: only the content inside the card slides, like the prototype.
+  // remounted per question: only the content inside the card slides.
   const [picked, setPicked] = useState<{ id: string; value: number } | null>(null);
   // After a failed save (an error shows) the pick is not shown, so the learner can answer again.
   const selected = picked?.id === step.id && !error ? picked.value : null;
   const labels = step.scale.labels;
-  const middle = (labels.length - 1) / 2;
   // Keyboard focus moves to each new question as it appears, otherwise it falls to the page after each answer.
   const focusHeading = useCallback((element: HTMLHeadingElement | null) => {
     element?.focus({ preventScroll: true });
@@ -68,10 +64,10 @@ export function ScaleQuestion({
     <div>
       {ack && (
         <div className="mb-4">
-          <AiBubble first>{ack}</AiBubble>
+          <AiBubble>{ack}</AiBubble>
         </div>
       )}
-      <div className="relative overflow-hidden rounded-3xl bg-white shadow-soft ring-1 ring-slate-200/80">
+      <div className="relative overflow-hidden rounded-[28px] border border-line bg-white sm:rounded-[32px]">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={step.id}
@@ -79,32 +75,29 @@ export function ScaleQuestion({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -40 }}
             transition={{ duration: 0.28, ease: "easeOut" }}
-            className="px-4 py-10 sm:px-12 sm:py-14"
+            className="px-5 py-8 sm:px-12 sm:py-14"
           >
-            <p className="text-center text-sm font-semibold text-slate-400">
-              Question {stage.answered + 1} of {stage.total}
+            <p className="text-[13px] font-semibold text-brand-700">
+              {stage.label} · question {stage.answered + 1}
             </p>
             <h2
               ref={focusHeading}
               tabIndex={-1}
-              className="mx-auto mt-4 max-w-xl text-center text-2xl leading-snug font-bold tracking-tight text-balance text-ink outline-none sm:text-3xl"
+              className="mt-2 font-display text-[22px] leading-[1.25] font-normal tracking-[-0.5px] text-balance text-ink outline-none sm:text-[28px] lg:text-[32px]"
               data-testid="question-text"
             >
               {step.text}
             </h2>
-            <p className="mt-3 text-center text-sm text-slate-500">{step.scale.prompt}</p>
+            <p className="mt-3 text-[15px] text-body">{step.scale.prompt}</p>
 
             <div
-              className="mt-10 flex items-center justify-center gap-0.5 sm:gap-3"
+              className="mt-8 flex max-w-130 justify-between gap-2 sm:mt-10 sm:gap-4"
               role="group"
               aria-label={step.scale.prompt}
             >
               {labels.map((label, i) => {
                 const value = i + 1;
                 const on = selected === value;
-                const distance = Math.min(Math.round(Math.abs(i - middle)), CIRCLE.length - 1);
-                const centre = i === middle;
-                const high = i > middle;
                 return (
                   <button
                     key={value}
@@ -114,41 +107,28 @@ export function ScaleQuestion({
                     disabled={pending}
                     data-testid={`scale-${value}`}
                     onClick={() => choose(value)}
-                    className="grid min-h-11 min-w-11 shrink-0 place-items-center disabled:opacity-60"
+                    className={cn(
+                      "grid size-12 place-items-center rounded-full border-[1.5px] font-display text-lg transition-all duration-200 disabled:opacity-60 motion-reduce:transition-none sm:size-16",
+                      on
+                        ? "scale-110 border-brand-600 bg-brand-600 text-white ring-8 ring-brand-600/15"
+                        : "border-line-strong bg-white text-ink hover:border-brand-600",
+                    )}
                   >
-                    <span
-                      className={cn(
-                        "grid place-items-center rounded-full border-2 transition-all duration-200",
-                        CIRCLE[distance],
-                        centre
-                          ? on
-                            ? "border-slate-500 bg-slate-500"
-                            : "border-slate-300 hover:bg-slate-100"
-                          : high
-                            ? on
-                              ? "border-brand-600 bg-brand-600 shadow-glow"
-                              : "border-brand-400 hover:bg-brand-50"
-                            : on
-                              ? "border-sun-500 bg-sun-500 shadow-glow"
-                              : "border-sun-400 hover:bg-sun-100",
-                      )}
-                    >
-                      {on && <span className="size-2.5 rounded-full bg-white" />}
-                    </span>
+                    {value}
                   </button>
                 );
               })}
             </div>
 
-            <div className="mx-auto mt-3 flex max-w-md justify-between gap-3 text-xs font-semibold sm:text-sm">
-              <span className="text-sun-600">{labels[0]}</span>
-              <span className="text-slate-400">
+            <div className="mt-3 flex max-w-130 justify-between gap-3 text-[13px] text-muted">
+              <span>{labels[0]}</span>
+              <span className="hidden text-center sm:inline">
                 {selected ? labels[selected - 1] : `Tap or press 1–${labels.length}`}
               </span>
-              <span className="text-right text-brand-700">{labels[labels.length - 1]}</span>
+              <span className="text-right">{labels[labels.length - 1]}</span>
             </div>
             {error && (
-              <p role="alert" className="mt-6 text-center text-sm font-medium text-red-600">
+              <p role="alert" className="mt-6 text-sm font-medium text-sun-600">
                 {error}
               </p>
             )}

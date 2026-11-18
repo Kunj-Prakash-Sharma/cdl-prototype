@@ -8,6 +8,7 @@ import type { ChatErrorCode, NextStep, Progress, StageId } from "@/modules/chat/
 import { ChatCard } from "./chat-card";
 import { chatMessage } from "./chat-messages";
 import { HelplineLink } from "./helpline-link";
+import { QuizRail } from "./quiz-rail";
 import { QuizStepper } from "./quiz-stepper";
 import { ScaleQuestion } from "./scale-question";
 import { StageHeader } from "./stage-header";
@@ -186,57 +187,63 @@ export function ChatFlow({
   return (
     <div>
       {shown && view.type !== "stopped" && <QuizStepper progress={shown} />}
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
-        {shown && stage && <StageHeader stage={stage} index={stageIndex} count={shown.stages.length} />}
+      <div className="mx-auto flex max-w-310 items-start gap-6 px-4.5 pt-6 pb-16 sm:px-6 sm:pt-8 sm:pb-24 lg:px-12">
+        {shown && step && <QuizRail progress={shown} />}
+        <div className="mx-auto w-full max-w-3xl min-w-0 flex-1">
+          {shown && stage && step?.kind === "question" && (
+            <StageHeader stage={stage} index={stageIndex} count={shown.stages.length} />
+          )}
 
-        {step && (step.kind === "name" || step.kind === "basics") && (
-          <ChatCard
-            key={step.id}
-            step={step}
-            ack={ack}
-            error={error}
-            pending={pending}
-            onName={sendName}
-            onChoose={(index) => answer(step.id, index, "basics")}
-          />
-        )}
-        {step && step.kind === "question" && stage && (
-          <ScaleQuestion
-            step={step}
-            stage={stage}
-            ack={ack}
-            error={error}
-            pending={pending}
-            onChoose={(value) => answer(step.id, value, "question")}
-          />
-        )}
-        {view.type === "finishing" && (
-          <FinishingScreen
-            error={view.error ?? error}
-            pending={pending}
-            onRetry={() => {
-              setView({ type: "finishing" });
-              run(() => finishNow(attemptId));
-            }}
-          />
-        )}
-        {view.type === "resume" && (
-          <ResumeScreen
-            answered={view.answered}
-            total={view.total}
-            pending={pending}
-            error={error}
-            onContinue={continueQuiz}
-            onRestart={startFresh}
-          />
-        )}
-        {view.type === "retry" && <RetryScreen pending={pending} error={error} onRetry={() => retry(view.stage)} />}
-        {view.type === "stopped" && <StopScreen pending={pending} error={error} onRestart={startOver} />}
-        {view.type === "finished" && (
-          <ResultPlaceholder result={view.result} pending={pending} error={error} onRetake={startOver} />
-        )}
+          {step && (step.kind === "name" || step.kind === "basics") && (
+            <ChatCard
+              key={step.id}
+              step={step}
+              meta={shown && stage ? `Part ${stageIndex + 1} of ${shown.stages.length} · ${stage.title}` : ""}
+              ack={ack}
+              error={error}
+              pending={pending}
+              onName={sendName}
+              onChoose={(index) => answer(step.id, index, "basics")}
+            />
+          )}
+          {step && step.kind === "question" && stage && (
+            <ScaleQuestion
+              step={step}
+              stage={stage}
+              ack={ack}
+              error={error}
+              pending={pending}
+              onChoose={(value) => answer(step.id, value, "question")}
+            />
+          )}
+          {view.type === "finishing" && (
+            <FinishingScreen
+              error={view.error ?? error}
+              pending={pending}
+              onRetry={() => {
+                setView({ type: "finishing" });
+                run(() => finishNow(attemptId));
+              }}
+            />
+          )}
+          {view.type === "resume" && (
+            <ResumeScreen
+              answered={view.answered}
+              total={view.total}
+              pending={pending}
+              error={error}
+              onContinue={continueQuiz}
+              onRestart={startFresh}
+            />
+          )}
+          {view.type === "retry" && <RetryScreen pending={pending} error={error} onRetry={() => retry(view.stage)} />}
+          {view.type === "stopped" && <StopScreen pending={pending} error={error} onRestart={startOver} />}
+          {view.type === "finished" && (
+            <ResultPlaceholder result={view.result} pending={pending} error={error} onRetake={startOver} />
+          )}
 
-        {view.type !== "stopped" && <HelplineLink className="mt-6 justify-center" />}
+          {view.type !== "stopped" && <HelplineLink className="mt-6 justify-center" />}
+        </div>
       </div>
     </div>
   );
