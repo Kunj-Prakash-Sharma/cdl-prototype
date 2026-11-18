@@ -55,7 +55,7 @@ function Section({
       id={id}
       data-testid={testId}
       aria-labelledby={`${id}-h`}
-      className="scroll-mt-24 rounded-[28px] border border-line bg-white p-6 sm:p-9 lg:p-11 print:break-inside-avoid"
+      className="scroll-mt-44 rounded-[28px] border border-line bg-white p-6 sm:p-9 lg:p-11 print:break-inside-avoid"
     >
       <div className="mb-6 max-w-3xl sm:mb-8">
         <p className="flex items-center gap-2.5 text-[13px] font-bold tracking-[1.2px] text-brand-600 uppercase">
@@ -167,7 +167,7 @@ export function ReportView({ report, children }: { report: LatestReport; childre
         {/* Jump links */}
         <nav
           aria-label="Report sections"
-          className="sticky top-3 z-10 flex flex-wrap justify-center gap-1 self-center rounded-[20px] border border-line bg-white/90 p-1.5 shadow-lift backdrop-blur-md sm:rounded-full print:hidden"
+          className="sticky top-[76px] z-10 flex flex-wrap justify-center gap-1 self-center rounded-[20px] border border-line bg-white/90 p-1.5 shadow-lift backdrop-blur-md sm:rounded-full print:hidden"
         >
           {sectionLinks.map(([id, label], i) => (
             <a

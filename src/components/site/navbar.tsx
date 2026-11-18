@@ -71,6 +71,8 @@ export function Navbar({ session }: { session: SessionView | null }) {
   const [open, setOpen] = useState(false);
   const { run: runLogout, pending: loggingOut } = useLogout();
   const menuButton = useRef<HTMLButtonElement>(null);
+  const header = useRef<HTMLElement>(null);
+  const [menuTop, setMenuTop] = useState(72);
 
   // While the phone menu is open: the page behind it does not scroll, Escape closes it (focus goes back to the
   // button), and it closes by itself if the window grows to the desktop layout.
@@ -113,7 +115,7 @@ export function Navbar({ session }: { session: SessionView | null }) {
           />
         )}
       </AnimatePresence>
-      <header className="sticky top-0 z-50 border-b border-line bg-white">
+      <header ref={header} className="sticky top-0 z-50 border-b border-line bg-white">
         <nav
           className="mx-auto flex max-w-7xl items-center gap-3 px-4.5 py-2.5 sm:px-6 md:gap-7 lg:px-8"
           aria-label="Main"
@@ -149,7 +151,12 @@ export function Navbar({ session }: { session: SessionView | null }) {
             ref={menuButton}
             type="button"
             className="-mr-1.5 grid size-11 place-items-center rounded-full text-ink hover:bg-mist md:hidden"
-            onClick={() => setOpen((o) => !o)}
+            onClick={() => {
+              // The offer bar above the header can push the menu down; measure where the header ends so the menu's
+              // height cap leaves its bottom (Log out) on screen.
+              if (!open) setMenuTop(header.current?.getBoundingClientRect().bottom ?? 72);
+              setOpen((o) => !o);
+            }}
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
             aria-controls="mobile-menu"
@@ -168,7 +175,10 @@ export function Navbar({ session }: { session: SessionView | null }) {
               className="overflow-hidden border-t border-line bg-white md:hidden"
             >
               {/* scrolls inside itself on short phones, since the page behind is locked */}
-              <div className="flex max-h-[calc(100dvh-4.5rem)] flex-col gap-1 overflow-y-auto overscroll-contain px-4.5 py-4">
+              <div
+                style={{ maxHeight: `calc(100dvh - ${Math.ceil(menuTop)}px)` }}
+                className="flex flex-col gap-1 overflow-y-auto overscroll-contain px-4.5 py-4"
+              >
                 <Suspense fallback={<NavLinks vertical onNavigate={() => setOpen(false)} />}>
                   <ActiveNavLinks vertical onNavigate={() => setOpen(false)} />
                 </Suspense>

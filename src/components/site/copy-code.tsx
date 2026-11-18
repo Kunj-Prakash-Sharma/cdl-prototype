@@ -4,19 +4,24 @@ import { useEffect, useState } from "react";
 
 /** The offer bar's code chip: a tap copies the code and says so for two seconds. */
 export function CopyCode({ code, note }: { code: string; note?: string }) {
-  const [copied, setCopied] = useState(false);
+  const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle");
 
   useEffect(() => {
-    if (!copied) return;
-    const t = setTimeout(() => setCopied(false), 2000);
+    if (status === "idle") return;
+    const t = setTimeout(() => setStatus("idle"), 2000);
     return () => clearTimeout(t);
-  }, [copied]);
+  }, [status]);
 
   const copy = () => {
-    setCopied(true);
-    // Clipboard can be missing or blocked (http, old browser, a pending permission); the code is still visible to type.
-    navigator.clipboard?.writeText(code).catch(() => {});
+    // Clipboard can be missing or blocked (http, old browser, a denied permission): then say so, the code stays visible.
+    if (!navigator.clipboard) return setStatus("failed");
+    navigator.clipboard.writeText(code).then(
+      () => setStatus("copied"),
+      () => setStatus("failed"),
+    );
   };
+
+  const label = status === "copied" ? "Copied" : status === "failed" ? "Copy failed, type the code" : "Tap to copy";
 
   return (
     <>
@@ -29,7 +34,7 @@ export function CopyCode({ code, note }: { code: string; note?: string }) {
         {code}
       </button>
       <span className="text-white/75">
-        <span aria-live="polite">{copied ? "Copied" : "Tap to copy"}</span>
+        <span aria-live="polite">{label}</span>
         {note && ` · ${note}`}
       </span>
     </>

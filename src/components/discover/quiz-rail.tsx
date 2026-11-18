@@ -9,7 +9,7 @@ import type { Progress } from "@/modules/chat/types";
 export function QuizRail({ progress }: { progress: Progress }) {
   const percent = progress.total > 0 ? Math.round((progress.answered / progress.total) * 100) : 0;
   return (
-    <aside aria-label="Discovery progress" className="sticky top-6 hidden w-80 shrink-0 flex-col gap-3.5 lg:flex">
+    <aside aria-label="Discovery progress" className="sticky top-[88px] hidden w-80 shrink-0 flex-col gap-3.5 lg:flex">
       <div className="rounded-[20px] border border-line bg-white px-5.5 py-5">
         <p className="text-[13px] font-semibold text-muted">
           {progress.answered} of {progress.total} answered

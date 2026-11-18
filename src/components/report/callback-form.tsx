@@ -56,7 +56,7 @@ export function CallbackForm({ wording }: { wording: CallbackWording }) {
     <section
       id="callback"
       data-testid="callback"
-      className="scroll-mt-24 rounded-[28px] border border-line bg-white p-6 shadow-lift sm:p-9 lg:p-11 print:hidden"
+      className="scroll-mt-44 rounded-[28px] border border-line bg-white p-6 shadow-lift sm:p-9 lg:p-11 print:hidden"
     >
       {done ? (
         <div className="flex items-start gap-4 sm:gap-5" data-testid="callback-done" role="status">

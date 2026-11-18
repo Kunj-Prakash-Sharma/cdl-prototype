@@ -5,7 +5,7 @@ import { CourseCard } from "@/components/learn/course-card";
 import { ButtonLink } from "@/components/ui/button";
 import { Eyebrow, LogoMark } from "@/components/ui/misc";
 import { brand } from "@/config/brand";
-import { sampleChatPreview, sampleCoach, sampleLaunchOffer, sampleStories } from "@/content/samples";
+import { sampleChatPreview, sampleCoach, sampleLaunchOffer, sampleOffer, sampleStories } from "@/content/samples";
 import { COURSES } from "@/modules/catalog/courses";
 
 // V5 home (D81). Sections: hero + guide preview, courses, student stories, career coach, FAQ, closing CTA.
@@ -43,7 +43,7 @@ const FAQ = [
 const FACTS = [
   "Career discovery is free during launch",
   "First lesson of every course is free",
-  "25% off every course with NEWYEAR26",
+  ...(sampleOffer ? [`${sampleOffer.highlight} with ${sampleOffer.code}`] : []),
 ];
 
 const COACH_POINTS = [
@@ -149,7 +149,6 @@ export default function HomePage() {
               Your knowledge gets you started. Your skills help you stand out.
             </p>
           </div>
-          {/* CourseCard is still the prototype card; V5 Courses (row 8) restyles it. */}
           <div className="grid grid-cols-[repeat(auto-fill,minmax(270px,1fr))] gap-4.5">
             {shopCourses.map((c) => (
               <CourseCard key={c.slug} slug={c.slug} className="h-full" />
@@ -218,7 +217,8 @@ export default function HomePage() {
             </div>
             <div className="flex flex-col justify-center p-[clamp(24px,3.4vw,40px)]">
               <p className="font-display text-[clamp(22px,2.3vw,28px)] leading-[1.2] font-normal tracking-[-0.5px] text-ink">
-                Not sure what&apos;s next? <span className="text-brand-600">Talk it through with Gaurav.</span>
+                Not sure what&apos;s next?{" "}
+                <span className="text-brand-600">Talk it through with {sampleCoach.name.split(" ")[0]}.</span>
               </p>
               <ul className="mt-5 flex flex-col gap-3.5">
                 {COACH_POINTS.map((p) => (
@@ -341,7 +341,9 @@ export default function HomePage() {
               Start free discovery
             </ButtonLink>
           </div>
-          <p className="mt-4.5 text-sm text-white/75">No sign-up to start · Private · Courses 25% off with NEWYEAR26</p>
+          <p className="mt-4.5 text-sm text-white/75">
+            No sign-up to start · Private{sampleOffer && ` · ${sampleOffer.highlight} with ${sampleOffer.code}`}
+          </p>
         </div>
       </section>
     </>

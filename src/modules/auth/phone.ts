@@ -28,3 +28,16 @@ export function parsePhoneList(raw: string | undefined): Set<string> {
   }
   return out;
 }
+
+/**
+ * For the phone input as the learner types or pastes: the 10-digit national part, dropping a pasted +91, 0091, 91 or
+ * 0 prefix and any spaces or symbols. Never longer than 10 digits.
+ */
+export function nationalDigits(raw: string): string {
+  let d = raw.replace(/\D/g, "");
+  // Strip a prefix only when the length says it is one, so typing past 10 digits never shifts the number.
+  if (d.length === 14 && d.startsWith("0091")) d = d.slice(4);
+  else if (d.length === 12 && d.startsWith("91")) d = d.slice(2);
+  else if (d.length === 11 && d.startsWith("0")) d = d.slice(1);
+  return d.slice(0, 10);
+}

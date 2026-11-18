@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ShieldCheck, Smartphone } from "lucide-react";
 import { sendOtp, verifyOtp } from "@/modules/auth/actions";
+import { nationalDigits } from "@/modules/auth/phone";
 import { Button } from "@/components/ui/button";
 import { authMessage } from "./messages";
 import { useTurnstile } from "./use-turnstile";
@@ -108,9 +109,8 @@ export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; 
               inputMode="numeric"
               autoComplete="tel-national"
               placeholder="98765 43210"
-              maxLength={10}
               value={digits}
-              onChange={(e) => setDigits(e.target.value.replace(/\D/g, "").slice(0, 10))}
+              onChange={(e) => setDigits(nationalDigits(e.target.value))}
               className="autofill-paper min-h-12 min-w-0 flex-1 bg-transparent py-3 pr-4 pl-2 text-[15px] text-ink outline-none"
               aria-describedby={error ? "login-error" : undefined}
             />
@@ -154,7 +154,6 @@ export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; 
             inputMode="numeric"
             autoComplete="one-time-code"
             placeholder="000000"
-            maxLength={6}
             value={code}
             onChange={(e) => {
               const value = e.target.value.replace(/\D/g, "").slice(0, 6);

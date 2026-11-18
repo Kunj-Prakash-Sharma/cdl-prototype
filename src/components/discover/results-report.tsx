@@ -381,17 +381,12 @@ export function ResultsReport() {
             </div>
           </div>
           <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {r.courses.map(({ course, career, fit }, i) => (
+            {r.courses.map(({ course, career }, i) => (
               <div key={course.slug} className="relative">
                 <span className="absolute -top-2 -left-2 z-10 grid size-8 place-items-center rounded-full bg-ink text-sm font-bold text-white ring-4 ring-white">
                   {i + 1}
                 </span>
-                <CourseCard
-                  slug={course.slug}
-                  match={fit}
-                  reason={`Builds skills for ${career.title}`}
-                  className="h-full"
-                />
+                <CourseCard slug={course.slug} reason={`Builds skills for ${career.title}`} className="h-full" />
               </div>
             ))}
           </div>

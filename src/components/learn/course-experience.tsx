@@ -174,7 +174,7 @@ export function CourseExperience({ slug }: { slug: string }) {
             <Badge tone="slate">{course.level}</Badge>
             {rec && (
               <Badge tone="sun">
-                <Sparkles className="size-3" aria-hidden /> Recommended for you · {rec.fit}% match
+                <Sparkles className="size-3" aria-hidden /> Recommended for you
               </Badge>
             )}
           </div>
