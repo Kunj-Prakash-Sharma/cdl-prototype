@@ -95,7 +95,7 @@ Cost reference (US East examples from the architecture doc, India rates differ):
 ### Runtime (shipped)
 | Package | Why we have it |
 |---|---|
-| `next` 16.4.1, `react` 19.3.0, `react-dom` 19.3.0 | The app: server-rendered pages, server actions and route handlers. Next 16 has breaking changes (read its docs) |
+| `next` 16.4.6, `react` 19.3.0, `react-dom` 19.3.0 | The app: server-rendered pages, server actions and route handlers. Next 16 has breaking changes (read its docs) |
 | `drizzle-orm`, `pg` | Typed database access to Postgres |
 | `pg-boss` | Job queue on Postgres (worker) |
 | `zod` | Validates env config and request input |
