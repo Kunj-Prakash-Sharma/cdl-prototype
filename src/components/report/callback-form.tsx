@@ -28,7 +28,7 @@ const MESSAGES: Record<string, string> = {
 };
 const FALLBACK_MESSAGE = "Something went wrong. Please try again.";
 
-export function CallbackForm({ wording, phoneMasked }: { wording: CallbackWording; phoneMasked: string }) {
+export function CallbackForm({ wording }: { wording: CallbackWording }) {
   const [consent, setConsent] = useState(false);
   const [time, setTime] = useState<Time | null>(null);
   const [pending, setPending] = useState(false);
@@ -68,8 +68,7 @@ export function CallbackForm({ wording, phoneMasked }: { wording: CallbackWordin
               Request received.
             </h2>
             <p className="mt-2 text-[15px] leading-[1.6] text-body">
-              Thank you. We have your request and will call you on{" "}
-              <span className="font-bold text-ink">{phoneMasked}</span>.
+              Thank you. We have your request and will call you on the mobile number you verified.
             </p>
           </div>
         </div>
@@ -86,8 +85,7 @@ export function CallbackForm({ wording, phoneMasked }: { wording: CallbackWordin
               Talk to <span className="text-brand-600">our team</span>
             </h2>
             <p className="mt-2 text-[15px] leading-[1.6] text-body">
-              A short call to talk about your report and the courses. We will call{" "}
-              <span className="font-bold text-ink">{phoneMasked}</span>.
+              A short call to talk about your report and the courses, on the mobile number you verified.
             </p>
           </div>
 

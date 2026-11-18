@@ -63,8 +63,6 @@ async function Report() {
   const session = await getSession(); // a verified learner here (a guest never reaches this line)
   const wording = session ? await getConsentWording(session.userId) : null;
   return (
-    <ReportView report={result.latest.report}>
-      {wording && session && <CallbackForm wording={wording} phoneMasked={session.phoneMasked} />}
-    </ReportView>
+    <ReportView report={result.latest.report}>{wording && session && <CallbackForm wording={wording} />}</ReportView>
   );
 }

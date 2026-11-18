@@ -91,3 +91,57 @@ export const sampleChatPreview = {
     "I'll ask a few questions, build your career report and suggest courses that fit you. First, where are you right now?",
   replies: ["In school (15–17)", "In college (18–21)", "Working or job hunting (22–25)"],
 };
+
+// ---- Report (V5-Discover report) ----
+
+/**
+ * Persona title and tagline on the report hero. Invented: the real title needs `chat` report data and client-approved
+ * wording (D82). The report shows this only outside production.
+ */
+export const sampleReportPersona = {
+  title: "The Curious Thinker",
+  tagline: "You like working out how things fit together, and you do your best work when you can try ideas out.",
+};
+
+/**
+ * Strengths and growth areas on the report. Invented scores and wording (D82): the real ones come from combining the
+ * interest and personality scores, which `chat` does not do yet. Shown only outside production.
+ */
+export const sampleReportStrengths = {
+  strengths: [
+    {
+      name: "Problem solving",
+      score: 94,
+      description: "You enjoy puzzles and break big questions into smaller steps.",
+      tip: "Pick one real problem around you and write down three ways to fix it.",
+    },
+    {
+      name: "Creative thinking",
+      score: 82,
+      description: "You come up with new ideas easily and like to try them.",
+      tip: "Keep a note of one idea a day, however small.",
+    },
+    {
+      name: "Learning fast",
+      score: 78,
+      description: "You pick up new things quickly when they interest you.",
+      tip: "Teach what you learned to a friend within a day.",
+    },
+  ],
+  growth: [
+    {
+      name: "Speaking up in groups",
+      description: "You sometimes hold back ideas when the room is busy.",
+      tip: "Share one point in every group chat or class this week.",
+      course: "Communication & Storytelling at Work",
+      href: "/learn",
+    },
+    {
+      name: "Planning your time",
+      description: "Good ideas can slip when the week fills up.",
+      tip: "Write your top three tasks each morning.",
+      course: "Product Management 101",
+      href: "/learn",
+    },
+  ],
+};

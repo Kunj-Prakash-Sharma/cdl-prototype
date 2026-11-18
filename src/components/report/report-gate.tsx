@@ -17,7 +17,7 @@ export function ReportGate({ sample, siteKey }: { sample: LatestReport; siteKey:
       <div
         aria-hidden="true"
         inert
-        className="pointer-events-none max-h-[1200px] overflow-hidden opacity-90 blur-[9px] saturate-[.85] select-none [mask-image:linear-gradient(180deg,#000_50%,transparent_100%)]"
+        className="pointer-events-none max-h-[1200px] overflow-hidden [mask-image:linear-gradient(180deg,#000_50%,transparent_100%)] opacity-90 blur-[9px] saturate-[.85] select-none"
       >
         <ReportView report={sample} />
       </div>
