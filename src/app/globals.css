@@ -1,35 +1,47 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  /* V5 design (D81). Token NAMES are unchanged from the prototype so every screen moves at once; values are V5. */
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  /* Legacy: prototype accent words only. Removed as each screen is ported to V5, then dropped. */
   --font-serif: var(--font-instrument), ui-serif, Georgia, serif;
 
-  --color-paper: #f8f8fb;
-  --color-ink: #0f1020;
+  --color-paper: #fbf8f5;
+  --color-ink: #1c1b29;
+  --color-body: #45434d;
+  --color-muted: #5c5a63;
+  --color-line: #ece6ee;
+  --color-line-strong: #d9d2e4;
+  --color-mist: #f3eef3;
+  --color-success: #167a4c;
+  --color-success-50: #eaf7f0;
+  --color-teal: #3e9c8f;
 
-  --color-brand-50: #f2f1ff;
-  --color-brand-100: #e6e3ff;
-  --color-brand-200: #cfcaff;
-  --color-brand-300: #aea5ff;
-  --color-brand-400: #8b7dff;
-  --color-brand-500: #6d5cff;
-  --color-brand-600: #5a45f2;
-  --color-brand-700: #4a35d6;
-  --color-brand-800: #3c2dab;
-  --color-brand-900: #322a86;
-  --color-brand-950: #1d1850;
+  --color-brand-50: #f6f4ff;
+  --color-brand-100: #ece9ff;
+  --color-brand-200: #c9c2ff;
+  --color-brand-300: #b9aef5;
+  --color-brand-400: #7c6ff0;
+  --color-brand-500: #5b4bea;
+  --color-brand-600: #5146e6;
+  --color-brand-700: #4338ca;
+  --color-brand-800: #3b31c4;
+  --color-brand-900: #2b2566;
+  --color-brand-950: #1f1d2b;
 
-  --color-sun-100: #fff1df;
-  --color-sun-200: #ffdcb3;
-  --color-sun-300: #ffc485;
-  --color-sun-400: #ffa654;
-  --color-sun-500: #ff8a2e;
-  --color-sun-600: #ec6d12;
-  --color-sun-700: #c4530b;
+  --color-sun-100: #fff1ea;
+  --color-sun-200: #fde0d3;
+  --color-sun-300: #ffd3c3;
+  --color-sun-400: #ffc2ac;
+  --color-sun-500: #e07b5a;
+  --color-sun-600: #c2543a;
+  --color-sun-700: #a3412a;
 
-  --shadow-soft: 0 1px 2px rgb(15 16 32 / 0.04), 0 8px 24px -12px rgb(15 16 32 / 0.12);
-  --shadow-lift: 0 2px 4px rgb(15 16 32 / 0.04), 0 24px 48px -20px rgb(45 35 140 / 0.28);
-  --shadow-glow: 0 10px 40px -10px rgb(90 69 242 / 0.55);
+  --shadow-soft: 0 1px 2px rgb(28 27 41 / 0.04), 0 8px 24px -16px rgb(28 27 41 / 0.1);
+  --shadow-lift: 0 18px 40px -24px rgb(81 70 230 / 0.35);
+  --shadow-glow: 0 40px 90px -50px rgb(81 70 230 / 0.45);
+  --shadow-focus: 0 0 0 4px rgb(81 70 230 / 0.12);
 
   --animate-float: float 7s ease-in-out infinite;
   --animate-float-slow: float 9s ease-in-out infinite;
@@ -103,10 +115,16 @@ body {
 }
 
 @layer components {
+  /* V5 hero background: soft violet glow top right, peach glow left, on paper. */
+  .hero-glow {
+    background:
+      radial-gradient(700px 420px at 85% 0%, var(--color-brand-100) 0%, transparent 72%),
+      radial-gradient(620px 380px at 10% 40%, var(--color-sun-200) 0%, transparent 72%), var(--color-paper);
+  }
   .bg-grid {
     background-image:
-      linear-gradient(to right, rgb(15 16 32 / 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(15 16 32 / 0.05) 1px, transparent 1px);
+      linear-gradient(to right, rgb(28 27 41 / 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(28 27 41 / 0.05) 1px, transparent 1px);
     background-size: 44px 44px;
   }
   .bg-grid-dark {
@@ -128,7 +146,7 @@ body {
   }
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: rgb(15 16 32 / 0.15) transparent;
+    scrollbar-color: rgb(28 27 41 / 0.15) transparent;
   }
 }
 

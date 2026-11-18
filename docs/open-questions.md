@@ -43,5 +43,19 @@ From the Scope of Work. Dates are "to give" unless stated.
 | Report personality cards (15) are **DRAFT text** (D72). Copy the client-approved wording from the client sample page into `report-copy.ts` and remove the draft marker before any real learner sees a report | Us | Before launch | open |
 | Legal review of the under-18 consent route (D71): the login/terms line telling parents to log in for a learner under 18, and the age-based consent wording on the callback form. Exact wording needs the client's lawyer | client | open |
 
+## V5 design vs earlier decisions (D81, Nov 17, 2026)
+The V5 screens show things that earlier decisions rule out or that have no data yet. None is built until it is decided here and recorded in [decisions.md](decisions.md).
+| Item in V5 | Conflicts with / needs | Backend change if accepted | Status |
+|---|---|---|---|
+| Guide is called **"MIRA"** | Docs and code say Meera | No (one value in `src/config/brand.ts`) | open |
+| **Certificates** (course card meta, "Your certificates", certificate dialog) | Out of Phase 1 (CLAUDE.md, design-system) | Yes: completion records, certificate issuing | open |
+| **Payment method and bank picker** on the course page | Card data never touches our servers; hosted checkout only | Yes: `commerce` module with Razorpay hosted checkout (V5 screen can only be the review step) | open |
+| **"How we score"** page | D72 skipped it (V2 sample) | No for a static page | open |
+| **Coupon NEWYEAR26 and 25% off prices**, offer bar | Final prices and discounts are an open client input | Yes for real coupons (`commerce`); no for a static offer bar | open |
+| **Student stories** with names on the home page | Needs real, approved stories (no invented people or stats) | No | open |
+| Report **persona title** ("The Curious Thinker") and **scored strengths** ("Problem solving 94") | Not in the report data; wording needs client approval (like D69) | Yes: `chat` report data and `report-copy.ts` | open |
+| **"Choose two"** answer type in the quiz | Question set has single-choice and scale only; scoring and stored answers assume one value | Yes: `chat` question set, answer storage, scoring | open |
+| **Courses, course page, My Learning** with real data | Courses are a static file; no orders, entitlements or progress yet | Yes: `catalog`, `commerce`, `video` modules (big features, spec first) | open |
+
 ## Chat inactivity timeout
 Config `CHAT_INACTIVITY_MINUTES`, default 30. Client may tune it. (Decision D58.)

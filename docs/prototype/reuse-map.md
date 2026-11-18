@@ -64,3 +64,19 @@ The prototype (`prototype-v0`) is about 5,950 lines in 45 files: learner-facing 
 - Bundles: a real Product with a fixed price (prototype computed a 30% discount).
 - Quiz: new; multiple-choice after a lesson, auto-marked.
 - No certificates, no share-link, no ratings, no "demo benchmark" in Phase 1.
+
+## V5 screens (D81)
+Each screen is ported to the V5 design with `/ui-port` (reference: the V5 artboards of the "SELF Website Redesign" canvas, https://claude.ai/artifact/LZQHUV8x22RTPgQTFGPwbh). "UI only" = no backend change; the others wait for a module (see the D81 table in [../open-questions.md](../open-questions.md)). Mark **Done (date)** as each lands.
+| # | V5 artboard | Our files | Backend change? | Status |
+|---|---|---|---|---|
+| 1 | Tokens and fonts (all artboards) | `app/globals.css`, `app/layout.tsx` | UI only | **Done** (2026-11-17) |
+| 2 | Header, offer bar, footer | `site/navbar.tsx`, `site/footer.tsx`, `site/site-shell.tsx`, `ui/button.tsx`, `ui/misc.tsx` | UI only (offer bar has no coupon until decided) | not started |
+| 3 | `V5-Login` | `auth/login-form.tsx`, `(public)/login/page.tsx` | UI only | not started |
+| 4 | `V5-Discover` (chat + quiz) | `discover/*` | UI only ("Choose two" is NOT built: needs chat changes) | not started |
+| 5 | `V5-Discover` (report, gate, callback) | `report/*` | UI only for the existing data (persona title and strength scores need chat changes) | not started |
+| 6 | `V5-Report-PDF-1…5` | print stylesheet on the report | UI only | not started |
+| 7 | `V5-Home` | `(public)/page.tsx`, `home/*` | UI only (stories and coupon wait for content) | not started |
+| 8 | `V5-Courses` | `learn/course-catalog.tsx`, `learn/course-card.tsx` | UI on sample data now; real data needs `catalog` | not started |
+| 9 | `V5-Course-*` | `learn/course-experience.tsx`, `video-player.tsx`, `checkout-modal.tsx` | Needs `catalog`, `commerce`, `video` | not started |
+| 10 | `V5-Learn`, `V5-Learn-s1…s7` | `(learner)/my-self`, `learn/my-learning.tsx` | Needs `commerce` (entitlements) and progress | not started |
+| 11 | `V5-Method` (How we score) | new page | UI only, but needs a decision (D72 skipped it) | blocked on decision |

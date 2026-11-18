@@ -14,7 +14,7 @@ const variants: Record<Variant, string> = {
   ghost: "text-slate-600 hover:text-ink hover:bg-slate-900/5",
   dark: "bg-ink text-white hover:bg-slate-800 hover:-translate-y-0.5",
   light: "bg-white text-ink hover:bg-brand-50 hover:-translate-y-0.5",
-  sun: "bg-sun-500 text-white shadow-[0_10px_30px_-10px_rgb(255_138_46/0.7)] hover:bg-sun-600 hover:-translate-y-0.5",
+  sun: "bg-sun-500 text-white shadow-lift hover:bg-sun-600 hover:-translate-y-0.5",
 };
 
 const sizes: Record<Size, string> = {

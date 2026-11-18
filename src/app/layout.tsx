@@ -1,13 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Serif, Plus_Jakarta_Sans } from "next/font/google";
+import { Instrument_Serif, Manrope, Outfit } from "next/font/google";
 import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
 
-const jakarta = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
+// V5 design (D81): Manrope for body text, Outfit for headings. Both are variable fonts, so no weight list is needed.
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
 });
 
+const outfit = Outfit({
+  variable: "--font-outfit",
+  subsets: ["latin"],
+});
+
+// Legacy: the prototype's serif accent words. Drop once no ported screen uses `font-serif`.
 const instrument = Instrument_Serif({
   variable: "--font-instrument",
   subsets: ["latin"],
@@ -25,7 +32,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f8f8fb",
+  // Matches the `paper` token (theme colour must be a literal here).
+  themeColor: "#fbf8f5",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -33,7 +41,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className={`${jakarta.variable} ${instrument.variable} h-full antialiased`}
+      className={`${manrope.variable} ${outfit.variable} ${instrument.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         <ToastProvider>{children}</ToastProvider>
