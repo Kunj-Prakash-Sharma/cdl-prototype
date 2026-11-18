@@ -181,3 +181,9 @@ body {
     display: none !important;
   }
 }
+
+/* Chrome autofill paints a blue box inside inputs; keep the paper fill instead. */
+.autofill-paper:-webkit-autofill {
+  box-shadow: inset 0 0 0 100px var(--color-paper);
+  -webkit-text-fill-color: var(--color-ink);
+}

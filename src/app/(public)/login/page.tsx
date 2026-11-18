@@ -21,9 +21,9 @@ async function LoginGate({ searchParams }: { searchParams: Promise<{ next?: stri
 
 export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
-    <div className="mx-auto flex min-h-[70vh] max-w-7xl items-start justify-center px-4 py-10 sm:items-center sm:px-6 sm:py-16">
+    <div className="hero-glow flex min-h-[70vh] items-center justify-center px-[18px] py-9 sm:px-6 sm:py-16 lg:py-20">
       <Suspense
-        fallback={<div className="h-96 w-full max-w-md rounded-3xl bg-white shadow-soft ring-1 ring-slate-200/80" />}
+        fallback={<div className="h-96 w-full max-w-[460px] rounded-[28px] border border-line bg-white shadow-glow" />}
       >
         <LoginGate searchParams={searchParams} />
       </Suspense>

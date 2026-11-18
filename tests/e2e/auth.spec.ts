@@ -100,7 +100,7 @@ test.describe("login", () => {
     await page.goto("/login");
     await requestCode(page, phone);
     await expect(page.getByText(/Resend in \d+s/)).toBeVisible();
-    await page.getByRole("button", { name: "Change number" }).click();
+    await page.getByRole("button", { name: "Use a different number" }).click();
     await expect(page.getByLabel("Mobile number")).toHaveValue(phone);
   });
 

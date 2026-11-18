@@ -71,7 +71,7 @@ Each screen is ported to the V5 design with `/ui-port` (reference: the V5 artboa
 |---|---|---|---|---|
 | 1 | Tokens and fonts (all artboards) | `app/globals.css`, `app/layout.tsx` | UI only | **Done** (2026-11-17) |
 | 2 | Header, offer bar, footer | `site/navbar.tsx`, `site/footer.tsx`, `site/site-shell.tsx`, `ui/button.tsx`, `ui/misc.tsx` | UI only (offer is sample content, D82) | **Done** (2026-11-18): sample offer from `content/samples.ts`; guide renamed Mira; footer legal links wait for the pages (E2-FE3) |
-| 3 | `V5-Login` | `auth/login-form.tsx`, `(public)/login/page.tsx` | UI only | not started |
+| 3 | `V5-Login` | `auth/login-form.tsx`, `(public)/login/page.tsx` | UI only | **Done (2026-11-18)**: card, hero-glow page, Outfit heading, brand-200 disabled button. Same card is used by the report gate. Artboard email tab and "You are logged in" state not built (OTP only; /login redirects when signed in); the artboard keeps the V5 white footer on this page, ours uses the shared footer |
 | 4 | `V5-Discover` (chat + quiz) | `discover/*` | UI only ("Choose two" is NOT built: needs chat changes) | not started |
 | 5 | `V5-Discover` (report, gate, callback) | `report/*` | UI only for the existing data (persona title and strength scores need chat changes) | not started |
 | 6 | `V5-Report-PDF-1…5` | print stylesheet on the report | UI only | not started |
