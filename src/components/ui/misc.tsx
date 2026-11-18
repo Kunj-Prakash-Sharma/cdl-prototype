@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
 import { Star } from "lucide-react";
+import { brand } from "@/config/brand";
 import { cn } from "@/lib/format";
 
 type Tone = "brand" | "sun" | "green" | "slate" | "dark" | "white";
 
 const tones: Record<Tone, string> = {
-  brand: "bg-brand-50 text-brand-700 ring-brand-200/70",
+  brand: "bg-brand-100 text-brand-700 ring-transparent",
   sun: "bg-sun-100 text-sun-700 ring-sun-200",
   green: "bg-emerald-50 text-emerald-700 ring-emerald-200/70",
   slate: "bg-slate-100 text-slate-600 ring-slate-200",
@@ -36,18 +37,33 @@ export function Badge({
 }
 
 export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
-  return <p className={cn("text-xs font-bold tracking-[0.18em] text-brand-600 uppercase", className)}>{children}</p>;
+  return <p className={cn("text-[13px] font-bold tracking-[1.4px] text-brand-600 uppercase", className)}>{children}</p>;
 }
 
+/** The V5 four-point star in brand violet, tilted slightly. Decorative: the product name sits next to it. */
+export function LogoMark({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className={cn("size-7 shrink-0 fill-brand-600", className)}>
+      <path
+        d="M12 1.5C12.9 7.6 16.4 11.1 22.5 12 16.4 12.9 12.9 16.4 12 22.5 11.1 16.4 7.6 12.9 1.5 12 7.6 11.1 11.1 7.6 12 1.5Z"
+        transform="rotate(-12 12 12)"
+      />
+    </svg>
+  );
+}
+
+/** Star mark plus the product name in Outfit with wide tracking (V5 header). `inverted` is for dark backgrounds. */
 export function Logo({ className, inverted = false }: { className?: string; inverted?: boolean }) {
   return (
-    <span className={cn("inline-flex items-center gap-2", className)}>
-      <span className="relative grid size-8 place-items-center overflow-hidden rounded-xl bg-linear-to-br from-brand-500 via-brand-700 to-brand-950 shadow-glow">
-        <span className="absolute -top-2 -right-2 size-5 rounded-full bg-sun-400/90 blur-[2px]" />
-        <span className="relative font-serif text-[19px] leading-none text-white italic">s</span>
-      </span>
-      <span className={cn("text-[19px] font-extrabold tracking-tight", inverted ? "text-white" : "text-ink")}>
-        SELF
+    <span className={cn("inline-flex items-center gap-2.5", className)}>
+      <LogoMark />
+      <span
+        className={cn(
+          "font-display text-2xl leading-none font-semibold tracking-[5px]",
+          inverted ? "text-white" : "text-ink",
+        )}
+      >
+        {brand.name}
       </span>
     </span>
   );
@@ -66,7 +82,7 @@ export function ProgressBar({
   const track = { brand: "bg-brand-100", green: "bg-emerald-100", white: "bg-white/20" }[tone];
   return (
     <div
-      className={cn("h-1.5 w-full overflow-hidden rounded-full", track, className)}
+      className={cn("h-2 w-full overflow-hidden rounded-full", track, className)}
       role="progressbar"
       aria-valuemin={0}
       aria-valuemax={100}

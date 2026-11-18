@@ -4,18 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Menu, Sparkles, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { UserMenu, useLogout } from "@/components/site/user-menu";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Logo } from "@/components/ui/misc";
+import { brand } from "@/config/brand";
 import { cn } from "@/lib/format";
 import { useAppState } from "@/lib/store";
 import type { SessionView } from "@/modules/auth/types";
 
+// V5 header (D81): Career Discovery, Courses, My Learning, then Log in or the account menu.
+// The saved report is reached from Career Discovery and the My SELF card (E5-S4), so it has no nav link.
 const LINKS = [
-  { href: "/discover", label: "Career Discovery", ai: true, exact: true },
-  { href: "/discover/report", label: "My Report" },
-  { href: "/learn", label: "Level 1 Learning" },
+  { href: "/discover", label: "Career Discovery", exact: true },
+  { href: "/learn", label: "Courses" },
   { href: "/my-self", label: "My Learning", count: true },
 ];
 
@@ -39,13 +41,14 @@ function NavLinks({
             key={link.href}
             href={link.href}
             onClick={onNavigate}
+            aria-current={active ? "page" : undefined}
             className={cn(
-              "relative inline-flex items-center gap-1.5 rounded-full font-medium transition-colors",
-              vertical ? "px-4 py-3 text-base" : "px-3.5 py-2 text-sm",
-              active ? "bg-brand-50 text-brand-700" : "text-slate-600 hover:bg-slate-900/[0.04] hover:text-ink",
+              "inline-flex min-h-11 items-center gap-1.5 font-semibold transition-colors hover:text-brand-600",
+              vertical ? "rounded-[14px] px-4 text-base" : "text-[15px]",
+              active ? "text-brand-600" : "text-ink",
+              vertical && active && "bg-brand-50",
             )}
           >
-            {link.ai && <Sparkles className="size-3.5 text-brand-500" aria-hidden />}
             {link.label}
             {link.count && purchases.length > 0 && (
               <span className="grid min-w-5 place-items-center rounded-full bg-brand-600 px-1.5 text-[11px] leading-5 font-bold text-white">
@@ -66,8 +69,6 @@ function ActiveNavLinks(props: { onNavigate?: () => void; vertical?: boolean }) 
 
 export function Navbar({ session }: { session: SessionView | null }) {
   const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const { completedAt } = useAppState();
   const { run: runLogout, pending: loggingOut } = useLogout();
   const menuButton = useRef<HTMLButtonElement>(null);
 
@@ -96,21 +97,9 @@ export function Navbar({ session }: { session: SessionView | null }) {
     };
   }, [open]);
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  const cta = completedAt
-    ? { href: "/discover", label: "View my report" }
-    : { href: "/discover", label: "Start free discovery" };
-
   return (
     <>
-      {/* Dims the page under the open phone menu; a tap on it closes the menu. A sibling of the header (not a child)
-        because the header's backdrop blur would otherwise become the containing block of a fixed element. */}
+      {/* Dims the page under the open phone menu; a tap on it closes the menu. */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -124,59 +113,49 @@ export function Navbar({ session }: { session: SessionView | null }) {
           />
         )}
       </AnimatePresence>
-      <header
-        className={cn(
-          "sticky top-0 z-50 transition-all duration-300",
-          open
-            ? "border-b border-slate-200/70 bg-white"
-            : scrolled
-              ? "border-b border-slate-200/70 bg-white/80 backdrop-blur-xl"
-              : "border-b border-transparent bg-transparent",
-        )}
-      >
+      <header className="sticky top-0 z-50 border-b border-line bg-white">
         <nav
-          className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8"
+          className="mx-auto flex max-w-7xl items-center gap-3 px-4.5 py-2.5 sm:px-6 md:gap-7 lg:px-8"
           aria-label="Main"
         >
-          <Link href="/" aria-label="SELF home" className="shrink-0">
+          <Link
+            href="/"
+            aria-label={`${brand.name} home`}
+            className="mr-auto inline-flex min-h-11 shrink-0 items-center"
+          >
             <Logo />
           </Link>
 
-          <div className="hidden items-center gap-1 md:flex">
+          <div className="hidden items-center gap-5.5 md:flex">
             <Suspense fallback={<NavLinks />}>
               <ActiveNavLinks />
             </Suspense>
           </div>
 
-          <div className="flex items-center gap-2">
-            {session ? (
-              <span className="hidden md:block">
-                <UserMenu session={session} />
-              </span>
-            ) : (
-              <span className="hidden sm:block">
-                <ButtonLink href="/login" variant="ghost" size="sm">
-                  Log in
-                </ButtonLink>
-              </span>
-            )}
-            <span className="hidden sm:block">
-              <ButtonLink href={cta.href} size="sm">
-                {cta.label}
-              </ButtonLink>
+          {session ? (
+            <span className="hidden md:block">
+              <UserMenu session={session} />
             </span>
-            <button
-              ref={menuButton}
-              type="button"
-              className="grid size-11 place-items-center rounded-full text-ink hover:bg-slate-900/5 md:hidden"
-              onClick={() => setOpen((o) => !o)}
-              aria-label={open ? "Close menu" : "Open menu"}
-              aria-expanded={open}
-              aria-controls="mobile-menu"
+          ) : (
+            <Link
+              href="/login"
+              className="hidden min-h-11 items-center text-[15px] font-semibold text-ink transition-colors hover:text-brand-600 md:inline-flex"
             >
-              {open ? <X className="size-5" /> : <Menu className="size-5" />}
-            </button>
-          </div>
+              Log in
+            </Link>
+          )}
+
+          <button
+            ref={menuButton}
+            type="button"
+            className="-mr-1.5 grid size-11 place-items-center rounded-full text-ink hover:bg-mist md:hidden"
+            onClick={() => setOpen((o) => !o)}
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            aria-controls="mobile-menu"
+          >
+            {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
         </nav>
 
         <AnimatePresence>
@@ -186,19 +165,16 @@ export function Navbar({ session }: { session: SessionView | null }) {
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               id="mobile-menu"
-              className="overflow-hidden border-t border-slate-200/70 bg-white md:hidden"
+              className="overflow-hidden border-t border-line bg-white md:hidden"
             >
               {/* scrolls inside itself on short phones, since the page behind is locked */}
-              <div className="flex max-h-[calc(100dvh-4.5rem)] flex-col gap-1 overflow-y-auto overscroll-contain px-4 py-4">
+              <div className="flex max-h-[calc(100dvh-4.5rem)] flex-col gap-1 overflow-y-auto overscroll-contain px-4.5 py-4">
                 <Suspense fallback={<NavLinks vertical onNavigate={() => setOpen(false)} />}>
                   <ActiveNavLinks vertical onNavigate={() => setOpen(false)} />
                 </Suspense>
-                <ButtonLink href={cta.href} className="mt-3" onClick={() => setOpen(false)}>
-                  {cta.label}
-                </ButtonLink>
                 {session ? (
-                  <div className="mt-2 rounded-2xl bg-slate-50 p-3">
-                    <p className="text-sm text-slate-600">
+                  <div className="mt-3 rounded-[20px] border border-line bg-paper p-3">
+                    <p className="text-sm text-muted">
                       Logged in as <span className="font-semibold text-ink">{session.name || session.phoneMasked}</span>
                       {session.role === "admin" && " (admin)"}
                     </p>
@@ -220,7 +196,7 @@ export function Navbar({ session }: { session: SessionView | null }) {
                     </Button>
                   </div>
                 ) : (
-                  <ButtonLink href="/login" variant="secondary" className="mt-2" onClick={() => setOpen(false)}>
+                  <ButtonLink href="/login" className="mt-3" onClick={() => setOpen(false)}>
                     Log in
                   </ButtonLink>
                 )}

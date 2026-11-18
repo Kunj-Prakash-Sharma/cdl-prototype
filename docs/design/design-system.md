@@ -34,9 +34,9 @@ Radii: pills and buttons `rounded-full`; cards `rounded-[20px]` (22 for large); 
 - **Headings:** eyebrow (13px, bold, uppercase, 1.4px tracking, `brand-600`) plus an Outfit heading, weight 400, tight tracking (-1px). The accent is **one brand-coloured word** (no serif italic).
 - **Pill badge:** `brand-100` fill, `brand-700` text, a small `brand-600` dot.
 - **Hero background:** `.hero-glow`: two soft radial glows (violet top right, peach left) on `paper`.
-- **Header:** white, bottom `line` border; star logo plus "SELF" in Outfit with wide tracking; nav links ink, current and hover `brand-600`.
-- **Offer bar:** `brand-900` navy, white text, `sun-400` coupon chip. (Coupon content is an open question, D81.)
-- **Footer:** two forms in V5: dark (`ink` background) single row, and light (white, three columns: brand line, Platform, Explore). Pick one when porting the shell.
+- **Header (`site/navbar.tsx`):** white, bottom `line` border, sticky; star logo (`LogoMark`) plus the product name in Outfit with wide tracking; links Career Discovery, Courses, My Learning, then Log in or the account menu; ink, current and hover `brand-600`. Below `md` the links move into the phone menu.
+- **Offer bar (`site/offer-bar.tsx`):** `ink` (same near-black as the footer), white text, `brand-200` highlight, a dashed white code chip that copies on tap (`site/copy-code.tsx`). Its offer is sample content (`sampleOffer` in `src/content/samples.ts`, D82); set it to `null` to hide the bar. No real coupon: checkout prices come from the server.
+- **Footer (`site/footer.tsx`):** the dark single-row form: `ink` background, product name, links, "© year name · India". Privacy, Terms and Refunds links are added with those pages.
 - **Chat:** guide bubbles left, learner bubbles right in `brand-600`; quick replies are `brand-200`-bordered pills, solid when chosen.
 - **Course card:** coloured top band per category with image, play button, "Free preview" and lesson-count tags; body with title, description, meta, price row and Buy button.
 - **Tabs / filter chips:** pills, white with `line-strong` border; selected = `brand-600` fill.
@@ -56,7 +56,7 @@ Most users are on phones. Build the base (unprefixed) classes for phone, then sc
 "SELF" is a working name. Name, logo and colours go in `src/config/brand.ts` plus the theme tokens, so a rebrand touches config only. Never hardcode the product name or the guide name in components or copy.
 
 ## Not built even though V5 shows it
-See the D81 table in [../open-questions.md](../open-questions.md). Until decided: no certificates, no on-page payment form (hosted checkout only), no invented student stories or stats, no coupon prices, no "Choose two" question, no persona title or strength scores. Also still out of Phase 1: ratings, review counts, learner counts ("120,000+ learners"), instructor names, share buttons, "Top X%" benchmarks, "demo" copy.
+Settled in D82 (table in [../open-questions.md](../open-questions.md)). **Not built:** certificates, an on-page payment form (hosted checkout only). **Sample content** (all in `src/content/samples.ts`, replaced before launch): offer bar coupon and 25% off prices, named student stories, the report persona title and strength scores (never shown in production), the "Choose two" question (UI only). **Ask when built:** course search, "How we score". Also still out of Phase 1: ratings, review counts, learner counts ("120,000+ learners"), instructor names, share buttons, "Top X%" benchmarks, "demo" copy.
 
 ## New screens
 OTP login, learner dashboard, quiz, admin and legal pages are built in the same kit. Admin uses the same tokens in a denser, table-based layout (not in V5).

@@ -47,31 +47,28 @@ export function UserMenu({ session }: { session: SessionView }) {
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label="Account menu"
-        className="grid size-10 place-items-center rounded-full bg-brand-50 text-brand-700 ring-1 ring-brand-200/70 hover:bg-brand-100"
+        className="grid size-11 place-items-center rounded-full bg-brand-100 text-brand-700 hover:bg-brand-200"
       >
         <UserRound className="size-5" aria-hidden />
       </button>
       {open && (
-        <div
-          role="menu"
-          className="absolute right-0 mt-2 w-64 rounded-2xl bg-white p-2 shadow-lift ring-1 ring-slate-200/80"
-        >
+        <div role="menu" className="absolute right-0 mt-2 w-64 rounded-2xl border border-line bg-white p-2 shadow-glow">
           <div className="px-3 py-2">
-            <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Logged in as</p>
+            <p className="text-xs font-semibold tracking-wide text-muted uppercase">Logged in as</p>
             <p className="mt-0.5 font-semibold text-ink">{session.name || session.phoneMasked}</p>
-            {session.name && <p className="text-sm text-slate-500">{session.phoneMasked}</p>}
+            {session.name && <p className="text-sm text-muted">{session.phoneMasked}</p>}
             {session.role === "admin" && (
               <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-sun-100 px-2 py-0.5 text-xs font-semibold text-sun-700">
                 <ShieldCheck className="size-3.5" aria-hidden /> Admin
               </span>
             )}
           </div>
-          <div className="my-1 h-px bg-slate-100" />
+          <div className="my-1 h-px bg-line" />
           <Link
             role="menuitem"
             href="/my-self"
             onClick={() => setOpen(false)}
-            className="flex h-11 items-center rounded-xl px-3 text-sm font-medium text-slate-700 hover:bg-slate-900/[0.04]"
+            className="flex h-11 items-center rounded-xl px-3 text-sm font-medium text-ink hover:bg-mist"
           >
             My Learning
           </Link>
@@ -80,7 +77,7 @@ export function UserMenu({ session }: { session: SessionView }) {
               role="menuitem"
               href="/admin"
               onClick={() => setOpen(false)}
-              className="flex h-11 items-center rounded-xl px-3 text-sm font-medium text-slate-700 hover:bg-slate-900/[0.04]"
+              className="flex h-11 items-center rounded-xl px-3 text-sm font-medium text-ink hover:bg-mist"
             >
               Admin
             </Link>
@@ -90,7 +87,7 @@ export function UserMenu({ session }: { session: SessionView }) {
             role="menuitem"
             onClick={run}
             disabled={pending}
-            className="flex h-11 w-full items-center gap-2 rounded-xl px-3 text-sm font-medium text-slate-700 hover:bg-slate-900/[0.04] disabled:opacity-50"
+            className="flex h-11 w-full items-center gap-2 rounded-xl px-3 text-sm font-medium text-ink hover:bg-mist disabled:opacity-50"
           >
             <LogOut className="size-4" aria-hidden /> {pending ? "Logging out…" : "Log out"}
           </button>

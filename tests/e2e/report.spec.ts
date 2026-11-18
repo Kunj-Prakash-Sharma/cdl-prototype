@@ -42,16 +42,11 @@ test.describe("report", () => {
     await expect(page.getByTestId("report-interests")).toBeVisible();
   });
 
-  test("a learner with no finished attempt sees the empty state, and the navbar has the report link", async ({
-    page,
-  }) => {
+  test("a learner with no finished attempt sees the empty state", async ({ page }) => {
     await openChat(page);
     await page.goto("/discover/report");
     await expect(page.getByTestId("report-empty")).toBeVisible();
     await expect(page.getByTestId("report")).toHaveCount(0);
-    // The navbar link exists on desktop (the phone menu is covered by the same list of links).
-    const link = page.getByRole("link", { name: "My Report" });
-    if (await link.first().isVisible()) await expect(link.first()).toHaveAttribute("href", "/discover/report");
   });
 
   test("My SELF links to the saved report once the quiz is finished (E5-S4)", async ({ page }) => {

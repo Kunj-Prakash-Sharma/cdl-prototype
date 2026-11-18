@@ -70,7 +70,7 @@ Each screen is ported to the V5 design with `/ui-port` (reference: the V5 artboa
 | # | V5 artboard | Our files | Backend change? | Status |
 |---|---|---|---|---|
 | 1 | Tokens and fonts (all artboards) | `app/globals.css`, `app/layout.tsx` | UI only | **Done** (2026-11-17) |
-| 2 | Header, offer bar, footer | `site/navbar.tsx`, `site/footer.tsx`, `site/site-shell.tsx`, `ui/button.tsx`, `ui/misc.tsx` | UI only (offer bar has no coupon until decided) | not started |
+| 2 | Header, offer bar, footer | `site/navbar.tsx`, `site/footer.tsx`, `site/site-shell.tsx`, `ui/button.tsx`, `ui/misc.tsx` | UI only (offer is sample content, D82) | **Done** (2026-11-18): sample offer from `content/samples.ts`; guide renamed Mira; footer legal links wait for the pages (E2-FE3) |
 | 3 | `V5-Login` | `auth/login-form.tsx`, `(public)/login/page.tsx` | UI only | not started |
 | 4 | `V5-Discover` (chat + quiz) | `discover/*` | UI only ("Choose two" is NOT built: needs chat changes) | not started |
 | 5 | `V5-Discover` (report, gate, callback) | `report/*` | UI only for the existing data (persona title and strength scores need chat changes) | not started |
