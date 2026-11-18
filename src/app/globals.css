@@ -170,8 +170,16 @@ body {
 /* Printing the report ("Save as PDF"): only the report, on white paper. The navbar and footer are hidden here; buttons
    inside the report use Tailwind's print:hidden. */
 @media print {
+  /* Page numbers for the report PDF, from the browser so they stay right however long a section runs (Chrome and Edge;
+     Safari ignores page margin boxes and prints no number). */
   @page {
     margin: 14mm;
+    @bottom-right {
+      content: "Page " counter(page) " of " counter(pages);
+      font-family: var(--font-sans), system-ui, sans-serif;
+      font-size: 9pt;
+      color: var(--color-muted);
+    }
   }
   body {
     background: white !important;

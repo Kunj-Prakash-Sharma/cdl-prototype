@@ -8,7 +8,8 @@ import type { LatestReport } from "@/modules/chat/service";
 import { Letter, Radar, TRAIT_BG, TYPE_BG } from "./report-parts";
 
 // The report on paper ("Save as PDF"), in the V5 PDF design (D81, V5-Report-PDF-1..5): A4 pages with a cover, one page
-// per section and a running footer. It is hidden on screen and shown only when printing; the screen report is hidden
+// per section and a running footer. Page numbers come from the browser (@page in globals.css), so they stay right
+// when a section runs onto a second sheet. It is hidden on screen and shown only when printing; the screen report is hidden
 // when printing (print:hidden in report-view.tsx). Server component, no script. No test ids here, so the screen report's
 // ids stay unique.
 //
@@ -27,18 +28,15 @@ const dayFormat = new Intl.DateTimeFormat("en-IN", {
   timeZone: "Asia/Kolkata",
 });
 
-/** One A4 page. The height keeps the footer at the bottom and stops a page from spilling onto a blank one. */
+/** One section, starting on a new sheet. The minimum height keeps the footer at the bottom of a one-sheet section; a longer
+ * section runs on, and the browser numbers the extra sheet. */
 function Page({
   label,
-  page,
-  total,
   date,
   last = false,
   children,
 }: {
   label: string;
-  page: number;
-  total: number;
   date: string;
   last?: boolean;
   children: ReactNode;
@@ -53,14 +51,9 @@ function Page({
         <span className="text-xs font-bold tracking-[0.4px] text-muted uppercase">{label}</span>
       </div>
       {children}
-      <div className="mt-auto flex justify-between gap-4 border-t border-line pt-3 text-xs text-muted">
-        <span>
-          {brand.name} · Career report · {date}
-        </span>
-        <span>
-          Page {page} of {total}
-        </span>
-      </div>
+      <p className="mt-auto border-t border-line pt-3 text-xs text-muted">
+        {brand.name} · Career report · {date}
+      </p>
     </section>
   );
 }
@@ -110,22 +103,20 @@ export function ReportPrint({ report, showSamples }: { report: LatestReport; sho
   const standout = report.traits.reduce((best, t) => (t.score > best.score ? t : best), report.traits[0]);
   const scoreByType = Object.fromEntries(report.interests.map((i) => [i.type, i.score]));
 
-  // Pages, in order. The contents list and the footers take their numbers from this one list.
+  // Sections, in order. The contents list and the section labels take their numbers from this one list.
   const pages = [
     { id: "pers", label: "Personality", toc: "Personality" },
     { id: "int", label: "Interests", toc: "Interests" },
     ...(showSamples ? [{ id: "str", label: "Strengths and growth", toc: "Strengths and growth" }] : []),
     { id: "about", label: "About this report", toc: "About this report" },
   ];
-  const total = pages.length + 1;
-  const pageOf = (id: string) => pages.findIndex((p) => p.id === id) + 2;
-  const num = (id: string) => String(pageOf(id) - 1).padStart(2, "0");
+  const num = (id: string) => String(pages.findIndex((p) => p.id === id) + 1).padStart(2, "0");
   const label = (id: string) => `${num(id)} · ${pages.find((p) => p.id === id)?.label}`;
 
   return (
     <div className="hidden print:block" aria-hidden="true" data-testid="report-print-doc">
-      {/* Page 1: cover */}
-      <Page label="Career report · Private" page={1} total={total} date={date}>
+      {/* Cover */}
+      <Page label="Career report · Private" date={date}>
         <div className="mt-7 rounded-3xl border border-brand-100 bg-brand-50 px-10 pt-9 pb-7">
           <p className="inline-flex items-center gap-2 rounded-full border border-brand-100 bg-white px-3.5 py-1.5 text-[13px] font-bold text-brand-900">
             <span className="size-[7px] rounded-full bg-sun-500" />
@@ -212,14 +203,13 @@ export function ReportPrint({ report, showSamples }: { report: LatestReport; sho
             <li key={p.id} className="flex items-baseline gap-3 border-b border-mist py-2.5 text-sm text-ink">
               <b className="w-[22px] text-brand-700">{num(p.id)}</b>
               <span className="flex-1">{p.toc}</span>
-              <span className="text-muted">Page {pageOf(p.id)}</span>
             </li>
           ))}
         </ol>
       </Page>
 
       {/* Personality */}
-      <Page label={label("pers")} page={pageOf("pers")} total={total} date={date}>
+      <Page label={label("pers")} date={date}>
         <PageTitle
           eyebrow="01 · Personality"
           title="How you think, feel and work"
@@ -261,7 +251,7 @@ export function ReportPrint({ report, showSamples }: { report: LatestReport; sho
       </Page>
 
       {/* Interests */}
-      <Page label={label("int")} page={pageOf("int")} total={total} date={date}>
+      <Page label={label("int")} date={date}>
         <PageTitle
           eyebrow="02 · Interests"
           title="What you love doing"
@@ -329,7 +319,7 @@ export function ReportPrint({ report, showSamples }: { report: LatestReport; sho
 
       {/* Strengths and growth: SAMPLE content outside production (D82) */}
       {showSamples && (
-        <Page label={label("str")} page={pageOf("str")} total={total} date={date}>
+        <Page label={label("str")} date={date}>
           <PageTitle
             eyebrow="03 · Strengths and growth"
             title="What you’re great at, and what to build next"
@@ -395,7 +385,7 @@ export function ReportPrint({ report, showSamples }: { report: LatestReport; sho
       )}
 
       {/* About this report */}
-      <Page label={label("about")} page={pageOf("about")} total={total} date={date} last>
+      <Page label={label("about")} date={date} last>
         <PageTitle eyebrow={`${num("about")} · About this report`} title="How your report was made" />
         <dl className="mt-[18px] border-t border-mist">
           {[
