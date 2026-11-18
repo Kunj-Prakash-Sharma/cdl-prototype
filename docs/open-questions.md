@@ -57,6 +57,10 @@ The V5 screens show things that earlier decisions rule out or that have no data 
 | **"Choose two"** answer type in the quiz | Question set has single-choice and scale only; scoring and stored answers assume one value | Yes: `chat` question set, answer storage, scoring | **Decided (D82):** sample UI, answer not stored or scored |
 | **Courses, course page, My Learning** with real data | Courses are a static file; no orders, entitlements or progress yet | Yes: `catalog`, `commerce`, `video` modules (big features, spec first) | **Decided (D82):** V5 on sample data now, wired later |
 | **Course search** on V5 Courses | E7 says search is not in Phase 1 | No (client-side filter of the list) | open: ask when V5 Courses is built (D82) |
+| **"Book a free call"** on the home page (phone form, no report needed) | Callbacks need a finished report and a logged-in learner (D71) | Yes: `leads` (anonymous callback request with consent, rate limit and bot check) | open: today the button goes to /discover (home, 2026-11-18)
+| **Career coach card** (name, "free 15-min call", "English or Hindi", "replies within a day") | Real coach and call terms are client inputs | No | **Sample content** in `content/samples.ts` until the client confirms (home, 2026-11-18)
+| **Home hero chat** runs inside the home page, with typed free text | Client feedback 4973: chat starts on /discover. No free text in the chat (name only) | No | **Decided (2026-11-18):** hero links to /discover; the card on the home page is a static preview
+| **Course prices, 25% off, Hit/Blockbuster tags, cart and Buy now** on the home shop | Prices and discounts are open; purchase counts are learner counts (out of Phase 1); no `commerce` | Yes: `catalog`, `commerce` | open: home shows real catalog courses with no prices until row 8 / `commerce`
 
 ## Chat inactivity timeout
 Config `CHAT_INACTIVITY_MINUTES`, default 30. Client may tune it. (Decision D58.)

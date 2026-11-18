@@ -9,3 +9,85 @@ export const sampleOffer: { text: string; highlight: string; code: string; ends:
   code: "NEWYEAR26",
   ends: "ends 15 Jan",
 };
+
+// ---- Home page (V5-Home) ----
+
+/** Launch-offer pill in the hero. Display only: the real price is an open client input (D82). */
+export const sampleLaunchOffer = { label: "Launch offer", before: "₹999", free: "FREE", after: "for a limited time" };
+
+export type SampleStory = {
+  name: string;
+  initials: string;
+  role: string;
+  before: string;
+  after: string;
+  quote: string;
+  /** Colour family for the card (mapped to tokens in the component). */
+  tone: "brand" | "sun" | "success" | "teal";
+};
+
+/** Student stories carousel. Invented people and quotes: replace with real, approved stories before launch. */
+export const sampleStories: SampleStory[] = [
+  {
+    name: "Aarav S.",
+    initials: "AS",
+    role: "Class 12",
+    before: "Unsure about streams",
+    after: "Chose Commerce",
+    quote:
+      "I had no idea which stream suited me. The report gave me words for what I enjoy, and my parents finally listened.",
+    tone: "brand",
+  },
+  {
+    name: "Diya M.",
+    initials: "DM",
+    role: "First-year college",
+    before: "Dreaded group discussions",
+    after: "Led her first GD",
+    quote: "The lessons were short and practical. Last month I opened a discussion in class without my hands shaking.",
+    tone: "sun",
+  },
+  {
+    name: "Kabir R.",
+    initials: "KR",
+    role: "Final-year student",
+    before: "Blank LinkedIn profile",
+    after: "Got two recruiter messages",
+    quote:
+      "I copied nothing, I just followed the steps. A recruiter wrote to me within two weeks of updating my profile.",
+    tone: "success",
+  },
+  {
+    name: "Meher K.",
+    initials: "MK",
+    role: "Job seeker",
+    before: "Froze in interviews",
+    after: "Cleared a second round",
+    quote: "Practising the answers out loud made the real interview feel familiar. I stopped rushing my words.",
+    tone: "teal",
+  },
+  {
+    name: "Rohan P.",
+    initials: "RP",
+    role: "Class 11",
+    before: "Never led anything",
+    after: "Runs the science club",
+    quote: "I thought leaders were born that way. The course showed me small habits I could start on day one.",
+    tone: "brand",
+  },
+];
+
+/** Career coach card. Invented person and claims: needs the client's real coach and call terms (D82). */
+export const sampleCoach = {
+  name: "Gaurav Sharma",
+  initials: "GS",
+  role: "Career coach",
+  chips: ["Free 15-min call", "English or Hindi", "Replies within a day"],
+};
+
+/** First guide message and quick replies shown in the hero preview card. Display only: the real chat is on /discover. */
+export const sampleChatPreview = {
+  greeting:
+    "I'll ask a few questions, build your career report and suggest courses that fit you. First, where are you right now?",
+  replies: ["In school (15–17)", "In college (18–21)", "Working or job hunting (22–25)"],
+};

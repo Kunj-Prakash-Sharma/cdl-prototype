@@ -75,7 +75,7 @@ Each screen is ported to the V5 design with `/ui-port` (reference: the V5 artboa
 | 4 | `V5-Discover` (chat + quiz) | `discover/*` | UI only ("Choose two" is NOT built: needs chat changes) | not started |
 | 5 | `V5-Discover` (report, gate, callback) | `report/*` | UI only for the existing data (persona title and strength scores need chat changes) | not started |
 | 6 | `V5-Report-PDF-1…5` | print stylesheet on the report | UI only | not started |
-| 7 | `V5-Home` | `(public)/page.tsx`, `home/*` | UI only (stories and coupon wait for content) | not started |
+| 7 | `V5-Home` | `(public)/page.tsx`, `home/*` | UI only (stories and coupon wait for content) | **Done (2026-11-18)**: hero starts the chat on /discover (feedback 4973), so the in-page chat is a static preview; stories, coach and launch offer are sample content (`content/samples.ts`); course cards still the old card until row 8; Book a free call waits for an anonymous callback (needs `leads` change); old stats/how-it-works/levels sections dropped as not in V5 |
 | 8 | `V5-Courses` | `learn/course-catalog.tsx`, `learn/course-card.tsx` | UI on sample data now; real data needs `catalog` | not started |
 | 9 | `V5-Course-*` | `learn/course-experience.tsx`, `video-player.tsx`, `checkout-modal.tsx` | Needs `catalog`, `commerce`, `video` | not started |
 | 10 | `V5-Learn`, `V5-Learn-s1…s7` | `(learner)/my-self`, `learn/my-learning.tsx` | Needs `commerce` (entitlements) and progress | not started |
