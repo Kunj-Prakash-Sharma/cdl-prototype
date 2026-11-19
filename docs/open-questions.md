@@ -41,6 +41,9 @@ From the Scope of Work. Dates are "to give" unless stated.
 | Admin phone numbers: how many and which (expect 2 to 4); they get the admin role at login (D64) | to give date | open |
 | Legal review: no age gate with many users under 18 (DPDP Act) | client | open |
 | Report personality cards (15) are **DRAFT text** (D72). Copy the client-approved wording from the client sample page into `report-copy.ts` and remove the draft marker before any real learner sees a report | Us | Before launch | open |
+| Persona copy for the 6 personas (D81): names, taglines, strengths, growth areas. **DRAFT** until approved | Us + client | Before launch | open |
+| RIASEC-to-course mapping for the 8 V5 sample courses (D86) is temporary; client supplies the real one (#4665) | Client | with the real courses | open |
+| V5 Home mini-chat (4 own personas) duplicates Discover: recommend replacing it with a "Start discovery" button | Design + client | before the Home build | open |
 | Legal review of the under-18 consent route (D71): the login/terms line telling parents to log in for a learner under 18, and the age-based consent wording on the callback form. Exact wording needs the client's lawyer | client | open |
 
 ## Chat inactivity timeout
