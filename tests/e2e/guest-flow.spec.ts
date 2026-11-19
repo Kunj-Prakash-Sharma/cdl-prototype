@@ -1,7 +1,7 @@
 // The guest quiz and the phone gate in a real browser (D78, D80), against the TEST database.
 // Needs network access: the invisible Cloudflare Turnstile widget (dummy keys) loads from Cloudflare.
 import { expect, test } from "@playwright/test";
-import { answerScored, finishBasics, requestCode, scoredCount, varied } from "../support/chat-e2e";
+import { answerScored, answerStatus, finishBasics, requestCode, scoredCount, varied } from "../support/chat-e2e";
 import { newLearnerPhone } from "../support/e2e";
 
 test.describe("guest quiz", () => {
@@ -9,14 +9,15 @@ test.describe("guest quiz", () => {
   test("a guest finishes the quiz, meets the phone gate with a sample, verifies, and then sees the real report", async ({
     page,
   }) => {
-    // 1. No login: the Start screen, then the chat at the name step.
+    // 1. No login: the Start screen, then the chat at its first question.
     await page.goto("/discover");
     await page.waitForFunction(() => "turnstile" in window);
     await expect(page.getByTestId("guest-start")).toBeVisible();
     await expect(async () => {
       await page.getByRole("button", { name: "Start" }).click();
-      await expect(page.getByTestId("name-input")).toBeVisible({ timeout: 8000 });
+      await expect(page.getByTestId("choice-0")).toBeVisible({ timeout: 8000 });
     }).toPass({ timeout: 40_000 });
+    await answerStatus(page); // status first, then the name (D87)
 
     // 2. Finish the quiz as a guest (the name is typed here, before any account exists).
     await finishBasics(page, "Asha");
@@ -57,7 +58,7 @@ test.describe("guest quiz", () => {
       await codeInput.fill(code);
       await expect(page).not.toHaveURL(/\/login/, { timeout: 2500 });
     }).toPass({ timeout: 20_000 });
-    await expect(page.getByTestId("name-input")).toBeVisible();
+    await answerStatus(page);
     await finishBasics(page, "Asha");
     await answerScored(page, scoredCount, varied);
     await expect(page).toHaveURL(/\/discover\/report$/, { timeout: 20_000 });

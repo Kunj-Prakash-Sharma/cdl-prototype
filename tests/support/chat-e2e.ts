@@ -29,7 +29,7 @@ export async function requestCode(page: Page, phone: string): Promise<string> {
   throw new Error("the bot check never produced a token");
 }
 
-/** Logs in with a fresh number and opens the chat at the name step. */
+/** Logs in with a fresh number and opens the chat at the name step (the status question is answered on the way). */
 export async function openChat(page: Page, phone: string = newLearnerPhone()): Promise<string> {
   await page.goto("/login?next=%2Fdiscover");
   const code = await requestCode(page, phone);
@@ -42,10 +42,19 @@ export async function openChat(page: Page, phone: string = newLearnerPhone()): P
     await expect(page).not.toHaveURL(/\/login/, { timeout: 2500 });
   }).toPass({ timeout: 20_000 });
   await expect(page).toHaveURL(/\/discover$/, { timeout: 15_000 });
-  await expect(page.getByTestId("name-input")).toBeVisible();
+  await answerStatus(page);
   // The guide says what it is before asking anything (E4-S1: a virtual guide, not a human).
   await expect(page.getByText("virtual guide, not a human")).toBeVisible();
   return phone;
+}
+
+export async function answerStatus(page: Page) {
+  // A learner who already answered it (a number reused by an earlier run) is waiting at the name step: nothing to tap.
+  const name = page.getByTestId("name-input");
+  const status = page.getByTestId("choice-0");
+  await expect(name.or(status)).toBeVisible();
+  if (!(await name.isVisible())) await answerWith(page, status);
+  await expect(name).toBeVisible();
 }
 
 export const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -75,12 +84,13 @@ export async function sendName(page: Page, name: string) {
 }
 
 /**
- * Name and the tap questions, ending on the first scored question. `ageIndex` is the position of the answer to the
+ * Name and the remaining tap questions (the status was answered before the name), ending on the first scored question. `ageIndex` is the position of the answer to the
  * first tap question (age). Every age takes the same path (D79).
  */
 export async function finishBasics(page: Page, name = "Asha", ageIndex = 0) {
   await sendName(page, name);
-  for (let i = 0; i < basicsCount; i++) {
+  // The status question was answered before the name (D87), so the age comes first here.
+  for (let i = 0; i < basicsCount - 1; i++) {
     await answerWith(page, page.getByTestId(`choice-${i === 0 ? ageIndex : 0}`));
   }
   await expect(page.getByTestId("question-text")).toBeVisible();
