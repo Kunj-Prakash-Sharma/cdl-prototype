@@ -54,6 +54,15 @@ export async function retake() {
   return guarded(async () => chat.retake(await currentLearner()));
 }
 
+const homeAnswerSchema = attemptSchema.extend({ optionId: z.string().min(1).max(32) });
+
+/** The Home mini-chat answer, sent once when the quiz opens (D87). The service refuses an unknown option or a quiz under way. */
+export async function applyHomeAnswer(input: unknown) {
+  const parsed = homeAnswerSchema.safeParse(input);
+  if (!parsed.success) return invalid;
+  return guarded(async () => chat.applyHomeAnswer(await currentLearner(), parsed.data.attemptId, parsed.data.optionId));
+}
+
 export async function submitAnswer(input: unknown) {
   const parsed = answerSchema.safeParse(input);
   if (!parsed.success) return invalid;

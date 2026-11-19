@@ -89,6 +89,13 @@ export type QuestionSet = {
   /** The typed name question (D46: the only free text). Its answer goes to the learner profile, never to answers. */
   name: { id: "b-name"; prompt: string };
   basics: BasicQuestion[];
+  /** The basics question after which the name is asked. Missing = the name comes first (set 1.0.0). */
+  nameAfter?: BasicQuestion["id"];
+  /**
+   * The basics question that the Home mini-chat also asks (D87). Its answer can arrive with the start of the quiz and
+   * is saved as that question's answer, so the learner is not asked twice.
+   */
+  homeQuestionId?: BasicQuestion["id"];
   scales: Record<Stage, ScaleLabels>;
   items: Item[];
   thresholds: Thresholds;
@@ -313,12 +320,28 @@ export const QUESTION_SET_1_0_0: QuestionSet = {
   ],
 };
 
+/**
+ * 1.1.0 (D87): the same questions, IDs and scoring as 1.0.0, only asked in another order: "what are you doing now"
+ * first (the Home mini-chat asks it too and passes the answer on), then the name, then age and goal. Attempts already
+ * started keep 1.0.0 and its order.
+ */
+const BASICS_1_1_0_ORDER = ["b-status", "b-age", "b-goal"] as const;
+
+export const QUESTION_SET_1_1_0: QuestionSet = {
+  ...QUESTION_SET_1_0_0,
+  version: "1.1.0",
+  basics: BASICS_1_1_0_ORDER.map((id) => QUESTION_SET_1_0_0.basics.find((b) => b.id === id)!),
+  nameAfter: "b-status",
+  homeQuestionId: "b-status",
+};
+
 /** Every set that ever shipped, by version. Never remove an entry: old attempts are scored against their own version. */
 export const QUESTION_SETS: Readonly<Record<string, QuestionSet>> = {
   [QUESTION_SET_1_0_0.version]: QUESTION_SET_1_0_0,
+  [QUESTION_SET_1_1_0.version]: QUESTION_SET_1_1_0,
 };
 
-export const CURRENT_QUESTION_SET: QuestionSet = QUESTION_SET_1_0_0;
+export const CURRENT_QUESTION_SET: QuestionSet = QUESTION_SET_1_1_0;
 
 export function getQuestionSet(version: string): QuestionSet | undefined {
   return QUESTION_SETS[version];

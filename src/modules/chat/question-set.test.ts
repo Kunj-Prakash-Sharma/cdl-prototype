@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   CURRENT_QUESTION_SET,
   OCEAN_DIMENSIONS,
+  QUESTION_SET_1_0_0,
+  QUESTION_SET_1_1_0,
   QUESTION_SETS,
   RIASEC_DIMENSIONS,
   getQuestionSet,
@@ -9,7 +11,7 @@ import {
 } from "./question-set";
 import { QUESTION_POOL, getPoolItem } from "./question-pool";
 
-const set = CURRENT_QUESTION_SET;
+const set = QUESTION_SET_1_0_0; // the shape tests below describe 1.0.0; 1.1.0 is tested at the end
 const ocean = set.items.filter((i) => i.stage === "ocean");
 const riasec = set.items.filter((i) => i.stage === "riasec");
 const allVariantTexts = set.items.flatMap((i) => i.variants.map((variant) => variant.text));
@@ -249,5 +251,29 @@ describe("no minor flow (D79)", () => {
     for (const basic of CURRENT_QUESTION_SET.basics) {
       for (const option of basic.options) expect(Object.keys(option)).not.toContain("minor");
     }
+  });
+});
+
+describe("question set 1.1.0: same questions, new order (D87)", () => {
+  const next = QUESTION_SET_1_1_0;
+
+  it("is the current set and is registered", () => {
+    expect(CURRENT_QUESTION_SET).toBe(next);
+    expect(getQuestionSet("1.1.0")).toBe(next);
+  });
+
+  it("keeps every ID, item and score rule of 1.0.0, so scoring is unchanged", () => {
+    expect(next.items).toBe(QUESTION_SET_1_0_0.items);
+    expect(next.thresholds).toEqual(QUESTION_SET_1_0_0.thresholds);
+    expect([...next.basics.map((b) => b.id)].sort()).toEqual(QUESTION_SET_1_0_0.basics.map((b) => b.id).sort());
+  });
+
+  it("asks status first, then the name, then age and goal", () => {
+    expect(next.basics.map((b) => b.id)).toEqual(["b-status", "b-age", "b-goal"]);
+    expect(next.nameAfter).toBe("b-status");
+  });
+
+  it("names a real basics question as the one the Home chat also asks", () => {
+    expect(next.basics.map((b) => b.id)).toContain(next.homeQuestionId);
   });
 });

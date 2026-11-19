@@ -64,7 +64,7 @@ describe("a visitor with no session", () => {
     const calls = [
       () => actions.startAttempt(),
       () => actions.retake(),
-      () => actions.submitAnswer({ attemptId: id, questionId: "b-age", value: 0 }),
+      () => actions.submitAnswer({ attemptId: id, questionId: "b-status", value: 0 }),
       () => actions.submitName({ attemptId: id, name: "Asha" }),
       () => actions.finishAttempt({ attemptId: id }),
       () => actions.retryStage({ attemptId: id, stage: "riasec" }),
@@ -87,7 +87,7 @@ describe("input is checked before anything happens", () => {
       "x",
       42,
       {},
-      { attemptId: "not-a-uuid", questionId: "b-age", value: 0 },
+      { attemptId: "not-a-uuid", questionId: "b-status", value: 0 },
       { attemptId, questionId: "", value: 0 },
       { attemptId, questionId: "x".repeat(65), value: 0 },
       { attemptId, questionId: "b-age", value: "0" },
@@ -114,23 +114,26 @@ describe("input is checked before anything happens", () => {
     const ownerId = await loginAs("Asha");
     const { attemptId } = await started();
     await loginAs("Ravi"); // a different learner
-    const smuggled = { attemptId, questionId: "b-age", value: 0, userId: ownerId };
+    const smuggled = { attemptId, questionId: "b-status", value: 0, userId: ownerId };
     expect(await actions.submitAnswer(smuggled)).toEqual({ ok: false, code: "not_found" });
     expect(await actions.finishAttempt({ attemptId, userId: ownerId })).toEqual({ ok: false, code: "not_found" });
   });
 });
 
 describe("the quiz through the actions", () => {
-  it("asks for the name first, saves it on the profile, then takes the learner to the questions", async () => {
+  it("asks what they are doing, then the name, saves it on the profile, then takes the learner on", async () => {
     const userId = await loginAs("");
     const first = await started();
-    expect(first.next.kind).toBe("name");
+    expect(first.next.kind).toBe("basics");
+    const status = await actions.submitAnswer({ attemptId: first.attemptId, questionId: "b-status", value: 0 });
+    if (!status.ok) throw new Error(status.code);
+    expect(status.next.kind).toBe("name");
     const res = await actions.submitName({ attemptId: first.attemptId, name: "Asha" });
     if (!res.ok) throw new Error(res.code);
     expect(res.next.kind).toBe("basics");
     const rows = await db.execute<{ name: string }>(sql`select name from auth_user where id = ${userId}`);
     expect(rows.rows[0]!.name).toBe("Asha");
-    // A refresh now starts at the basics: the profile name is read fresh, not remembered.
+    // A refresh now continues at the next basics question: the profile name is read fresh, not remembered.
     const resumed = await started();
     expect(resumed.resumed).toBe(true);
     expect(resumed.next.kind).toBe("basics");
@@ -166,11 +169,27 @@ describe("the quiz through the actions", () => {
   });
 });
 
+describe("the Home answer through the action", () => {
+  it("saves a valid option, and refuses an empty or made-up one", async () => {
+    await loginAs("Asha");
+    const { attemptId } = await started();
+    expect(await actions.applyHomeAnswer({ attemptId, optionId: "" })).toEqual({ ok: false, code: "invalid_input" });
+    expect(await actions.applyHomeAnswer({ attemptId, optionId: "astronaut" })).toEqual({
+      ok: false,
+      code: "invalid_input",
+    });
+    const res = await actions.applyHomeAnswer({ attemptId, optionId: "college" });
+    if (!res.ok) throw new Error(res.code);
+    expect(res.applied).toBe(true);
+    expect(res.next.kind).toBe("basics"); // the profile already has a name, so the age comes next
+  });
+});
+
 describe("rate limit", () => {
   it("allows a normal pace and refuses a flood with a wait time, per learner", async () => {
     await loginAs("Asha");
     const { attemptId } = await started();
-    const tap = () => actions.submitAnswer({ attemptId, questionId: "b-age", value: 0 });
+    const tap = () => actions.submitAnswer({ attemptId, questionId: "b-status", value: 0 });
     for (let i = 0; i < ANSWER_LIMIT_PER_MINUTE; i++) expect((await tap()).ok, `tap ${i}`).toBe(true);
     const refused = await tap();
     expect(refused).toMatchObject({ ok: false, code: "rate_limited" });
@@ -179,7 +198,9 @@ describe("rate limit", () => {
     // Another learner is not affected by this one's flood.
     await loginAs("Ravi");
     const other = await started();
-    expect((await actions.submitAnswer({ attemptId: other.attemptId, questionId: "b-age", value: 0 })).ok).toBe(true);
+    expect((await actions.submitAnswer({ attemptId: other.attemptId, questionId: "b-status", value: 0 })).ok).toBe(
+      true,
+    );
   });
 
   it("also covers the name", async () => {

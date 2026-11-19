@@ -5,6 +5,7 @@ import {
   completedStage,
   computeNextStep,
   firstUnanswered,
+  homeAnswer,
   isAway,
   isExpired,
   isReachable,
@@ -14,9 +15,10 @@ import {
   stageQuestionIds,
   type SavedAnswers,
 } from "./flow";
-import { CURRENT_QUESTION_SET, type QuestionSet } from "./question-set";
+import { QUESTION_SET_1_0_0, QUESTION_SET_1_1_0, type QuestionSet } from "./question-set";
 
-const set = CURRENT_QUESTION_SET;
+// The generic flow tests use 1.0.0 (name first): attempts started on it keep that order. 1.1.0 has its own block below.
+const set = QUESTION_SET_1_0_0;
 const order = questionOrder(set);
 const withName = { attemptId: "attempt-1", hasName: true };
 const noName = { attemptId: "attempt-1", hasName: false };
@@ -280,5 +282,43 @@ describe("isAway (a returning learner, D75)", () => {
   it("falls back to the start time while nothing is answered", () => {
     expect(isAway({ startedAt: minutesAgo(60), lastAnswerAt: null }, now, 30)).toBe(true);
     expect(isAway({ startedAt: minutesAgo(1), lastAnswerAt: null }, now, 30)).toBe(false);
+  });
+});
+
+describe("set 1.1.0: status first, name second, and the Home answer (D87)", () => {
+  const next = QUESTION_SET_1_1_0;
+
+  it("asks status, then the name, then age and goal, then the scored items", () => {
+    const order = questionOrder(next);
+    expect(order.slice(0, 4).map((e) => e.id)).toEqual(["b-status", "b-name", "b-age", "b-goal"]);
+    expect(order.slice(0, 4).map((e) => e.kind)).toEqual(["basics", "name", "basics", "basics"]);
+    expect(order).toHaveLength(1 + next.basics.length + next.items.length);
+  });
+
+  it("puts the name first when the set names no question to follow (1.0.0)", () => {
+    expect(questionOrder(QUESTION_SET_1_0_0)[0]).toEqual({ id: "b-name", stage: "basics", kind: "name" });
+  });
+
+  it("goes to the name once status is answered", () => {
+    const step = computeNextStep(next, { "b-status": 0 }, { attemptId: "a", hasName: false });
+    expect(step.kind).toBe("name");
+  });
+
+  it("skips the name for a learner who already has one", () => {
+    const step = computeNextStep(next, { "b-status": 0 }, { attemptId: "a", hasName: true });
+    expect(step.kind === "basics" && step.id).toBe("b-age");
+  });
+
+  it("homeAnswer turns an option id into the answer's position", () => {
+    const options = next.basics.find((b) => b.id === "b-status")!.options;
+    const i = options.findIndex((o) => o.id === "college");
+    expect(homeAnswer(next, "college")).toEqual({ questionId: "b-status", value: i });
+  });
+
+  it("homeAnswer refuses an unknown option, a non-string, and a set with no home question", () => {
+    expect(homeAnswer(next, "astronaut")).toBeNull();
+    expect(homeAnswer(next, 2)).toBeNull();
+    expect(homeAnswer(next, undefined)).toBeNull();
+    expect(homeAnswer(QUESTION_SET_1_0_0, "school")).toBeNull();
   });
 });

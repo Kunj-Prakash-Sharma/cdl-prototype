@@ -41,6 +41,7 @@ async function finishReport(learner: Learner, ageIndex = 2) {
   const started = await startOrResumeAttempt(learner);
   if (!started.ok) throw new Error(started.code);
   const { attemptId } = started;
+  await submitAnswer(learner, attemptId, "b-status", 0); // status is asked first (set 1.1.0), then the name, then age
   await submitAnswer(learner, attemptId, "b-age", ageIndex);
   for (let guard = 0; guard < 100; guard++) {
     const res = await getNextStep(learner, attemptId);

@@ -9,6 +9,7 @@ import {
   completedStage,
   computeNextStep,
   firstUnanswered,
+  homeAnswer,
   isAway,
   isExpired,
   progressOf,
@@ -221,6 +222,42 @@ export async function submitAnswer(
     next: computeNextStep(set, updated, { attemptId, hasName: hasName(learner) }),
     acknowledgement: acknowledgementFor(set, attemptId, questionId, value),
   };
+}
+
+/**
+ * The answer the Home mini-chat already took (D87), as an option id such as "school". Saved as the answer to the set's
+ * home question, but only while the attempt has NO answers yet: a quiz that is under way is never changed, so a repeat
+ * call (refresh, two tabs) is harmless (`applied: false`). The id must be one of that question's own options, so a
+ * made-up value from the browser is refused. Changing the answer later goes through `submitAnswer` like any other.
+ */
+export async function applyHomeAnswer(
+  learner: Learner,
+  attemptId: string,
+  optionId: unknown,
+): Promise<ChatResult<{ next: NextStep; applied: boolean }>> {
+  const loaded = await loadOwned(learner, attemptId);
+  if (loaded === null || loaded === "unknown_set") return failed(loaded);
+  const { attempt, set } = loaded;
+  if (attempt.status !== "in_progress") return { ok: false, code: "attempt_closed" };
+
+  const home = homeAnswer(set, optionId);
+  if (!home) return { ok: false, code: "invalid_input" };
+
+  const answers = await repo.listAnswers(attemptId);
+  const context = { attemptId, hasName: hasName(learner) };
+  if (Object.keys(answers).length > 0)
+    return { ok: true, applied: false, next: computeNextStep(set, answers, context) };
+
+  const now = new Date();
+  await repo.saveAnswer({ attemptId, questionId: home.questionId, variantId: null, value: home.value }, now);
+  trackChat(attemptId, "chat_step", {
+    stage: "basics",
+    messageNumber: questionOrder(set).findIndex((entry) => entry.id === home.questionId) + 1,
+    inputType: "single",
+    secondsTaken: secondsBetween(attempt.startedAt, now),
+  });
+  const updated = { [home.questionId]: home.value };
+  return { ok: true, applied: true, next: computeNextStep(set, updated, context) };
 }
 
 /**
