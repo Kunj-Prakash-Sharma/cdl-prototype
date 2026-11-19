@@ -1,7 +1,7 @@
 // The guest quiz and the phone gate in a real browser (D78, D80), against the TEST database.
 // Needs network access: the invisible Cloudflare Turnstile widget (dummy keys) loads from Cloudflare.
 import { expect, test } from "@playwright/test";
-import { answerScored, finishBasics, requestCode, scoredCount, varied } from "../support/chat-e2e";
+import { answerScored, enterCode, finishBasics, requestCode, scoredCount, varied } from "../support/chat-e2e";
 import { newLearnerPhone } from "../support/e2e";
 
 test.describe("guest quiz", () => {
@@ -36,12 +36,7 @@ test.describe("guest quiz", () => {
     // 4. Verify a phone at the gate. The same page now shows the real report, with the callback form.
     const phone = newLearnerPhone();
     const code = await requestCode(page, phone);
-    const codeInput = page.getByLabel("6-digit code");
-    await expect(async () => {
-      await codeInput.fill("");
-      await codeInput.fill(code);
-      await expect(page.getByTestId("report-gate")).toHaveCount(0, { timeout: 2500 });
-    }).toPass({ timeout: 20_000 });
+    await enterCode(page, code, () => expect(page.getByTestId("report-gate")).toHaveCount(0, { timeout: 5000 }));
     await expect(page).toHaveURL(/\/discover\/report$/);
     await expect(page.getByTestId("report")).toBeVisible();
     await expect(page.getByTestId("report-callback-button")).toBeVisible();
@@ -51,12 +46,7 @@ test.describe("guest quiz", () => {
     await page.goto("/login?next=%2Fdiscover");
     const phone = newLearnerPhone();
     const code = await requestCode(page, phone);
-    const codeInput = page.getByLabel("6-digit code");
-    await expect(async () => {
-      await codeInput.fill("");
-      await codeInput.fill(code);
-      await expect(page).not.toHaveURL(/\/login/, { timeout: 2500 });
-    }).toPass({ timeout: 20_000 });
+    await enterCode(page, code);
     await expect(page.getByTestId("name-input")).toBeVisible();
     await finishBasics(page, "Asha");
     await answerScored(page, scoredCount, varied);

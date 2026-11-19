@@ -29,18 +29,33 @@ export async function requestCode(page: Page, phone: string): Promise<string> {
   throw new Error("the bot check never produced a token");
 }
 
+/**
+ * Types the one-time code and waits until the login page has moved on. Six digits submit on their own, except when
+ * the form is still busy (the "Send code" step can still be finishing): then the code sits in the box unsent and the
+ * "Verify and log in" button is enabled, so click it. The button is disabled while a check runs and after a success,
+ * so a code is never sent twice (a second send of a used code would fail).
+ * `loggedIn` says when it worked; by default "the URL has left /login" (the report gate stays on its own URL).
+ */
+export async function enterCode(
+  page: Page,
+  code: string,
+  loggedIn: () => Promise<void> = () => expect(page).not.toHaveURL(/\/login/, { timeout: 5000 }),
+) {
+  await page.getByLabel("6-digit code").fill(code);
+  const verifyButton = page.getByRole("button", { name: "Verify and log in" });
+  await expect(async () => {
+    if ((await verifyButton.isVisible()) && (await verifyButton.isEnabled({ timeout: 500 }).catch(() => false))) {
+      await verifyButton.click({ timeout: 1000 }).catch(() => {});
+    }
+    await loggedIn();
+  }).toPass({ timeout: 30_000 });
+}
+
 /** Logs in with a fresh number and opens the chat at the name step. */
 export async function openChat(page: Page, phone: string = newLearnerPhone()): Promise<string> {
   await page.goto("/login?next=%2Fdiscover");
   const code = await requestCode(page, phone);
-  // Six digits submit on their own, but not before React has hydrated: under load the first fill can do nothing, so
-  // type the code again until the login page has moved on.
-  const codeInput = page.getByLabel("6-digit code");
-  await expect(async () => {
-    await codeInput.fill("");
-    await codeInput.fill(code);
-    await expect(page).not.toHaveURL(/\/login/, { timeout: 2500 });
-  }).toPass({ timeout: 20_000 });
+  await enterCode(page, code);
   await expect(page).toHaveURL(/\/discover$/, { timeout: 15_000 });
   await expect(page.getByTestId("name-input")).toBeVisible();
   // The guide says what it is before asking anything (E4-S1: a virtual guide, not a human).

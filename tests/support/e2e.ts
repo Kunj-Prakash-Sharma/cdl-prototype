@@ -89,7 +89,9 @@ export async function awayFromChat(nationalNumber: string, minutes: number): Pro
  */
 export function createEmailAdmin(): { email: string; password: string } {
   const email = `e2e-admin-${randomInt(0, 1_000_000_000)}@example.com`;
-  const output = execFileSync("npx", ["tsx", "--env-file-if-exists=.env", "scripts/create-admin.ts", email], {
+  // Node with the tsx loader rather than `npx tsx`: Windows cannot spawn `npx` without a shell.
+  const args = ["--import", "tsx", "--env-file-if-exists=.env", "scripts/create-admin.ts", email];
+  const output = execFileSync(process.execPath, args, {
     env: { ...process.env, DATABASE_URL: assertTestDbUrl(process.env.TEST_DATABASE_URL) },
     encoding: "utf8",
   });

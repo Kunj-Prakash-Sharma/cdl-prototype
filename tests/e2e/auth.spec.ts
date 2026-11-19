@@ -2,6 +2,7 @@
 // Needs network access: the invisible Cloudflare Turnstile widget (dummy keys) loads from Cloudflare.
 import { expect, test, type Page } from "@playwright/test";
 import { e2eAdminPhone, latestOtp, newLearnerPhone } from "../support/e2e";
+import { enterCode } from "../support/chat-e2e";
 
 /** Types the number, asks for a code (retrying while the bot-check widget is still loading) and returns the code. */
 async function requestCode(page: Page, phone: string): Promise<string> {
@@ -26,14 +27,7 @@ async function requestCode(page: Page, phone: string): Promise<string> {
 async function signIn(page: Page, phone: string, next?: string) {
   await page.goto(next ? `/login?next=${encodeURIComponent(next)}` : "/login");
   const code = await requestCode(page, phone);
-  // Six digits submit on their own, but not before React has hydrated: under load the first fill can do nothing, so
-  // type the code again until the login page has moved on.
-  const codeInput = page.getByLabel("6-digit code");
-  await expect(async () => {
-    await codeInput.fill("");
-    await codeInput.fill(code);
-    await expect(page).not.toHaveURL(/\/login/, { timeout: 2500 });
-  }).toPass({ timeout: 20_000 });
+  await enterCode(page, code);
 }
 
 /** Desktop has an account menu; the phone layout has the hamburger menu. */
@@ -66,13 +60,7 @@ test.describe("login", () => {
     await page.goto("/my-self");
     await expect(page).toHaveURL(/\/login\?next=%2Fmy-self$/);
     const code = await requestCode(page, newLearnerPhone());
-    // Six digits submit on their own, but not before React has hydrated: type the code again until the page moves on.
-    const codeInput = page.getByLabel("6-digit code");
-    await expect(async () => {
-      await codeInput.fill("");
-      await codeInput.fill(code);
-      await expect(page).not.toHaveURL(/\/login/, { timeout: 2500 });
-    }).toPass({ timeout: 20_000 });
+    await enterCode(page, code);
     await expect(page).toHaveURL(/\/my-self$/);
   });
 
