@@ -4,6 +4,7 @@
 import type { Stage, StageCopy, StageId } from "./question-set";
 
 export type { StageId };
+export type { ResultView } from "./result";
 
 /** One part of the quiz: its wording (from the set) and how far the learner is in it. */
 export type StageProgress = StageCopy & { id: StageId; answered: number; total: number };

@@ -7,7 +7,8 @@ One Next.js app serves the pages **and** the API (monolith, one repo). A worker 
 src/
   app/
     (public)/   home, /learn, /learn/[slug], legal pages   server-rendered, cached
-    (learner)/  /discover, /my-self/*                      session required
+    (quiz)/     /discover, /discover/report                open to guests (D78); report behind the phone gate
+    (learner)/  /my-self/*                                 session required
     (admin)/    /admin/*                                   admin role (added with the admin feature)
     api/        REST handlers: webhooks, uploads, worker callbacks
   modules/<name>/

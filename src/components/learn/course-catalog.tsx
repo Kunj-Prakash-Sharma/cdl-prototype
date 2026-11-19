@@ -1,25 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, Lock, Search, Sparkles, Target, Users } from "lucide-react";
+import { ArrowRight, Lock, Search, Target, Users } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
-import { Eyebrow, SageAvatar } from "@/components/ui/misc";
+import { GuideAvatar } from "@/components/ui/misc";
 import { CATEGORIES, COURSES, type CourseCategory } from "@/modules/catalog/courses";
 import { cn } from "@/lib/format";
-import { computeResults, isDiscoveryComplete } from "@/modules/chat/legacy/scoring";
-import { useAppState, useHydrated } from "@/lib/store";
 import { CourseCard } from "./course-card";
 
 export function CourseCatalog() {
-  const state = useAppState();
-  const hydrated = useHydrated();
   const [category, setCategory] = useState<CourseCategory | "All">("All");
   const [query, setQuery] = useState("");
-
-  const results = useMemo(
-    () => (state.completedAt && isDiscoveryComplete(state) ? computeResults(state) : null),
-    [state],
-  );
 
   const courses = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -50,51 +41,20 @@ export function CourseCatalog() {
 
       <section className="border-b border-line bg-white">
         <div className="mx-auto max-w-7xl px-4.5 pt-9 pb-16 sm:px-6">
-          {/* Personalisation */}
-          {hydrated &&
-            (results ? (
-              <div className="mb-12 rounded-[22px] border border-brand-200 bg-brand-50 p-6 sm:p-8">
-                <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-                  <div>
-                    <Eyebrow className="flex items-center gap-1.5">
-                      <Sparkles className="size-3.5" aria-hidden /> Recommended for you
-                    </Eyebrow>
-                    <h2 className="mt-2 font-display text-2xl font-normal tracking-[-0.5px] text-ink sm:text-3xl">
-                      {results.name}, your path to {results.matches[0].career.title}
-                    </h2>
-                    <p className="mt-1 text-sm text-body">
-                      Based on your career profile — <span className="font-semibold">{results.archetype.title}</span>
-                    </p>
-                  </div>
-                  <ButtonLink href="/discover" variant="secondary" size="sm">
-                    View my report <ArrowRight className="size-4" aria-hidden />
-                  </ButtonLink>
-                </div>
-                <div className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(270px,1fr))] gap-4.5">
-                  {results.courses.map(({ course, career }) => (
-                    <CourseCard
-                      key={course.slug}
-                      slug={course.slug}
-                      reason={`For ${career.title}`}
-                      className="h-full"
-                    />
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="mb-12 flex flex-col items-start gap-5 rounded-[22px] bg-ink p-6 text-white sm:flex-row sm:items-center sm:p-8">
-                <SageAvatar size="lg" />
-                <div className="flex-1">
-                  <h2 className="font-display text-xl font-normal">Not sure where to start?</h2>
-                  <p className="mt-1 text-sm text-white/70">
-                    Take the free career discovery and get a learning path built around your strengths.
-                  </p>
-                </div>
-                <ButtonLink href="/discover" variant="light">
-                  Discover my path <ArrowRight className="size-4" aria-hidden />
-                </ButtonLink>
-              </div>
-            ))}
+          {/* Personal "Recommended for you" courses come from the saved report once the catalog module exists
+              (row 9). Until then everyone sees the way into the chat. */}
+          <div className="mb-12 flex flex-col items-start gap-5 rounded-[22px] bg-ink p-6 text-white sm:flex-row sm:items-center sm:p-8">
+            <GuideAvatar size="lg" />
+            <div className="flex-1">
+              <h2 className="font-display text-xl font-normal">Not sure where to start?</h2>
+              <p className="mt-1 text-sm text-white/70">
+                Take the free career discovery and get a learning path built around your strengths.
+              </p>
+            </div>
+            <ButtonLink href="/discover" variant="light">
+              Discover my path <ArrowRight className="size-4" aria-hidden />
+            </ButtonLink>
+          </div>
 
           {/* Filters */}
           <div className="mb-7 flex flex-wrap items-end justify-between gap-x-6 gap-y-4.5">

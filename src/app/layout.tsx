@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Serif, Manrope, Outfit } from "next/font/google";
+import { Manrope, Outfit } from "next/font/google";
 import { ToastProvider } from "@/components/ui/toast";
+import { brand } from "@/config/brand";
 import "./globals.css";
 
 // V5 design (D81): Manrope for body text, Outfit for headings. Both are variable fonts, so no weight list is needed.
@@ -14,21 +15,12 @@ const outfit = Outfit({
   subsets: ["latin"],
 });
 
-// Legacy: the prototype's serif accent words. Drop once no ported screen uses `font-serif`.
-const instrument = Instrument_Serif({
-  variable: "--font-instrument",
-  subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
-});
-
 export const metadata: Metadata = {
   title: {
-    default: "SELF — Career discovery & learning",
-    template: "%s · SELF",
+    default: `${brand.name} — Career discovery & learning`,
+    template: `%s · ${brand.name}`,
   },
-  description:
-    "SELF is the complete career development and learning platform. Discover your path with CDL, our AI career discovery, then learn the skills to get there.",
+  description: `${brand.name} is the complete career development and learning platform. Discover your path with ${brand.guideName}, your career guide, then learn the skills to get there.`,
 };
 
 export const viewport: Viewport = {
@@ -41,7 +33,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className={`${manrope.variable} ${outfit.variable} ${instrument.variable} h-full antialiased`}
+      className={`${manrope.variable} ${outfit.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         <ToastProvider>{children}</ToastProvider>

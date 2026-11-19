@@ -20,8 +20,8 @@ The prototype (`prototype-v0`) is about 5,950 lines in 45 files: learner-facing 
 | `app/globals.css` | Keep | Tokens; swap colours when the brand lands |
 | `lib/format.ts` | Keep | |
 | `components/ui/button, modal, toast, reveal` | Keep | |
-| `components/ui/misc.tsx` | Adapt | `SageAvatar` → `GuideAvatar`; `Logo` from brand config; drop `Rating` |
-| `components/charts/radar-chart.tsx` | Adapt | Hardwired to RIASEC; generalise to N axes (OCEAN 5 + RIASEC 6) |
+| `components/ui/misc.tsx` | Adapt | **Done** (2026-11-19): `SageAvatar` → `GuideAvatar`, `Logo` from brand config, colours on tokens. `Rating` stays until the course page (row 9) drops it |
+| `components/charts/radar-chart.tsx` | **Deleted** (2026-11-19) | Was hardwired to the prototype dimensions and unused; the V5 report draws its own bars. Build a new N-axis chart if a design asks for one |
 | `components/site/navbar.tsx` | Adapt | Session state, mobile menu |
 | `components/site/footer.tsx` | Adapt | Drop demo disclaimer; add privacy/terms/refund links |
 | `components/site/reset-demo-button.tsx` | Delete | |
@@ -32,15 +32,15 @@ The prototype (`prototype-v0`) is about 5,950 lines in 45 files: learner-facing 
 | File | Verdict | Note |
 |---|---|---|
 | `discover/discovery-flow.tsx` | **Done** (2026-11-03) | Replaced by `chat-flow.tsx`: draws the server's next step (name, tap questions, scale question, finishing, try again, stop, saved result); no stage machine, no `localStorage` |
-| `discover/stage-shell.tsx`, `stepper.tsx` | **Done** (deleted) | Replaced by `progress-header.tsx` (a bar and "answered of total" from the server's numbers) |
+| `discover/stage-shell.tsx`, `stepper.tsx` | **Done** (deleted) | Replaced by `quiz-stepper.tsx` and `stage-header.tsx` (a bar and "answered of total" from the server's numbers) |
 | `discover/intro-stage.tsx` | **Done** (deleted) | The learner resumes at the first unanswered question; no intro screen |
 | `discover/chat-stage.tsx` | **Done** | Bubbles, typing indicator and chips kept in `chat-card.tsx` and `chat-bubbles.tsx`; wording from the question set; only the name is typed; no side panel |
 | `discover/personality-stage.tsx` | **Done** | Round-button scale kept in `scale-question.tsx`; the statement, labels and number of buttons come from the step |
 | `discover/analyzing-stage.tsx` | **Done** | Pulsing loader in `status-screens.tsx` (`FinishingScreen`) while `finishAttempt` runs |
 | `discover/aptitude-stage.tsx` | **Done** (deleted) | Not in spec |
 | `discover/values-stage.tsx` | **Done** (deleted) | Not in spec |
-| `discover/results-report.tsx` | Rewrite (**not started**; the old file stays as a reference and is unused, with the legacy folder, until the report block) | Drop aptitude, values, percentile, salary, % fit. Add OCEAN strengths/growth, RIASEC interests + career families, suggested courses, save, print-PDF, callback with consent |
-| `home/hero-visual.tsx` | Adapt | Rename; static demo scores are fine for marketing |
+| `discover/results-report.tsx` | **Done** (deleted 2026-11-19) | Replaced by `components/report/*` (V5 rows 5 and 6): OCEAN strengths/growth, RIASEC interests and career families, suggested courses, print-PDF, callback with consent. No aptitude, values, percentile, salary or % fit |
+| `home/hero-visual.tsx` | **Deleted** (2026-11-19) | The V5 home (row 7) has its own hero; the old visual was unused |
 | `lib/data/discovery.ts` | Rewrite | Becomes versioned question-set config with fixed IDs; RIASEC items and `DIMENSION_INFO` copy partly salvageable; add OCEAN |
 | `lib/scoring.ts` | Rewrite | Pure server-side module; keep the cosine/clamp pattern idea; new OCEAN + RIASEC rules; unit-tested |
 | `lib/data/careers.ts` | Reduce | Interest/career families only; no salary, outlook or % fit (D47) |
@@ -70,13 +70,13 @@ Each screen is ported to the V5 design with `/ui-port` (reference: the V5 artboa
 | # | V5 artboard | Our files | Backend change? | Status |
 |---|---|---|---|---|
 | 1 | Tokens and fonts (all artboards) | `app/globals.css`, `app/layout.tsx` | UI only | **Done** (2026-11-17) |
-| 2 | Header, offer bar, footer | `site/navbar.tsx`, `site/footer.tsx`, `site/site-shell.tsx`, `ui/button.tsx`, `ui/misc.tsx` | UI only (offer is sample content, D82) | **Done** (2026-11-18): sample offer from `content/samples.ts`; guide renamed Mira; footer legal links wait for the pages (E2-FE3) |
+| 2 | Header, offer bar, footer | `site/navbar.tsx`, `site/footer.tsx`, `site/site-shell.tsx`, `ui/button.tsx`, `ui/misc.tsx` | UI only (offer is sample content, D82) | **Done** (2026-11-18): sample offer from `content/samples.ts`; guide renamed Mira; footer legal links wait for the pages (E2-FE3). My Learning count removed (2026-11-19): it read this browser's demo storage; it returns with purchases from `commerce` |
 | 3 | `V5-Login` | `auth/login-form.tsx`, `(public)/login/page.tsx` | UI only | **Done (2026-11-18)**: card, hero-glow page, Outfit heading, brand-200 disabled button. Same card is used by the report gate. Artboard email tab and "You are logged in" state not built (OTP only; /login redirects when signed in); the artboard keeps the V5 white footer on this page, ours uses the shared footer |
 | 4 | `V5-Discover` (chat + quiz) | `discover/*` | UI only ("Choose two" is NOT built: needs chat changes) | **Done (2026-11-18)**: stage bar, chat card (Mira avatar, bubbles, pill composer, quick-reply chips), quiz card with round 1-to-n buttons, desktop side panel (percent done, sample launch offer, privacy line), status screens and guest start. Not built: free-text composer (name only, D18), "Choose two" and multiple-choice cards (no such question types), minutes-left estimate and Save and exit (no timing or save-exit flow), How we score link (page open), per-part test tiles (the step bar already shows parts). Phone hides the side panel |
 | 5 | `V5-Discover` (report, gate, callback) | `report/*` | UI only for the existing data (persona title and strength scores need chat changes) | **Done (2026-11-18)**: hero (interest code, next-step course), jump links, personality, interests (radar, bars, top-3 with career families), courses, callback card, gate over blurred sample. Persona title and strengths/growth are sample content shown only outside production (D82, `content/samples.ts`). Left out (backend, D82): course price/image/lessons, named coach, time-slot ranges, "Generated by AI" note (no AI in quiz, D62). Overview ring (V2 variant) not built |
 | 6 | `V5-Report-PDF-1…5` | print stylesheet on the report | UI only | **Done (2026-11-18)**: a print-only A4 document (`report-print.tsx`: cover, personality, interests, strengths, about; running footer; page numbers from the browser (`@page` counters, Chrome and Edge), so they stay right when a section runs over) replaces the screen report when printing. Left out: learner name on cover and footer (not in report data), plain-language scale ends and the "What your IAS code means" paragraph (wording), page 6 career paths and the 65/35 note (not Phase 1). Persona, top strength, area to grow and the strengths page are sample content, outside production only (D82) |
 | 7 | `V5-Home` | `(public)/page.tsx`, `home/*` | UI only (stories and coupon wait for content) | **Done (2026-11-18)**: hero starts the chat on /discover (feedback 4973), so the in-page chat is a static preview; stories, coach and launch offer are sample content (`content/samples.ts`); course cards still the old card until row 8; Book a free call waits for an anonymous callback (needs `leads` change); old stats/how-it-works/levels sections dropped as not in V5 |
-| 8 | `V5-Courses` | `learn/course-catalog.tsx`, `learn/course-card.tsx` | UI on sample data now; real data needs `catalog` | **Done (2026-11-18)**: restyled on the existing 9 sample courses (rating, learner count, instructor, sort dropped); the 8 V5 courses wait for `catalog`; search kept (client-side) |
+| 8 | `V5-Courses` | `learn/course-catalog.tsx`, `learn/course-card.tsx` | UI on sample data now; real data needs `catalog` | **Done (2026-11-18)**: restyled on the existing 9 sample courses (rating, learner count, instructor, sort dropped); the 8 V5 courses wait for `catalog`; search kept (client-side). "Recommended for you" (old prototype scoring on demo storage) removed 2026-11-19; everyone sees the way into the chat until recommendations come from the saved report |
 | 9 | `V5-Course-*` | `learn/course-experience.tsx`, `video-player.tsx`, `checkout-modal.tsx` | Needs `catalog`, `commerce`, `video` | not started |
 | 10 | `V5-Learn`, `V5-Learn-s1…s7` | `(learner)/my-self`, `learn/my-learning.tsx` | Needs `commerce` (entitlements) and progress | not started |
 | 11 | `V5-Method` (How we score) | new page | UI only, but needs a decision (D72 skipped it) | blocked on decision |

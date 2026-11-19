@@ -20,7 +20,7 @@ const SHOP_COURSE_COUNT = 8;
 const FAQ = [
   {
     q: `What is ${brand.guideName}?`,
-    a: `${brand.guideName} is our AI career guide. You answer a short set of questions, and ${brand.guideName} turns your answers into a career report. The questions are fixed and reviewed by people, so nothing is made up on the way.`,
+    a: `${brand.guideName} is our career guide. You answer a short set of questions, and ${brand.guideName} turns your answers into a career report. The questions are fixed and reviewed by people, so nothing is made up on the way.`,
   },
   {
     q: "Is career discovery really free?",
@@ -103,13 +103,13 @@ export default function HomePage() {
                 <p className="text-base font-bold text-ink">{brand.guideName}</p>
                 <p className="mt-0.5 flex items-center gap-1.5 text-[13px] text-muted">
                   <span aria-hidden className="size-[7px] rounded-full bg-success" />
-                  AI career guide · online
+                  Career guide · online
                 </p>
               </div>
             </div>
             <div className="flex flex-col gap-3 bg-paper/50 px-5 py-5.5 text-left">
               <p className="max-w-[80%] self-start rounded-[18px] rounded-bl-sm bg-brand-50 px-4 py-3 text-base leading-[1.55] text-ink max-sm:max-w-[92%]">
-                Hi, I&apos;m {brand.guideName}, your AI career guide. {sampleChatPreview.greeting}
+                Hi, I&apos;m {brand.guideName}, your career guide. {sampleChatPreview.greeting}
               </p>
               <div className="mt-1 flex flex-wrap gap-2">
                 {sampleChatPreview.replies.map((r) => (
@@ -288,7 +288,7 @@ export default function HomePage() {
                 <span>
                   <b className="block text-[17px]">Still curious?</b>
                   <span className="text-sm text-white/75">
-                    {brand.guideName}, our AI career guide, answers in seconds.
+                    {brand.guideName}, our career guide, answers in seconds.
                   </span>
                 </span>
               </div>

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { finishAttempt, restartAttempt, retake, retryStage, submitAnswer, submitName } from "@/modules/chat/actions";
-import type { ResultView } from "@/modules/chat/result";
+import type { ResultView } from "@/modules/chat/types";
 import type { ChatErrorCode, NextStep, Progress, StageId } from "@/modules/chat/types";
 import { ChatCard } from "./chat-card";
 import { chatMessage } from "./chat-messages";

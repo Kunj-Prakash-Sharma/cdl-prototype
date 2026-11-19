@@ -5,7 +5,7 @@ import { Check } from "lucide-react";
 import { brand } from "@/config/brand";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { GuideAvatar } from "./chat-bubbles";
-import type { ResultView } from "@/modules/chat/result";
+import type { ResultView } from "@/modules/chat/types";
 import { HelplineLink } from "./helpline-link";
 
 /** Shown while the answers are scored (the prototype's pulsing avatar). */
@@ -22,7 +22,7 @@ export function FinishingScreen({
     <div className="flex flex-col items-center py-16 text-center" data-testid="finishing" aria-live="polite">
       <div className="relative grid size-40 place-items-center">
         <span className="absolute inset-6 animate-pulse-ring rounded-full bg-brand-400/40" />
-        <span className="absolute inset-6 animate-pulse-ring rounded-full bg-fuchsia-400/30 [animation-delay:0.7s]" />
+        <span className="absolute inset-6 animate-pulse-ring rounded-full bg-sun-400/30 [animation-delay:0.7s]" />
         <motion.span
           animate={{ rotate: 360 }}
           transition={{ duration: 6, repeat: Infinity, ease: "linear" }}

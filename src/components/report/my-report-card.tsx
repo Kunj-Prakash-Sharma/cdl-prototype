@@ -8,12 +8,12 @@ export async function MyReportCard() {
   const latest = await getLatestResult(session.userId);
   return (
     <section
-      className="mx-auto mb-6 flex max-w-6xl flex-col gap-3 rounded-3xl bg-white p-6 shadow-soft ring-1 ring-slate-200/80 sm:flex-row sm:items-center sm:justify-between"
+      className="mx-auto mb-6 flex max-w-6xl flex-col gap-3 rounded-3xl bg-white p-6 shadow-soft ring-1 ring-line sm:flex-row sm:items-center sm:justify-between"
       data-testid="my-report-card"
     >
       <div>
         <h2 className="text-lg font-bold text-ink">Your career report</h2>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted">
           {latest
             ? "Your report is saved in your account. Open it any time."
             : "Answer the quick questions and your report will be saved here."}

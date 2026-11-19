@@ -4,8 +4,6 @@
   /* V5 design (D81). Token NAMES are unchanged from the prototype so every screen moves at once; values are V5. */
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
-  /* Legacy: prototype accent words only. Removed as each screen is ported to V5, then dropped. */
-  --font-serif: var(--font-instrument), ui-serif, Georgia, serif;
 
   --color-paper: #fbf8f5;
   --color-ink: #1c1b29;
@@ -138,12 +136,6 @@ body {
       linear-gradient(to right, rgb(255 255 255 / 0.06) 1px, transparent 1px),
       linear-gradient(to bottom, rgb(255 255 255 / 0.06) 1px, transparent 1px);
     background-size: 44px 44px;
-  }
-  .text-gradient {
-    background-image: linear-gradient(100deg, var(--color-brand-600), #a855f7 55%, var(--color-sun-500));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
   }
   .shimmer {
     background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.55), transparent);

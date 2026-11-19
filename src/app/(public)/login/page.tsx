@@ -3,8 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/login-form";
 import { env } from "@/lib/env";
-import { safeNextPath } from "@/modules/auth/next-path";
-import { getSession } from "@/modules/auth/service";
+import { getSession, safeNextPath } from "@/modules/auth/service";
 
 export const metadata: Metadata = {
   title: "Log in",

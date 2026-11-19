@@ -66,7 +66,7 @@ Status values: `not started` · `in progress` · `ready` · `installed`. "Unrese
 | Analytics | Funnel events, no PII | Mixpanel, India data residency | `analytics` | Us. Request India access in week 1 | not started. **Pricing and plans unresearched** | Free tier and paid plans. Unresearched |
 | Video | Upload, encode, adaptive stream, signed playback | AWS S3 + MediaConvert + CloudFront | `video`, `storage` | AWS account | not started. Week-1 spike with managed-platform fallback | Usage based (see AWS below) |
 | Job queue | Background jobs (video status, emails) | pg-boss on our Postgres | `queue` | No external account | installed | None beyond the database |
-| Bot check | Stop scripted OTP abuse | Cloudflare Turnstile via the Better Auth captcha plugin | not wrapped | Cloudflare account | not started | Free tier. Verify current terms |
+| Bot check | Stop scripted OTP abuse | Cloudflare Turnstile via the Better Auth captcha plugin | not wrapped | Cloudflare account | wired (OTP send, guest start, admin login); dev uses Cloudflare's always-pass test keys, production needs real keys | Free tier. Verify current terms |
 | Error tracking | Crash and error alerts | Sentry (**assumed**; the doc only says "free-tier error tracking") | via the `logger` facade | Us | not started. Wired in week 1 | Free tier |
 | Code and CI | Repo, PRs, CI workflow | GitHub, GitHub Actions (our choice; the doc only says "CI builds the image") | none | Kunj's repo (currently public) | workflow written, not run yet | Free for public repos |
 
@@ -99,6 +99,7 @@ Cost reference (US East examples from the architecture doc, India rates differ):
 | `drizzle-orm`, `pg` | Typed database access to Postgres |
 | `pg-boss` | Job queue on Postgres (worker) |
 | `zod` | Validates env config and request input |
+| `better-auth` | Phone-OTP login, sessions, roles, admin email + password, captcha plugin (Turnstile). Only `modules/auth` imports it |
 | `motion`, `lucide-react` | Animations and icons used by the prototype UI |
 
 ### Dev only
@@ -114,7 +115,7 @@ Cost reference (US East examples from the architecture doc, India rates differ):
 | `tsx`, `esbuild` | Run the worker and scripts in dev; bundle them for the image |
 
 ### Planned (not installed yet)
-Added with the feature that needs them: `better-auth` (login and roles), AWS SDK clients (S3, MediaConvert, CloudFront signing, SES), `razorpay`, `mixpanel`, the Sentry SDK, `video.js` (video player, HLS built in), an Excel export library (to choose), and the Turnstile browser script.
+Added with the feature that needs them: AWS SDK clients (S3, MediaConvert, CloudFront signing, SES), `razorpay`, `mixpanel`, the Sentry SDK, `video.js` (video player, HLS built in) and an Excel export library (to choose). The Turnstile browser script is loaded from Cloudflare at runtime (`components/auth/use-turnstile.ts`), not installed.
 
 ### Gotcha: worker dependencies
 The Docker image installs the worker's runtime packages separately (`pg`, `pg-boss`, `zod`, `drizzle-orm`, pinned to the lockfile versions). If worker or migrate code starts importing another package, add it to the list in the `Dockerfile`.

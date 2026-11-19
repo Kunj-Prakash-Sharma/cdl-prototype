@@ -10,13 +10,9 @@ const root = path.resolve(__dirname, "../../..");
 const uiDir = path.join(root, "src/components/discover");
 const pageFile = path.join(root, "src/app/(quiz)/discover/page.tsx");
 
-// results-report.tsx is the old prototype report: it still uses the legacy aptitude/values code and is rewritten in
-// the report block (docs/specs/chat.md, 4d). Remove it from this list when that file goes.
-const EXCLUDED = new Set(["results-report.tsx"]);
-
 const files = [
   ...readdirSync(uiDir)
-    .filter((name) => /\.(ts|tsx)$/.test(name) && !/\.test\.ts$/.test(name) && !EXCLUDED.has(name))
+    .filter((name) => /\.(ts|tsx)$/.test(name) && !/\.test\.ts$/.test(name))
     .map((name) => path.join(uiDir, name)),
   pageFile,
 ];
@@ -71,7 +67,6 @@ describe("the chat UI hardcodes nothing the question set owns (D68)", () => {
     for (const expected of ["chat-flow.tsx", "scale-question.tsx", "chat-card.tsx", "status-screens.tsx", "page.tsx"]) {
       expect(names, expected).toContain(expected);
     }
-    expect(names).not.toContain("results-report.tsx");
   });
 
   it.each(RULES)("each rule can catch what it is for: $name", ({ pattern, bad }) => {

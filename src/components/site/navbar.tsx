@@ -10,15 +10,16 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { Logo } from "@/components/ui/misc";
 import { brand } from "@/config/brand";
 import { cn } from "@/lib/format";
-import { useAppState } from "@/lib/store";
 import type { SessionView } from "@/modules/auth/types";
 
 // V5 header (D81): Career Discovery, Courses, My Learning, then Log in or the account menu.
 // The saved report is reached from Career Discovery and the My SELF card (E5-S4), so it has no nav link.
+// My Learning shows no course count until purchases come from the server (commerce): the old count read this
+// browser's demo storage, so on a shared device it showed someone else's purchases.
 const LINKS = [
   { href: "/discover", label: "Career Discovery", exact: true },
   { href: "/learn", label: "Courses" },
-  { href: "/my-self", label: "My Learning", count: true },
+  { href: "/my-self", label: "My Learning" },
 ];
 
 function NavLinks({
@@ -30,7 +31,6 @@ function NavLinks({
   onNavigate?: () => void;
   vertical?: boolean;
 }) {
-  const { purchases } = useAppState();
   return (
     <>
       {LINKS.map((link) => {
@@ -50,11 +50,6 @@ function NavLinks({
             )}
           >
             {link.label}
-            {link.count && purchases.length > 0 && (
-              <span className="grid min-w-5 place-items-center rounded-full bg-brand-600 px-1.5 text-[11px] leading-5 font-bold text-white">
-                {purchases.length}
-              </span>
-            )}
           </Link>
         );
       })}

@@ -8,8 +8,8 @@ type Tone = "brand" | "sun" | "green" | "slate" | "dark" | "white";
 const tones: Record<Tone, string> = {
   brand: "bg-brand-100 text-brand-700 ring-transparent",
   sun: "bg-sun-100 text-sun-700 ring-sun-200",
-  green: "bg-emerald-50 text-emerald-700 ring-emerald-200/70",
-  slate: "bg-slate-100 text-slate-600 ring-slate-200",
+  green: "bg-success-50 text-success ring-success/20",
+  slate: "bg-mist text-muted ring-line",
   dark: "bg-ink/80 text-white ring-white/10 backdrop-blur",
   white: "bg-white/90 text-ink ring-white/60 backdrop-blur",
 };
@@ -78,8 +78,8 @@ export function ProgressBar({
   className?: string;
   tone?: "brand" | "green" | "white";
 }) {
-  const fill = { brand: "bg-brand-600", green: "bg-emerald-500", white: "bg-white" }[tone];
-  const track = { brand: "bg-brand-100", green: "bg-emerald-100", white: "bg-white/20" }[tone];
+  const fill = { brand: "bg-brand-600", green: "bg-success", white: "bg-white" }[tone];
+  const track = { brand: "bg-brand-100", green: "bg-success-50", white: "bg-white/20" }[tone];
   return (
     <div
       className={cn("h-2 w-full overflow-hidden rounded-full", track, className)}
@@ -101,7 +101,7 @@ export function Rating({ value, reviews, className }: { value: number; reviews?:
     <span className={cn("inline-flex items-center gap-1 text-sm", className)}>
       <Star className="size-4 fill-sun-400 text-sun-400" aria-hidden />
       <span className="font-semibold text-ink">{value.toFixed(1)}</span>
-      {reviews !== undefined && <span className="text-slate-500">({reviews.toLocaleString("en-IN")})</span>}
+      {reviews !== undefined && <span className="text-muted">({reviews.toLocaleString("en-IN")})</span>}
     </span>
   );
 }
@@ -119,11 +119,12 @@ export function Avatar({ initials, className }: { initials: string; className?: 
   );
 }
 
-export function SageAvatar({ size = "md", className }: { size?: "sm" | "md" | "lg"; className?: string }) {
+/** The guide's round avatar (abstract, no face or initials, so it does not depend on the guide's name). */
+export function GuideAvatar({ size = "md", className }: { size?: "sm" | "md" | "lg"; className?: string }) {
   const dims = { sm: "size-8", md: "size-10", lg: "size-16" }[size];
   return (
     <span className={cn("relative inline-grid shrink-0 place-items-center", dims, className)}>
-      <span className="absolute inset-0 rounded-full bg-linear-to-br from-brand-400 via-fuchsia-500 to-sun-400" />
+      <span className="absolute inset-0 rounded-full bg-linear-to-br from-brand-400 via-brand-300 to-sun-400" />
       <span className="absolute inset-[3px] rounded-full bg-linear-to-br from-brand-700 to-brand-950" />
       <span className="absolute inset-[30%] rounded-full bg-linear-to-br from-white via-brand-200 to-sun-300 blur-[1px]" />
     </span>

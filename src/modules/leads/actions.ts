@@ -33,12 +33,6 @@ async function guarded<T extends object>(run: () => Promise<LeadResult<T>>): Pro
   }
 }
 
-/** The consent tick text for the logged-in learner (null when they have no report yet). */
-export async function getConsentWording() {
-  const session = await requireUser("/discover/report");
-  return leads.getConsentWording(session.userId);
-}
-
 export async function requestCallback(input: unknown) {
   const parsed = requestSchema.safeParse(input);
   if (!parsed.success) return invalid;
@@ -53,26 +47,14 @@ export async function requestCallback(input: unknown) {
   });
 }
 
-// ---- Admin: callback list, status change, CSV (requireAdmin first on every one; the service checks the role again) ----
+// ---- Admin: status change and CSV (requireAdmin first on every one; the service checks the role again) ----
+// The list itself is read by the server-rendered page (app/(admin)/admin/callbacks), not through an action.
 
 const filterSchema = z.object({
   status: z.string().max(20).nullish(),
   page: z.number().int().min(1).max(10_000).nullish(),
 });
 const statusSchema = z.object({ leadId: z.string().uuid(), status: z.enum(leads.LEAD_STATUSES) });
-
-export async function listCallbacks(input: unknown) {
-  const parsed = filterSchema.safeParse(input ?? {});
-  if (!parsed.success) return invalid;
-  return guarded(async () => {
-    const session = await requireAdmin("/admin/callbacks");
-    const filters = leads.parseLeadFilters({
-      status: parsed.data.status ?? undefined,
-      page: String(parsed.data.page ?? 1),
-    });
-    return leads.listLeadsForAdmin(session, filters, getUserNames);
-  });
-}
 
 export async function changeLeadStatus(input: unknown) {
   const parsed = statusSchema.safeParse(input);
