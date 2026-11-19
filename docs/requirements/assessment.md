@@ -1,6 +1,6 @@
 # Assessment: OCEAN and RIASEC question sets
 
-What the Meera quiz asks, how answers are scored, and how the report is built. Decision: [D62](../decisions.md) (fixed question variants replace AI rewording). Related: D18 (no raw chat text), D46 (only the name is typed), D47 (careers part of the report), D60 (assessment shape). Module: `chat` in [../architecture/modules.md](../architecture/modules.md).
+What the Mira quiz asks, how answers are scored, and how the report is built. Decision: [D62](../decisions.md) (fixed question variants replace AI rewording). Related: D18 (no raw chat text), D46 (only the name is typed), D47 (careers part of the report), D60 (assessment shape). Module: `chat` in [../architecture/modules.md](../architecture/modules.md).
 
 > **Status: draft.** All item wording below is a draft for the client to approve (see [../open-questions.md](../open-questions.md)). Scoring thresholds also need sign-off.
 

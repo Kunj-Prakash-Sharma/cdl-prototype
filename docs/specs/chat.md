@@ -1,4 +1,4 @@
-# Spec: Chat (Meera quiz, scoring, report)
+# Spec: Chat (Mira quiz, scoring, report)
 
 - **Status:** draft
 - **Owner:** Vijay
@@ -6,10 +6,10 @@
 - **Source of truth for items and scoring:** [../requirements/assessment.md](../requirements/assessment.md). This spec says how to build it; that doc says what the questions, keys, thresholds and examples are. If they disagree, fix the doc first.
 
 ## Goal
-A learner (a **guest is enough, D78**; phone OTP comes before the report) chats with Meera through about 26 quick-tap questions (4 basics, 10 OCEAN, 12 RIASEC), gets a saved report (OCEAN strengths and growth areas, RIASEC interest areas, example career families, suggested courses), and can reopen it, print it as PDF, or retake.
+A learner (a **guest is enough, D78**; phone OTP comes before the report) chats with Mira through about 26 quick-tap questions (4 basics, 10 OCEAN, 12 RIASEC), gets a saved report (OCEAN strengths and growth areas, RIASEC interest areas, example career families, suggested courses), and can reopen it, print it as PDF, or retake.
 
 ## Scope
-- Question-set config (versioned) with 2 to 3 variants per item and Meera acknowledgement lines.
+- Question-set config (versioned) with 2 to 3 variants per item and Mira acknowledgement lines.
 - Per-tap answer saving via server action; resume where the learner left off.
 - Pure scoring function exactly as in assessment.md section 6.
 - Attempts: every start creates an attempt; all kept; report page shows the **latest completed** one.
@@ -40,7 +40,7 @@ A learner (a **guest is enough, D78**; phone OTP comes before the report) chats 
 ### Module `src/modules/chat/`
 | File | Role |
 |---|---|
-| `question-set.ts` | Versioned config: `QuestionSet` v`1.0.0` (shape in assessment.md section 7), `thresholds`, `scales`, Meera `acknowledgements: string[]`. Data only, no logic. Replaces prototype `questions.ts` |
+| `question-set.ts` | Versioned config: `QuestionSet` v`1.0.0` (shape in assessment.md section 7), `thresholds`, `scales`, Mira `acknowledgements: string[]`. Data only, no logic. Replaces prototype `questions.ts` |
 | `variants.ts` | `pickVariant(sessionId, itemId, count): number` (hash of `sessionId + itemId`, modulo count; use a stable hash such as FNV-1a, not `Math.random`) |
 | `scoring.ts` | **Pure** `scoreAttempt(answers: Record<string, number>, set: QuestionSet): ScoreResult`. No imports from db, env, or time. Replaces prototype `scoring.ts` entirely |
 | `report.ts` | **Pure** `buildReport(result: ScoreResult, basics: Basics): ReportView` (strength/growth cards from OCEAN bands, Holland code, career families, copy). Report copy lives in `report-copy.ts` |

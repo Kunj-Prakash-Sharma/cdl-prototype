@@ -5,7 +5,7 @@ Source: "SELF Phase 1 – Architecture and Technical Decisions.pdf", Oct 21, 202
 > **Changed (D62, Oct 26, 2026):** the quiz no longer uses AI rewording; fixed question variants replace it. Wherever this doc mentions AI wording, Bedrock or the AI wrapper (D4, D22, chat flow, cost, abuse, risks), read [assessment.md](assessment.md) and [../decisions.md](../decisions.md) instead.
 
 ## Summary
-Phase 1 is one modular web application on AWS (India region), with managed services for video, payments, SMS and AI. It goes to invited users around 22 November 2026, and that date can move by one to two weeks. It covers Level 0 (the free guided career chat with Meera) and Level 1 (self-paced courses), plus a learner dashboard and an admin panel. Live sessions (Level 2) follow around 6 December.
+Phase 1 is one modular web application on AWS (India region), with managed services for video, payments, SMS and AI. It goes to invited users around 22 November 2026, and that date can move by one to two weeks. It covers Level 0 (the free guided career chat with Mira) and Level 1 (self-paced courses), plus a learner dashboard and an admin panel. Live sessions (Level 2) follow around 6 December.
 
 Constraints:
 - **Team:** two developers and a lead architect who also does the design.
@@ -61,7 +61,7 @@ The backend is one deployable app with nine modules. Each module owns its data a
 | Module | Owns | Outside dependency |
 |---|---|---|
 | Auth and accounts | OTP login, sessions, learner profile (name, number, optional email), roles | SMS provider |
-| Chat and assessment | Meera flow, OCEAN and RIASEC question sets as versioned config, answers, scoring rules, report (web and PDF) | AI provider (wording only), PDF rendering |
+| Chat and assessment | Mira flow, OCEAN and RIASEC question sets as versioned config, answers, scoring rules, report (web and PDF) | AI provider (wording only), PDF rendering |
 | Catalog and content | Courses, lessons, videos, PDFs, quiz questions, prices, bundles, publish state | S3 |
 | Commerce and access | Products, orders, payments, entitlements, receipts, manual access grant | Payment gateway, email |
 | Learning | Playback authorisation, progress and resume, quiz marking | CloudFront signed access |
@@ -75,7 +75,7 @@ The backend is one deployable app with nine modules. Each module owns its data a
 ### 1. Career chat and report
 1. The visitor taps Start and enters a phone number. The server rate-limits and bot-checks the request, then sends an OTP by SMS.
 2. After OTP, the server creates or finds the learner and starts a chat session with a pseudonymous session ID.
-3. Meera serves about 25 fixed questions from versioned config. The AI provider only rewords each question. The answer is stored against the fixed question ID.
+3. Mira serves about 25 fixed questions from versioned config. The AI provider only rewords each question. The answer is stored against the fixed question ID.
 4. A funnel event is sent for every step: stage, message number and input type. No chat text is stored.
 5. After the last answer, fixed scoring rules compute the OCEAN and RIASEC scores and the report is saved to the account.
 6. The report page offers suggested courses, save, PDF download and a callback request. A callback saves a lead with its consent flag and sends an instant email to the team.
@@ -98,7 +98,7 @@ The model separates what a user bought (orders) from what a user may access (ent
 | Entity | Purpose | Key fields |
 |---|---|---|
 | Learner | The account holder | id, phone, name, optional email, role, consent flags, created date |
-| Chat session | One run of the Meera chat | pseudonymous id, learner id (after OTP), stage reached, last message number, started and ended times |
+| Chat session | One run of the Mira chat | pseudonymous id, learner id (after OTP), stage reached, last message number, started and ended times |
 | Chat answer | One structured answer | session id, fixed question id, value, input type, time taken |
 | Assessment result | Scores from fixed rules | learner id, framework (OCEAN or RIASEC), question set version, scores |
 | Report | The saved report | learner id, result ids, strengths, interests, suggested course ids |
@@ -173,7 +173,7 @@ Every funnel step sends one event under a pseudonymous session ID. Events carry 
 | home_viewed | Home page opens | traffic source, device type |
 | chat_started | User taps Start career discovery | source |
 | otp_sent, otp_verified | OTP requested and confirmed | result, attempt number |
-| chat_step | Each Meera question is answered | stage, message number, input type, seconds taken |
+| chat_step | Each Mira question is answered | stage, message number, input type, seconds taken |
 | chat_exited | Session goes quiet for the agreed timeout | last stage, last message number |
 | chat_stage_completed | The last question of a part is answered | stage, question set version |
 | chat_completed | The attempt is scored and saved | question set version, close-call flag, flat-profile flag, seconds from start to finish |
@@ -207,7 +207,7 @@ One thin end-to-end slice first, so integration problems show up early. This is 
 
 1. **Days 1 to 3:** the lead finishes screen designs, data model and API contract. Developers start in parallel: AWS accounts and CI/CD, OTP and DLT registration, payments in sandbox, and the video pipeline spike. **Gate 1:** client sign-off of design and estimate around day 4 or 5.
 2. **End of week 1, video checkpoint:** a test video is encoded and played end to end through S3, MediaConvert and CloudFront. If not, switch to a managed video platform behind the same interface.
-3. **End of week 2, thin slice:** OTP login, the Meera chat with one assessment, the report, one paid course through checkout, and video playback with signed access.
+3. **End of week 2, thin slice:** OTP login, the Mira chat with one assessment, the report, one paid course through checkout, and video playback with signed access.
 4. **Weeks 3 and 4, widen:** all question sets and scoring, bundles, quizzes, progress and resume, the dashboard, admin lists, the callback alert and the PDF report. **Gate 2:** a demo on dev in the middle of this period.
 5. **Final days:** client acceptance testing (**Gate 3**), the load test, and the go-live checklist, including one real low-value purchase on production, then a refund.
 

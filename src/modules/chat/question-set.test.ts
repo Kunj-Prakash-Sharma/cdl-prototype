@@ -135,7 +135,7 @@ describe("question set 1.0.0: wording rules (assessment.md section 5)", () => {
   });
 
   it("never hardcodes the guide's name in the data (it comes from brand config)", () => {
-    expect(JSON.stringify(set)).not.toMatch(/meera/i);
+    expect(JSON.stringify(set)).not.toMatch(/mira/i);
   });
 });
 
@@ -163,7 +163,7 @@ describe("question set 1.0.0: scales, thresholds, basics", () => {
     }
   });
 
-  it("has a few Meera acknowledgement lines", () => {
+  it("has a few Mira acknowledgement lines", () => {
     expect(set.acknowledgements.length).toBeGreaterThanOrEqual(3);
   });
 });

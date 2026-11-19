@@ -123,7 +123,7 @@ export function isReachable(set: QuestionSet, answers: SavedAnswers, hasName: bo
   return target !== -1 && target <= limit;
 }
 
-/** Meera's short line after an answer: the chosen option's reply for basics, a rotating generic line for the rest. */
+/** Mira's short line after an answer: the chosen option's reply for basics, a rotating generic line for the rest. */
 export function acknowledgementFor(set: QuestionSet, attemptId: string, questionId: string, value: number): string {
   const basic = set.basics.find((b) => b.id === questionId);
   if (basic) return basic.options[value]?.acknowledgement ?? "";

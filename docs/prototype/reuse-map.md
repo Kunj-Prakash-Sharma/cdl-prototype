@@ -26,7 +26,7 @@ The prototype (`prototype-v0`) is about 5,950 lines in 45 files: learner-facing 
 | `components/site/footer.tsx` | Adapt | Drop demo disclaimer; add privacy/terms/refund links |
 | `components/site/reset-demo-button.tsx` | Delete | |
 | `app/layout.tsx` | Adapt | Session provider, manifest, brand config |
-| `app/page.tsx` | Adapt | Copy: Meera, OCEAN + RIASEC, no aptitude/values/certificate/learner-count claims; courses from DB |
+| `app/page.tsx` | Adapt | Copy: Mira, OCEAN + RIASEC, no aptitude/values/certificate/learner-count claims; courses from DB |
 
 ## Discovery (Level 0)
 | File | Verdict | Note |
@@ -58,7 +58,7 @@ The prototype (`prototype-v0`) is about 5,950 lines in 45 files: learner-facing 
 | `lib/store.ts` | Delete | Replaced by server state. Keep the `useHydrated` helper if still needed |
 
 ## Spec deltas to remember when porting
-- Guide name: Sage → Meera (and keep it in brand/config, not hardcoded).
+- Guide name: Sage → Mira (and keep it in brand/config, not hardcoded).
 - Free preview: first lesson only, as a per-lesson `preview` flag (prototype had 2).
 - Progress: store position plus completed flag (prototype stored completed IDs only).
 - Bundles: a real Product with a fixed price (prototype computed a 30% discount).

@@ -2,5 +2,5 @@
 // Never hardcode the product or guide name in components or copy: read it from here.
 export const brand = {
   name: "SELF",
-  guideName: "Meera",
+  guideName: "Mira",
 } as const;

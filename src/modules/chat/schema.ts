@@ -1,4 +1,4 @@
-// Chat tables: attempts, answers and results of the Meera quiz. Nothing here knows which questions exist: question
+// Chat tables: attempts, answers and results of the Mira quiz. Nothing here knows which questions exist: question
 // IDs and wording live in the question set (question-set.ts), and every attempt remembers its `set_version`.
 // No question text and no free text is stored (D18). The learner's name is NOT here (it lives on the auth profile).
 //

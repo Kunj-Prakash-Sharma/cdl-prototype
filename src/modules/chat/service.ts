@@ -180,7 +180,7 @@ export async function getNextStep(learner: Learner, attemptId: string): Promise<
   };
 }
 
-/** Saves one answer (a second tap overwrites it) and returns what comes next plus Meera's short reply. */
+/** Saves one answer (a second tap overwrites it) and returns what comes next plus Mira's short reply. */
 export async function submitAnswer(
   learner: Learner,
   attemptId: string,

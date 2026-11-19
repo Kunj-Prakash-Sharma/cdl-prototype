@@ -1,4 +1,4 @@
-// The versioned question set for the Meera quiz. DATA ONLY: no logic, no imports from db, env or time.
+// The versioned question set for the Mira quiz. DATA ONLY: no logic, no imports from db, env or time.
 // Source of truth: docs/requirements/assessment.md (sections 3 to 7) and the approved pool in question-pool.ts.
 // The set only lists WHICH pool questions are asked (and their extra wordings), so swapping a question is a one-line
 // change here and a new set version. Wording is client-approved; variants 2 and 3 are our drafts until the client
@@ -64,7 +64,7 @@ export type Thresholds = {
 export type BasicOption = {
   id: string;
   label: string;
-  /** Meera's short reply after this answer (draft copy). */
+  /** Mira's short reply after this answer (draft copy). */
   acknowledgement: string;
 };
 
@@ -92,7 +92,7 @@ export type QuestionSet = {
   scales: Record<Stage, ScaleLabels>;
   items: Item[];
   thresholds: Thresholds;
-  /** Short Meera lines shown between scored questions (draft copy). */
+  /** Short Mira lines shown between scored questions (draft copy). */
   acknowledgements: string[];
   /** Headings for each part, shown in the step bar and above the questions. Data, so the UI hardcodes no part name. */
   stageCopy: Record<StageId, StageCopy>;

@@ -238,7 +238,7 @@ describe("admin callback list", () => {
     });
   });
 
-  it("shows the newest request first with the name, phone, role, time and what the learner told Meera", async () => {
+  it("shows the newest request first with the name, phone, role, time and what the learner told Mira", async () => {
     const [older, newer] = [await makeLearner(), await makeLearner()];
     await finishReport(older, 2);
     await finishReport(newer, 0);
@@ -436,7 +436,7 @@ describe("the team email job", () => {
     return { learner, id: made.lead.id };
   };
 
-  it("sends one email to the team with the phone, the time and what Meera learned, and no name", async () => {
+  it("sends one email to the team with the phone, the time and what Mira learned, and no name", async () => {
     const { id, learner } = await lead(1);
     const send = vi.fn(async () => {});
     const now = new Date("2026-11-05T12:00:00Z");

@@ -1,6 +1,6 @@
 # SELF — Claude instructions
 
-Phase 1 of SELF: a mobile-first career-discovery + learning site (Meera chat → report → paid courses), built as a **modular monolith** (one Next.js app = pages + API, plus a worker, one repo). "SELF" is a working name: never hardcode it (use `src/config/brand.ts`).
+Phase 1 of SELF: a mobile-first career-discovery + learning site (Mira chat → report → paid courses), built as a **modular monolith** (one Next.js app = pages + API, plus a worker, one repo). "SELF" is a working name: never hardcode it (use `src/config/brand.ts`).
 
 @AGENTS.md
 

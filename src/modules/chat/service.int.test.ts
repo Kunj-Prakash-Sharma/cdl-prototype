@@ -122,7 +122,7 @@ describe("starting and resuming", () => {
 });
 
 describe("answering", () => {
-  it("saves an answer and returns the next step with Meera's reply", async () => {
+  it("saves an answer and returns the next step with Mira's reply", async () => {
     const learner = await makeLearner();
     const { attemptId } = await start(learner);
     const basic = set.basics[0]!;
