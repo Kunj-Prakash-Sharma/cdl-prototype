@@ -18,6 +18,8 @@ export type LeadResult<T extends object = object> =
 
 export const LEAD_STATUSES = ["new", "contacted", "closed"] as const;
 export type LeadStatus = (typeof LEAD_STATUSES)[number];
+export const LEAD_SOURCES = ["home", "report"] as const;
+export type LeadSource = (typeof LEAD_SOURCES)[number];
 export const PREFERRED_TIMES = ["morning", "afternoon", "evening"] as const;
 export type PreferredTime = (typeof PREFERRED_TIMES)[number];
 

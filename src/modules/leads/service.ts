@@ -5,22 +5,25 @@
 // one NEW request at a time, so repeat taps make one lead and the team is told once.
 import { logger } from "@/lib/logger";
 import type { SessionView } from "@/modules/auth/service";
-import { getCallbackContext, getCallbackContextForAdmin } from "@/modules/chat/service";
+import { getCallbackContext } from "@/modules/chat/service";
 import { EXPORT_LIMIT, LEADS_PAGE_SIZE, pageCountFor, type LeadFilters, type StatusFilter } from "./admin-leads";
 import { CURRENT_CONSENT } from "./consent-copy";
 import { dateIst, dateTimeIst, phoneForScreen, phoneForSheet, toCsv } from "./csv";
+import { contextForLead } from "./lead-context";
 import * as repo from "./repo";
 import {
+  LEAD_SOURCES,
   LEAD_STATUSES,
   PREFERRED_TIMES,
   type LeadResult,
+  type LeadSource,
   type LeadStatus,
   type LeadView,
   type PreferredTime,
 } from "./types";
 
-export type { LeadErrorCode, LeadResult, LeadStatus, LeadView, PreferredTime } from "./types";
-export { LEAD_ERROR_CODES, LEAD_STATUSES, PREFERRED_TIMES } from "./types";
+export type { LeadErrorCode, LeadResult, LeadSource, LeadStatus, LeadView, PreferredTime } from "./types";
+export { LEAD_ERROR_CODES, LEAD_SOURCES, LEAD_STATUSES, PREFERRED_TIMES } from "./types";
 export { ALERT_SWEEP_CRON, ALERT_SWEEP_JOB, CALLBACK_ALERT_JOB, alertSweepHandler, callbackAlertHandler } from "./jobs";
 export { EXPORT_LIMIT, LEADS_PAGE_SIZE, parseLeadFilters, type LeadFilters, type StatusFilter } from "./admin-leads";
 
@@ -43,14 +46,21 @@ export type LeadNotifier = (leadId: string) => Promise<void>;
 /** What the callback form must show: the consent text for this learner, its version, and whether it is still draft. */
 export type ConsentWording = { text: string; version: string; draft: boolean };
 
-/** The consent tick text for this learner, or null when they have no report yet (so no callback form). */
-export async function getConsentWording(userId: string): Promise<ConsentWording | null> {
-  const context = await getCallbackContext(userId);
-  if (!context) return null;
+/**
+ * The consent tick text for this learner. From the report page it is null when they have no report yet (so no callback
+ * form); from Home (D85) it needs no report.
+ */
+export async function getConsentWording(userId: string, source: LeadSource = "report"): Promise<ConsentWording | null> {
+  if (source === "report" && !(await getCallbackContext(userId))) return null;
   return { text: CURRENT_CONSENT.text, version: CURRENT_CONSENT.version, draft: CURRENT_CONSENT.draft };
 }
 
-export type CreateCallbackInput = { consent: boolean; preferredTime?: PreferredTime | null };
+export type CreateCallbackInput = {
+  consent: boolean;
+  preferredTime?: PreferredTime | null;
+  /** Where the request was made (D85). Missing means the report button, which needs a finished report. */
+  source?: LeadSource;
+};
 
 /**
  * Saves a callback request for the learner. Idempotent: if they already have a NEW request, that one comes back with
@@ -70,14 +80,18 @@ export async function createCallback(
     return { ok: false, code: "invalid_input" };
   }
 
-  const context = await getCallbackContext(learner.userId);
-  if (!context) return { ok: false, code: "no_report" };
+  const source: LeadSource = input.source ?? "report";
+  if (!LEAD_SOURCES.includes(source)) return { ok: false, code: "invalid_input" };
+  // A request from the report points at that report; one from Home needs none (the team reads the newest report later).
+  const context = source === "report" ? await getCallbackContext(learner.userId) : null;
+  if (source === "report" && !context) return { ok: false, code: "no_report" };
   const phone = await getPhone(learner.userId);
   if (!phone) return { ok: false, code: "no_phone" };
 
   const created = await repo.insertLeadIfNoNew({
     userId: learner.userId,
-    attemptId: context.attemptId,
+    attemptId: context?.attemptId ?? null,
+    source,
     phone,
     preferredTime: input.preferredTime ?? null,
     consentAt: now,
@@ -124,6 +138,9 @@ export type AdminLeadRow = {
   goal: string | null;
   activity: string | null;
   topInterests: string[];
+  /** Where the request was made, and whether we know a finished report for this learner (D85). */
+  source: LeadSource;
+  hasReport: boolean;
   consentAt: string; // ISO date
   consentVersion: string;
 };
@@ -140,7 +157,7 @@ const isAdmin = (session: Pick<SessionView, "role">) => session.role === "admin"
 
 async function toAdminRows(rows: repo.LeadRow[], getNames: NameReader): Promise<AdminLeadRow[]> {
   const names = await getNames([...new Set(rows.map((row) => row.userId))]);
-  const contexts = await Promise.all(rows.map((row) => getCallbackContextForAdmin(row.attemptId)));
+  const contexts = await Promise.all(rows.map((row) => contextForLead(row)));
   return rows.map((row, i) => ({
     id: row.id,
     status: row.status,
@@ -153,6 +170,8 @@ async function toAdminRows(rows: repo.LeadRow[], getNames: NameReader): Promise<
     goal: contexts[i]?.goal ?? null,
     activity: contexts[i]?.activity ?? null,
     topInterests: contexts[i]?.topInterests ?? [],
+    source: row.source,
+    hasReport: contexts[i] != null,
     consentAt: row.consentAt.toISOString(),
     consentVersion: row.consentVersion,
   }));
@@ -217,6 +236,7 @@ const CSV_HEADERS = [
   "Goal",
   "Loses track of time doing",
   "Top interests",
+  "Source",
   "Consent given at",
   "Consent wording version",
 ] as const;
@@ -248,7 +268,8 @@ export async function exportLeadsCsv(
       row.studying ?? "",
       row.goal ?? "",
       row.activity ?? "",
-      row.topInterests.join(" / "),
+      row.hasReport ? row.topInterests.join(" / ") : "No report yet",
+      cap(row.source),
       dateTimeIst(new Date(row.consentAt)),
       row.consentVersion,
     ]),

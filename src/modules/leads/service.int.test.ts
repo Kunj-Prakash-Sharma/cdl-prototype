@@ -588,3 +588,88 @@ describe("the alert sweep (D76)", () => {
     ).toHaveLength(1);
   });
 });
+
+describe("a callback from Home, with no report (D85)", () => {
+  const TEAM = "team@example.com";
+  const home = { consent: true, source: "home" } as const;
+
+  it("saves a lead with no attempt and the source home, without needing a report", async () => {
+    const learner = await makeLearner();
+    const res = ok(await createCallback(learner, { ...home, preferredTime: "morning" }, phoneOf(PHONE)));
+    expect(res.created).toBe(true);
+    const [row] = await rows(learner.userId);
+    expect(row).toMatchObject({ source: "home", attemptId: null, status: "new", phone: PHONE });
+  });
+
+  it("still needs a finished report when the request comes from the report button", async () => {
+    const learner = await makeLearner();
+    expect(await createCallback(learner, { consent: true }, phoneOf(PHONE))).toEqual({ ok: false, code: "no_report" });
+    expect(await createCallback(learner, { consent: true, source: "report" }, phoneOf(PHONE))).toEqual({
+      ok: false,
+      code: "no_report",
+    });
+  });
+
+  it("keeps the other rules: consent tick, a known source, a phone, and one NEW lead per learner", async () => {
+    const learner = await makeLearner();
+    expect(await createCallback(learner, { consent: false, source: "home" }, phoneOf(PHONE))).toEqual({
+      ok: false,
+      code: "consent_required",
+    });
+    const bad = { consent: true, source: "billboard" } as unknown as Parameters<typeof createCallback>[1];
+    expect(await createCallback(learner, bad, phoneOf(PHONE))).toEqual({ ok: false, code: "invalid_input" });
+    expect(await createCallback(learner, home, phoneOf(null))).toEqual({ ok: false, code: "no_phone" });
+    const first = ok(await createCallback(learner, home, phoneOf(PHONE)));
+    const again = ok(await createCallback(learner, home, phoneOf(PHONE)));
+    expect(again.created).toBe(false);
+    expect(again.lead.id).toBe(first.lead.id);
+    expect(await rows(learner.userId)).toHaveLength(1);
+  });
+
+  it("shows the consent wording from Home without a report, and still none on the report page", async () => {
+    const learner = await makeLearner();
+    expect(await getConsentWording(learner.userId, "home")).toEqual({
+      text: CURRENT_CONSENT.text,
+      version: CURRENT_CONSENT.version,
+      draft: CURRENT_CONSENT.draft,
+    });
+    expect(await getConsentWording(learner.userId)).toBeNull();
+    expect(CURRENT_CONSENT.text).not.toMatch(/career report/i);
+  });
+
+  it('says "No report yet" in the admin list and the CSV, then shows the newest report once they finish the quiz', async () => {
+    const learner = await makeLearner();
+    ok(await createCallback(learner, home, phoneOf("+917777777777")));
+    const find = async () => (await listOf()).rows.find((r) => r.phone === "+91 77777 77777")!;
+
+    const before = await find();
+    expect(before).toMatchObject({ source: "home", hasReport: false, age: null, topInterests: [] });
+    const csvBefore = ok(await exportLeadsCsv(admin, "all", namesFromDb));
+    const lineBefore = csvBefore.csv.split("\r\n").find((l) => l.includes("77777 77777"))!;
+    expect(lineBefore).toContain("No report yet");
+    expect(lineBefore).toContain(",Home,");
+
+    await finishReport(learner, 3); // finishes the quiz after asking
+    const after = await find();
+    expect(after).toMatchObject({ source: "home", hasReport: true, age: "22 to 25" });
+    expect(after.topInterests.length).toBeGreaterThan(0);
+  });
+
+  it("sends the team email with no report fields, and still no name", async () => {
+    const learner = await makeLearner();
+    const made = ok(await createCallback(learner, { ...home, preferredTime: "evening" }, phoneOf(PHONE)));
+    const send = vi.fn(async () => {});
+    await sendCallbackAlert({ leadId: made.lead.id }, { to: TEAM, send, now: () => new Date() });
+    const [, , data] = send.mock.calls[0] as unknown as [string, string, Record<string, unknown>];
+    expect(data).toMatchObject({
+      leadId: made.lead.id,
+      reportId: null,
+      source: "home",
+      hasReport: false,
+      age: null,
+      activity: null,
+      topInterests: [],
+    });
+    expect(JSON.stringify(data)).not.toContain(learner.name);
+  });
+});
