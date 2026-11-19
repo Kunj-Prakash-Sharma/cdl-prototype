@@ -4,7 +4,8 @@
 // Never in a report (D72, CLAUDE.md): percentile, salary, fit percentage, aptitude, work values, learner counts.
 import type { ResultView } from "./result";
 import { OCEAN_DIMENSIONS, RIASEC_DIMENSIONS, type OceanDimension, type RiasecDimension } from "./question-set";
-import { getReportCopy, type ReportCopy } from "./report-copy";
+import { personaIdFor } from "./persona";
+import { getReportCopy, type PersonaCopy, type PersonaId, type ReportCopy } from "./report-copy";
 import type { OceanBand } from "./scoring";
 
 export type InterestScore = { type: RiasecDimension; name: string; description: string; score: number };
@@ -20,12 +21,16 @@ export type TraitView = {
   tip: string;
 };
 
+/** The learner's persona (D81): picked by the top interest letter, or the generic one for a flat profile. */
+export type PersonaView = PersonaCopy & { id: PersonaId };
+
 export type ReportView = {
   /** The wording version used. */
   copyVersion: string;
   /** True while the wording is a placeholder: the screen must show a draft tag (open-questions.md). */
   draft: boolean;
   completedAt: string; // ISO date
+  persona: PersonaView;
   /** All six interest types, highest first; ties in the order R, I, A, S, E, C. */
   interests: InterestScore[];
   /** The top three interest areas in rank order with career families; empty when the profile is flat. */
@@ -72,10 +77,14 @@ export function buildReport(result: ResultView, copy: ReportCopy): ReportView {
   // Strict "<" keeps the first trait in O, C, E, A, N order when scores tie.
   const lowest = traits.reduce((low, next) => (next.score < low.score ? next : low));
 
+  const personaId = personaIdFor(result.holland);
+  const persona: PersonaView = { id: personaId, ...copy.personas[personaId] };
+
   return {
     copyVersion: copy.version,
     draft: copy.draft,
     completedAt: result.completedAt,
+    persona,
     interests,
     areas,
     hollandLetters: [...hollandLetters],

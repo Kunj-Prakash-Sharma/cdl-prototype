@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { OCEAN_DIMENSIONS, RIASEC_DIMENSIONS } from "./question-set";
-import { CURRENT_REPORT_COPY, REPORT_COPIES, getReportCopy } from "./report-copy";
+import { CURRENT_REPORT_COPY, REPORT_COPIES, getReportCopy, type PersonaId } from "./report-copy";
+
+const PERSONA_IDS: PersonaId[] = [...RIASEC_DIMENSIONS, "explorer"];
 
 const BANDS = ["lower", "middle", "higher"] as const;
 
@@ -24,6 +26,22 @@ describe("every shipped report wording", () => {
           expect(copy.careerFamilies[type].length).toBeGreaterThanOrEqual(3);
           expect(copy.careerFamilies[type].length).toBeLessThanOrEqual(5);
         }
+      });
+
+      it("has a persona for each interest type and one generic Explorer: a name, a tagline, 3 strengths and 2 growth areas", () => {
+        expect(Object.keys(copy.personas).sort()).toEqual([...PERSONA_IDS].sort());
+        for (const id of PERSONA_IDS) {
+          const persona = copy.personas[id];
+          expect(persona.name.trim(), `${id} name`).not.toBe("");
+          expect(persona.tagline.trim(), `${id} tagline`).not.toBe("");
+          expect(persona.strengths, `${id} strengths`).toHaveLength(3);
+          expect(persona.growth, `${id} growth`).toHaveLength(2);
+          for (const block of [...persona.strengths, ...persona.growth]) {
+            expect(block.title.trim()).not.toBe("");
+            expect(block.note.trim()).not.toBe("");
+          }
+        }
+        expect(new Set(PERSONA_IDS.map((id) => copy.personas[id].name)).size).toBe(PERSONA_IDS.length);
       });
 
       it("never says neuroticism, and never puts salary, percentage or fit in the text", () => {
