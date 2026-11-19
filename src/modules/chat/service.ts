@@ -491,6 +491,8 @@ export type CallbackContext = {
   age: string | null;
   status: string | null;
   goal: string | null;
+  /** "What do you lose track of time doing?" (D89). Null for attempts on a set that did not ask it. */
+  activity: string | null;
   topInterests: string[];
 };
 
@@ -512,6 +514,7 @@ async function contextOf(attempt: repo.AttemptRow, resultRow: repo.ResultRow): P
     age: age.label,
     status: answerLabel(set, answers, "b-status").label,
     goal: answerLabel(set, answers, "b-goal").label,
+    activity: answerLabel(set, answers, "b-activity").label,
     topInterests: built.report.areas.map((area) => area.name),
   };
 }

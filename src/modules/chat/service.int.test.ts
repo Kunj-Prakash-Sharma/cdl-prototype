@@ -799,6 +799,7 @@ describe("callback context (what the team needs before a call)", () => {
     expect(context).toMatchObject({ attemptId, age: "22 to 25" });
     expect(context!.status).toBe(set.basics.find((b) => b.id === "b-status")!.options[0]!.label);
     expect(context!.goal).toBe(set.basics.find((b) => b.id === "b-goal")!.options[0]!.label);
+    expect(context!.activity).toBe(set.basics.find((b) => b.id === "b-activity")!.options[0]!.label);
     expect(context!.topInterests.length).toBeLessThanOrEqual(3);
     expect(JSON.stringify(context)).not.toContain("Zorbaxian");
   });

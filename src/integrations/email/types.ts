@@ -12,6 +12,8 @@ export interface EmailTemplates {
     requestedAt: string;
     preferredTime: string | null;
     age: string | null;
+    /** What the learner loses track of time doing (a tap answer, D89). */
+    activity: string | null;
     topInterests: string[];
   };
 }

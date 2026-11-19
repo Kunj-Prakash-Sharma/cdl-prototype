@@ -265,6 +265,7 @@ describe("admin callback list", () => {
       consentVersion: CURRENT_CONSENT.version,
     });
     expect(mine[0]!.topInterests.length).toBeLessThanOrEqual(3);
+    expect(mine[0]!.activity).toBe("Designing things"); // the warm-up answer (D89), first option
     expect(mine[1]).toMatchObject({ preferredTime: "morning", age: "18 to 21" });
     expect(mine[0]).not.toHaveProperty("contactRole");
   });
@@ -368,6 +369,8 @@ describe("CSV download", () => {
     const line = res.csv.split("\r\n").find((l) => l.includes("91 66666 66666"));
     expect(line).toBeDefined();
     expect(line).toContain(",Asha,91 66666 66666,Afternoon,15 to 17,");
+    expect(line).toContain(",Designing things,"); // "Loses track of time doing"
+    expect(res.csv.split("\r\n")[0]).toContain("Loses track of time doing");
     expect(line).not.toContain("+91");
     expect(res.count).toBe(res.csv.split("\r\n").length - 2); // minus the header and the trailing break
   });
@@ -453,6 +456,7 @@ describe("the team email job", () => {
       age: "15 to 17",
     });
     expect(Array.isArray(data.topInterests)).toBe(true);
+    expect(data.activity).toBe("Designing things");
     expect(JSON.stringify(data)).not.toContain(learner.name);
     const [row] = await rows(learner.userId);
     expect(row!.alertedAt?.toISOString()).toBe(now.toISOString());

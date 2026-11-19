@@ -265,15 +265,27 @@ describe("question set 1.1.0: same questions, new order (D87)", () => {
   it("keeps every ID, item and score rule of 1.0.0, so scoring is unchanged", () => {
     expect(next.items).toBe(QUESTION_SET_1_0_0.items);
     expect(next.thresholds).toEqual(QUESTION_SET_1_0_0.thresholds);
-    expect([...next.basics.map((b) => b.id)].sort()).toEqual(QUESTION_SET_1_0_0.basics.map((b) => b.id).sort());
+    for (const old of QUESTION_SET_1_0_0.basics) expect(next.basics.find((b) => b.id === old.id)).toBe(old);
   });
 
-  it("asks status first, then the name, then age and goal", () => {
-    expect(next.basics.map((b) => b.id)).toEqual(["b-status", "b-age", "b-goal"]);
+  it("asks status first, then the name, then age, goal and the warm-up question (D89)", () => {
+    expect(next.basics.map((b) => b.id)).toEqual(["b-status", "b-age", "b-goal", "b-activity"]);
     expect(next.nameAfter).toBe("b-status");
   });
 
   it("names a real basics question as the one the Home chat also asks", () => {
     expect(next.basics.map((b) => b.id)).toContain(next.homeQuestionId);
+  });
+
+  it("has the warm-up question with 5 options, each with a short reply, and it is not an item (never scored)", () => {
+    const activity = next.basics.find((b) => b.id === "b-activity")!;
+    expect(activity.prompt).toBe("What do you lose track of time doing?");
+    expect(activity.options).toHaveLength(5);
+    for (const option of activity.options) {
+      expect(option.label.trim()).not.toBe("");
+      expect(option.acknowledgement.trim()).not.toBe("");
+    }
+    expect(next.items.some((item) => item.id === "b-activity")).toBe(false);
+    expect(QUESTION_SET_1_0_0.basics.some((b) => b.id === "b-activity")).toBe(false); // the shipped set is unchanged
   });
 });

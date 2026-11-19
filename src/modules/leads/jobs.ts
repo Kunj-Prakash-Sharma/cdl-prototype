@@ -58,6 +58,7 @@ export async function sendCallbackAlert(payload: unknown, deps: AlertDeps): Prom
       requestedAt: lead.createdAt.toISOString(),
       preferredTime: lead.preferredTime,
       age: context?.age ?? null,
+      activity: context?.activity ?? null,
       topInterests: context?.topInterests ?? [],
     });
   } catch (err) {

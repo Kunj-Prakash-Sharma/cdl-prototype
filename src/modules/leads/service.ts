@@ -122,6 +122,7 @@ export type AdminLeadRow = {
   age: string | null;
   studying: string | null;
   goal: string | null;
+  activity: string | null;
   topInterests: string[];
   consentAt: string; // ISO date
   consentVersion: string;
@@ -150,6 +151,7 @@ async function toAdminRows(rows: repo.LeadRow[], getNames: NameReader): Promise<
     age: contexts[i]?.age ?? null,
     studying: contexts[i]?.status ?? null,
     goal: contexts[i]?.goal ?? null,
+    activity: contexts[i]?.activity ?? null,
     topInterests: contexts[i]?.topInterests ?? [],
     consentAt: row.consentAt.toISOString(),
     consentVersion: row.consentVersion,
@@ -213,6 +215,7 @@ const CSV_HEADERS = [
   "Age",
   "Studying or working",
   "Goal",
+  "Loses track of time doing",
   "Top interests",
   "Consent given at",
   "Consent wording version",
@@ -244,6 +247,7 @@ export async function exportLeadsCsv(
       row.age ?? "",
       row.studying ?? "",
       row.goal ?? "",
+      row.activity ?? "",
       row.topInterests.join(" / "),
       dateTimeIst(new Date(row.consentAt)),
       row.consentVersion,
