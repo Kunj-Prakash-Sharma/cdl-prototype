@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowLeft, ShieldCheck, Smartphone } from "lucide-react";
 import { sendOtp, verifyOtp } from "@/modules/auth/actions";
 import { nationalDigits } from "@/modules/auth/phone";
@@ -21,7 +20,6 @@ const LOGIN_COPY: LoginCopy = {
 };
 
 export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; siteKey: string; copy?: LoginCopy }) {
-  const router = useRouter();
   const { container, getToken } = useTurnstile(siteKey);
   const [step, setStep] = useState<Step>("phone");
   const [digits, setDigits] = useState("");
@@ -63,9 +61,10 @@ export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; 
         codeInput.current?.focus();
         return setError(authMessage(result.code, result.retryAfterSec));
       }
-      // Full navigation so the navbar and layout re-read the new session cookie.
-      router.replace(result.next);
-      router.refresh();
+      // Full page load so the navbar and layout re-read the new session cookie. Not router.replace + refresh: the
+      // refresh can re-render /login first, whose own redirect then shows the next page under the /login URL.
+      // result.next is already a same-site path (safeNextPath on the server).
+      window.location.replace(result.next);
     });
   }
 

@@ -1,21 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { LogOut, ShieldCheck, UserRound } from "lucide-react";
 import { logout } from "@/modules/auth/actions";
 import type { SessionView } from "@/modules/auth/types";
 
-/** Logs out, then hard-refreshes so the layout re-reads the (now missing) session cookie. */
+/**
+ * Logs out, then does a full page load of the home page so the layout re-reads the (now missing) session cookie.
+ * Not router.replace + refresh: the refresh can re-render the current page first and leave the URL behind.
+ */
 export function useLogout() {
-  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const run = () =>
     startTransition(async () => {
       await logout();
-      router.replace("/");
-      router.refresh();
+      window.location.replace("/");
     });
   return { run, pending };
 }
