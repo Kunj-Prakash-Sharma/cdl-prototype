@@ -2,6 +2,8 @@
 
 Source: "SELF Phase 1 – Architecture and Technical Decisions.pdf", Oct 21, 2026, Kunj Sharma. Converted to markdown for repo use. Our own interview decisions that refine this doc are in [../decisions.md](../decisions.md) (D41…D60). Where they differ, `decisions.md` wins.
 
+> **Changed (D62, Oct 26, 2026):** the quiz no longer uses AI rewording; fixed question variants replace it. Wherever this doc mentions AI wording, Bedrock or the AI wrapper (D4, D22, chat flow, cost, abuse, risks), read [assessment.md](assessment.md) and [../decisions.md](../decisions.md) instead.
+
 ## Summary
 Phase 1 is one modular web application on AWS (India region), with managed services for video, payments, SMS and AI. It goes to invited users around 22 November 2026, and that date can move by one to two weeks. It covers Level 0 (the free guided career chat with Meera) and Level 1 (self-paced courses), plus a learner dashboard and an admin panel. Live sessions (Level 2) follow around 6 December.
 

@@ -35,7 +35,7 @@ Five modules, each owning its data. Admin and analytics are not modules: admin i
 | Module | Owns | Outside dependency (via wrapper) |
 |---|---|---|
 | `auth` | OTP login, sessions, learner profile (name, number, optional email), roles | `sms` |
-| `chat` | Meera flow, OCEAN and RIASEC question sets as versioned config, answers, scoring rules, report | `ai` (wording only) |
+| `chat` | Meera flow, OCEAN and RIASEC question sets with wording variants as versioned config ([assessment.md](../requirements/assessment.md)), answers, scoring rules, report | none (no AI, D62) |
 | `catalog` | Courses, lessons, quiz questions, prices, bundles, publish state. Inside it: `video/` (upload, encoding jobs, status, thumbnails) and `learning/` (playback authorisation, progress and resume, quiz marking) | `video`, `storage`, `queue` |
 | `commerce` | Products, orders, payments, entitlements, receipts, manual access grant | `payments`, `email` |
 | `leads` | Callback requests, consent flag, instant email alert, Excel export, webhook | `email` |

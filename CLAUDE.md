@@ -39,7 +39,7 @@ Run `nvm use` first (Node 22; the shell may default to 23).
 - **No raw chat text stored.** Store answers by fixed question ID only (D18).
 - **No personal data in logs or analytics events** (no name, phone, email, free text). No ad pixels.
 - **Card data never touches our servers.** Payments use hosted checkout; webhooks are signature-checked and **idempotent**.
-- **Scoring never uses the AI.** Scoring is a pure, unit-tested function. The AI only rewords fixed questions and must fall back to the approved wording.
+- **No AI in the quiz (D62).** Questions come from pre-approved wording variants (`docs/requirements/assessment.md`). Scoring is a pure, unit-tested function of question IDs and answer values.
 - The only typed input in the chat is the name (letters, max 30, self-harm/abuse word check).
 - Video access is signed + expiring and checked against entitlements.
 

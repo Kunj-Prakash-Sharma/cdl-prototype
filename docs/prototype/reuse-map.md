@@ -51,7 +51,7 @@ The prototype (`prototype-v0`) is about 5,950 lines in 45 files: learner-facing 
 | `learn/course-card.tsx`, `course-thumb.tsx` | Adapt | Props from DB course; drop rating and learner counts |
 | `learn/course-catalog.tsx` | Adapt | Server-rendered list; client island for filters and "recommended" |
 | `learn/course-experience.tsx` | Adapt (heavy) | Split server shell + client islands; drop certificate toast and instructor; add quiz; PDFs via signed URL; sticky mobile CTA |
-| `learn/video-player.tsx` | Rewrite | Real HLS via hls.js, signed URL, watermark, progress reports; keep the control chrome |
+| `learn/video-player.tsx` | Rewrite | Real HLS via video.js, signed URL, watermark, progress reports; keep the control chrome |
 | `learn/checkout-modal.tsx` | Rewrite | Keep review and success screens; replace the fake card/UPI form with hosted checkout (`payments.openCheckout`); poll order status |
 | `learn/my-learning.tsx` | Adapt | Moves into the My SELF dashboard |
 | `lib/data/courses.ts` | Delete as source | Becomes the DB seed (placeholders); first lesson only is a free preview (per-lesson flag) |

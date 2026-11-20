@@ -53,3 +53,6 @@ CLAUDE.local.md
 
 # worker bundle
 /dist/
+
+# test server build folder (npm run dev:test, Playwright)
+/.next-test/
