@@ -45,3 +45,6 @@ Aptitude, work values, fit %, salary (D72). Client-approved wording and career l
 - E2E (`tests/e2e/report.spec.ts`, 375px and desktop): quiz opens the report by itself, all sections, banned words absent, reload keeps it, print hides the navbar, empty state, My SELF link.
 - Events: `report_viewed` (every visit), `report_action` (`save`, `pdf`, `callback`, `courses`).
 - Commands: `npm run lint && npm run typecheck && npm run test && npm run test:int && npm run test:e2e`.
+
+## Persona (D81, D88)
+The report carries `persona` (`{ id, name, tagline, strengths[3], growth[2] }`): the persona of the top Holland letter, or the generic `explorer` for a flat profile. Picked by `personaIdFor` (pure), built from the wording version on the result. All persona text is DRAFT until the client approves it (open-questions.md). No career percentage anywhere (D72).

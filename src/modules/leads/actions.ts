@@ -18,7 +18,12 @@ const callbackLimiter = createLimiter(CALLBACK_LIMIT_PER_HOUR, 60 * 60 * 1000);
 const requestSchema = z.object({
   consent: z.boolean(),
   preferredTime: z.enum(leads.PREFERRED_TIMES).nullish(),
+  // Where the request is made (D85). Missing means the report button.
+  source: z.enum(leads.LEAD_SOURCES).default("report"),
 });
+
+/** Where a login should send the learner back to. A fixed path per source, never taken from the browser. */
+const loginReturnPath = (source: leads.LeadSource) => (source === "home" ? "/" : "/discover/report");
 
 const invalid = { ok: false, code: "invalid_input" } as const;
 
@@ -37,7 +42,7 @@ export async function requestCallback(input: unknown) {
   const parsed = requestSchema.safeParse(input);
   if (!parsed.success) return invalid;
   return guarded(async () => {
-    const session = await requireUser("/discover/report");
+    const session = await requireUser(loginReturnPath(parsed.data.source));
     const limit = callbackLimiter.hit(session.userId, performance.now());
     if (!limit.ok) return { ok: false, code: "rate_limited", retryAfterSec: limit.retryAfterSec } as const;
     return leads.createCallback({ userId: session.userId }, parsed.data, getLearnerPhone, {

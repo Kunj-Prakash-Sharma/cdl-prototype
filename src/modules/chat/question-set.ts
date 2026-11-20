@@ -1,4 +1,4 @@
-// The versioned question set for the Meera quiz. DATA ONLY: no logic, no imports from db, env or time.
+// The versioned question set for the Mira quiz. DATA ONLY: no logic, no imports from db, env or time.
 // Source of truth: docs/requirements/assessment.md (sections 3 to 7) and the approved pool in question-pool.ts.
 // The set only lists WHICH pool questions are asked (and their extra wordings), so swapping a question is a one-line
 // change here and a new set version. Wording is client-approved; variants 2 and 3 are our drafts until the client
@@ -64,12 +64,12 @@ export type Thresholds = {
 export type BasicOption = {
   id: string;
   label: string;
-  /** Meera's short reply after this answer (draft copy). */
+  /** Mira's short reply after this answer (draft copy). */
   acknowledgement: string;
 };
 
 export type BasicQuestion = {
-  id: "b-age" | "b-status" | "b-goal";
+  id: "b-age" | "b-status" | "b-goal" | "b-activity";
   prompt: string;
   /** The stored answer is the 0-based position in this list. Basics are never scored. */
   options: BasicOption[];
@@ -89,10 +89,17 @@ export type QuestionSet = {
   /** The typed name question (D46: the only free text). Its answer goes to the learner profile, never to answers. */
   name: { id: "b-name"; prompt: string };
   basics: BasicQuestion[];
+  /** The basics question after which the name is asked. Missing = the name comes first (set 1.0.0). */
+  nameAfter?: BasicQuestion["id"];
+  /**
+   * The basics question that the Home mini-chat also asks (D87). Its answer can arrive with the start of the quiz and
+   * is saved as that question's answer, so the learner is not asked twice.
+   */
+  homeQuestionId?: BasicQuestion["id"];
   scales: Record<Stage, ScaleLabels>;
   items: Item[];
   thresholds: Thresholds;
-  /** Short Meera lines shown between scored questions (draft copy). */
+  /** Short Mira lines shown between scored questions (draft copy). */
   acknowledgements: string[];
   /** Headings for each part, shown in the step bar and above the questions. Data, so the UI hardcodes no part name. */
   stageCopy: Record<StageId, StageCopy>;
@@ -313,12 +320,45 @@ export const QUESTION_SET_1_0_0: QuestionSet = {
   ],
 };
 
+/**
+ * 1.1.0 (D87): the same questions, IDs and scoring as 1.0.0, only asked in another order: "what are you doing now"
+ * first (the Home mini-chat asks it too and passes the answer on), then the name, then age and goal. Attempts already
+ * started keep 1.0.0 and its order. It also asks one more tap question at the end of the basics (D89). Set 1.1.0 has no
+ * real results yet, so it is edited in place.
+ */
+const BASICS_1_1_0_ORDER = ["b-status", "b-age", "b-goal"] as const;
+
+/**
+ * The friendly warm-up from the V5 chat (D89): plain information for the team, like age and goal. Never scored (D62),
+ * never shown on the report. Wording and options are DRAFT until the client approves them.
+ */
+const ACTIVITY_QUESTION: BasicQuestion = {
+  id: "b-activity",
+  prompt: "What do you lose track of time doing?",
+  options: [
+    { id: "designing", label: "Designing things", acknowledgement: "Nice. Making things is a good clue." },
+    { id: "puzzles", label: "Solving puzzles", acknowledgement: "Good to know. You like working things out." },
+    { id: "helping", label: "Helping people", acknowledgement: "That says a lot about you." },
+    { id: "leading", label: "Leading a team", acknowledgement: "Good to know. You like taking the lead." },
+    { id: "other", label: "Something else", acknowledgement: "Thanks for sharing that." },
+  ],
+};
+
+export const QUESTION_SET_1_1_0: QuestionSet = {
+  ...QUESTION_SET_1_0_0,
+  version: "1.1.0",
+  basics: [...BASICS_1_1_0_ORDER.map((id) => QUESTION_SET_1_0_0.basics.find((b) => b.id === id)!), ACTIVITY_QUESTION],
+  nameAfter: "b-status",
+  homeQuestionId: "b-status",
+};
+
 /** Every set that ever shipped, by version. Never remove an entry: old attempts are scored against their own version. */
 export const QUESTION_SETS: Readonly<Record<string, QuestionSet>> = {
   [QUESTION_SET_1_0_0.version]: QUESTION_SET_1_0_0,
+  [QUESTION_SET_1_1_0.version]: QUESTION_SET_1_1_0,
 };
 
-export const CURRENT_QUESTION_SET: QuestionSet = QUESTION_SET_1_0_0;
+export const CURRENT_QUESTION_SET: QuestionSet = QUESTION_SET_1_1_0;
 
 export function getQuestionSet(version: string): QuestionSet | undefined {
   return QUESTION_SETS[version];

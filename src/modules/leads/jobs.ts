@@ -6,7 +6,7 @@ import { email, type EmailProvider } from "@/integrations/email";
 import { queue } from "@/integrations/queue";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
-import { getCallbackContextForAdmin } from "@/modules/chat/service";
+import { contextForLead } from "./lead-context";
 import { phoneForScreen } from "./csv";
 import * as repo from "./repo";
 
@@ -49,15 +49,18 @@ export async function sendCallbackAlert(payload: unknown, deps: AlertDeps): Prom
     throw new Error("CALLBACK_ALERT_EMAIL is not set");
   }
 
-  const context = await getCallbackContextForAdmin(lead.attemptId);
+  const context = await contextForLead(lead);
   try {
     await deps.send("callback_alert", deps.to, {
       leadId: lead.id,
       reportId: lead.attemptId,
+      source: lead.source,
+      hasReport: context != null,
       phone: phoneForScreen(lead.phone),
       requestedAt: lead.createdAt.toISOString(),
       preferredTime: lead.preferredTime,
       age: context?.age ?? null,
+      activity: context?.activity ?? null,
       topInterests: context?.topInterests ?? [],
     });
   } catch (err) {

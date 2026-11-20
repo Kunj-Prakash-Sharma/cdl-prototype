@@ -7,18 +7,18 @@ import { cn } from "@/lib/format";
 import type { LatestReport } from "@/modules/chat/service";
 import { Letter, Radar, TRAIT_BG, TYPE_BG } from "./report-parts";
 
-// The report on paper ("Save as PDF"), in the V5 PDF design (D81, V5-Report-PDF-1..5): A4 pages with a cover, one page
+// The report on paper ("Save as PDF"), in the V5 PDF design (D91, V5-Report-PDF-1..5): A4 pages with a cover, one page
 // per section and a running footer. Page numbers come from the browser (@page in globals.css), so they stay right
 // when a section runs onto a second sheet. It is hidden on screen and shown only when printing; the screen report is hidden
 // when printing (print:hidden in report-view.tsx). Server component, no script. No test ids here, so the screen report's
 // ids stay unique.
 //
-// BACKEND GAPS (D82, open-questions.md), not built here:
+// BACKEND GAPS (D92, open-questions.md), not built here:
 //  - the learner's name on the cover and in the footer (the report data has no name; PII needs a decision first);
 //  - the plain-language scale ends under each trait ("Likes the familiar" / "Loves new ideas"), and the "What your IAS
 //    code means" paragraph (client-approved wording first);
 //  - the "Career paths" page and the 65% / 35% match note (page 6 of the design): career paths are not in Phase 1;
-//  - the persona title and the Strengths / Areas to grow pages: sample content, drawn outside production only (D82).
+//  - the persona title and the Strengths / Areas to grow pages: sample content, drawn outside production only (D92).
 // The helpline line shows the placeholder number from src/config/helpline.ts until the client's number arrives.
 
 const dayFormat = new Intl.DateTimeFormat("en-IN", {
@@ -317,7 +317,7 @@ export function ReportPrint({ report, showSamples }: { report: LatestReport; sho
         )}
       </Page>
 
-      {/* Strengths and growth: SAMPLE content outside production (D82) */}
+      {/* Strengths and growth: SAMPLE content outside production (D92) */}
       {showSamples && (
         <Page label={label("str")} date={date}>
           <PageTitle

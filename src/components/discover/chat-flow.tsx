@@ -130,7 +130,7 @@ export function ChatFlow({
     run(async () => {
       const res = await submitAnswer({ attemptId, questionId, value });
       if (!res.ok) return fail(res.code, retryAfter(res));
-      // Meera's reply to a tap question shows above the next card; replies to scale answers would only make the card jump.
+      // Mira's reply to a tap question shows above the next card; replies to scale answers would only make the card jump.
       setAck(kind === "basics" ? res.acknowledgement || null : null);
       await goTo(res.next, attemptId);
     });

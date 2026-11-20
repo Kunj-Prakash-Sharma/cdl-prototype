@@ -11,6 +11,7 @@ import { CURRENT_REPORT_COPY, REPORT_COPIES, type ReportCopy } from "./report-co
 import { chatAnswers, chatAttempts, chatResults } from "./schema";
 import {
   abandonAttempt,
+  applyHomeAnswer,
   finishAttempt,
   getCallbackContext,
   getCallbackContextForAdmin,
@@ -79,11 +80,14 @@ beforeEach(cleanup);
 afterAll(cleanup);
 
 describe("starting and resuming", () => {
-  it("creates an attempt pinned to the current question set, starting at the name for a learner without one", async () => {
+  it("creates an attempt pinned to the current question set, starting at the status question (the name comes second)", async () => {
     const learner = await makeLearner("");
     const res = await start(learner);
     expect(res.resumed).toBe(false);
-    expect(res.next.kind).toBe("name");
+    expect(res.next).toMatchObject({ kind: "basics", id: "b-status" });
+    const second = await submitAnswer(learner, res.attemptId, "b-status", 0);
+    if (!second.ok) throw new Error(second.code);
+    expect(second.next.kind).toBe("name");
     const row = await attemptRow(res.attemptId);
     expect(row.setVersion).toBe(set.version);
     expect(row.status).toBe("in_progress");
@@ -122,7 +126,7 @@ describe("starting and resuming", () => {
 });
 
 describe("answering", () => {
-  it("saves an answer and returns the next step with Meera's reply", async () => {
+  it("saves an answer and returns the next step with Mira's reply", async () => {
     const learner = await makeLearner();
     const { attemptId } = await start(learner);
     const basic = set.basics[0]!;
@@ -209,7 +213,8 @@ describe("answering", () => {
   it("does not let a learner without a name answer the questions after the name", async () => {
     const learner = await makeLearner("");
     const { attemptId } = await start(learner);
-    expect(await submitAnswer(learner, attemptId, set.basics[0]!.id, 0)).toEqual({ ok: false, code: "out_of_order" });
+    await submitAnswer(learner, attemptId, set.basics[0]!.id, 0); // status, asked before the name
+    expect(await submitAnswer(learner, attemptId, set.basics[1]!.id, 0)).toEqual({ ok: false, code: "out_of_order" });
   });
 
   it("lets a learner change an earlier answer (back)", async () => {
@@ -227,7 +232,7 @@ describe("resume", () => {
   it("shows the same question and the same wording after a refresh", async () => {
     const learner = await makeLearner();
     const { attemptId } = await start(learner);
-    for (const entry of order.slice(1, 1 + set.basics.length + 4)) {
+    for (const entry of order.filter((e) => e.kind !== "name").slice(0, set.basics.length + 4)) {
       await submitAnswer(learner, attemptId, entry.id, entry.kind === "basics" ? 0 : 3);
     }
     const a = await getNextStep(learner, attemptId);
@@ -561,7 +566,7 @@ describe("funnel events", () => {
     const steps = named(spy, "chat_step");
     expect(steps).toHaveLength(order.length - 1); // the name is already on the profile
     expect(steps.every((e) => e.session === attemptId)).toBe(true);
-    expect(steps[0]!.props).toMatchObject({ stage: "basics", messageNumber: 2, inputType: "single" });
+    expect(steps[0]!.props).toMatchObject({ stage: "basics", messageNumber: 1, inputType: "single" });
     expect(steps.at(-1)!.props).toMatchObject({ messageNumber: order.length, inputType: "likert" });
     expect(named(spy, "chat_stage_completed").map((e) => (e.props as { stage: string }).stage)).toEqual([
       "basics",
@@ -651,7 +656,7 @@ describe("funnel events", () => {
       {
         session: attemptId,
         event: "chat_step",
-        props: { stage: "basics", messageNumber: 1, inputType: "name", secondsTaken: expect.any(Number) },
+        props: { stage: "basics", messageNumber: 2, inputType: "name", secondsTaken: expect.any(Number) },
       },
     ]);
   });
@@ -772,6 +777,7 @@ describe("the free report", () => {
 describe("callback context (what the team needs before a call)", () => {
   const finishWithAge = async (learner: Learner, ageIndex: number) => {
     const { attemptId } = await start(learner);
+    await submitAnswer(learner, attemptId, "b-status", 0); // status is asked first
     await submitAnswer(learner, attemptId, "b-age", ageIndex);
     await answerAll(learner, attemptId);
     const res = await finishAttempt(learner, attemptId);
@@ -791,8 +797,9 @@ describe("callback context (what the team needs before a call)", () => {
     const attemptId = await finishWithAge(learner, 3); // "22 to 25"
     const context = await getCallbackContext(learner.userId);
     expect(context).toMatchObject({ attemptId, age: "22 to 25" });
-    expect(context!.status).toBe(set.basics[1]!.options[0]!.label);
-    expect(context!.goal).toBe(set.basics[2]!.options[0]!.label);
+    expect(context!.status).toBe(set.basics.find((b) => b.id === "b-status")!.options[0]!.label);
+    expect(context!.goal).toBe(set.basics.find((b) => b.id === "b-goal")!.options[0]!.label);
+    expect(context!.activity).toBe(set.basics.find((b) => b.id === "b-activity")!.options[0]!.label);
     expect(context!.topInterests.length).toBeLessThanOrEqual(3);
     expect(JSON.stringify(context)).not.toContain("Zorbaxian");
   });
@@ -819,6 +826,7 @@ describe("callback context (what the team needs before a call)", () => {
     const open = (await start(learner)).attemptId;
     expect(await getCallbackContextForAdmin(open)).toBeNull();
     expect(await getCallbackContextForAdmin("00000000-0000-4000-8000-000000000000")).toBeNull();
+    await submitAnswer(learner, open, "b-status", 0);
     await submitAnswer(learner, open, "b-age", 1);
     await answerAll(learner, open);
     await finishAttempt(learner, open);
@@ -956,5 +964,60 @@ describe("continue or start again (E4-S12, D75)", () => {
     // Someone else's attempt id looks like a missing one, and nothing of theirs changes.
     expect(await restartAttempt(mine, theirs.attemptId)).toEqual({ ok: false, code: "not_found" });
     expect((await attemptRow(theirs.attemptId)).status).toBe("in_progress");
+  });
+});
+
+describe("the Home mini-chat answer (D87)", () => {
+  const status = () => set.basics.find((b) => b.id === set.homeQuestionId)!;
+  const optionIndex = (id: string) => status().options.findIndex((o) => o.id === id);
+
+  it("saves the answer as the home question's answer, then the next step asks the name", async () => {
+    const learner = await makeLearner("");
+    const { attemptId } = await start(learner);
+    const res = await applyHomeAnswer(learner, attemptId, "college");
+    if (!res.ok) throw new Error(res.code);
+    expect(res.applied).toBe(true);
+    expect(res.next.kind).toBe("name");
+    const rows = await answerRows(attemptId);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ questionId: status().id, value: optionIndex("college"), variantId: null });
+  });
+
+  it("does nothing the second time (refresh or two tabs): one row, same value", async () => {
+    const learner = await makeLearner("");
+    const { attemptId } = await start(learner);
+    await applyHomeAnswer(learner, attemptId, "college");
+    const again = await applyHomeAnswer(learner, attemptId, "working");
+    if (!again.ok) throw new Error(again.code);
+    expect(again.applied).toBe(false);
+    const rows = await answerRows(attemptId);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.value).toBe(optionIndex("college"));
+  });
+
+  it("never changes a quiz that is already under way", async () => {
+    const learner = await makeLearner();
+    const { attemptId } = await start(learner);
+    await submitAnswer(learner, attemptId, status().id, optionIndex("working"));
+    const res = await applyHomeAnswer(learner, attemptId, "school");
+    if (!res.ok) throw new Error(res.code);
+    expect(res.applied).toBe(false);
+    expect((await answerRows(attemptId))[0]!.value).toBe(optionIndex("working"));
+  });
+
+  it("refuses an option that is not in the question, saving nothing", async () => {
+    const learner = await makeLearner();
+    const { attemptId } = await start(learner);
+    expect(await applyHomeAnswer(learner, attemptId, "astronaut")).toEqual({ ok: false, code: "invalid_input" });
+    expect(await answerRows(attemptId)).toHaveLength(0);
+  });
+
+  it("is not_found for someone else's attempt, and attempt_closed for a closed one", async () => {
+    const owner = await makeLearner();
+    const stranger = await makeLearner();
+    const { attemptId } = await start(owner);
+    expect(await applyHomeAnswer(stranger, attemptId, "school")).toMatchObject({ ok: false, code: "not_found" });
+    await abandonAttempt(owner, attemptId);
+    expect(await applyHomeAnswer(owner, attemptId, "school")).toMatchObject({ ok: false, code: "attempt_closed" });
   });
 });

@@ -40,3 +40,6 @@ CRM webhook (E6-S6), Turnstile on the form (login stands in), audit log (E1-S5),
 - Integration (`leads/service.int.test.ts`): one new lead per learner, role from age, rate limit, status rules, admin role check on every function, alert job once, no name in the email, the sweep (only unalerted leads inside the 5 minute to 3 day window, one bad enqueue does not stop the rest).
 - E2E (`tests/e2e/report.spec.ts`, `callbacks-admin.spec.ts`): parent and adult wording, consent needed, repeat tap keeps one lead, admin sees, changes status, CSV downloads.
 - Commands: `npm run lint && npm run typecheck && npm run test && npm run test:int && npm run test:e2e`.
+
+## Callback from Home (D85, D90)
+`createCallback(learner, { consent, preferredTime?, source? })`: `source` is `home` or `report` (default `report`). `report` needs a finished report (`no_report`); `home` needs none and stores `attempt_id = null`. `getConsentWording(userId, source)` returns the wording from Home without a report; from the report page it is null until a report exists. The admin list, CSV and team email read the context with `contextForLead`: the lead's own attempt, or else the learner's newest finished report, or "No report yet". The email payload adds `source`, `hasReport`, `activity` (D89) and a nullable `reportId`.

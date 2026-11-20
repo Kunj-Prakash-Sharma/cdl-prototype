@@ -8,7 +8,7 @@ import { requestCallback } from "@/modules/leads/actions";
 
 // The callback request form on the report (E6-S1, E5-S5), in the V5 look. The logic (consent first, one request per
 // learner, a message per error code) is unchanged. The consent text comes from the server (D79: one wording, no minor
-// flow). GAP (D82): the artboard names a coach ("Gaurav Sharma") and shows time ranges under each slot; both are client
+// flow). GAP (D92): the artboard names a coach ("Gaurav Sharma") and shows time ranges under each slot; both are client
 // inputs, so the copy says "our team" and the slots have no range.
 
 type Time = "morning" | "afternoon" | "evening";

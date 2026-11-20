@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  /* V5 design (D81). Token NAMES are unchanged from the prototype so every screen moves at once; values are V5. */
+  /* V5 design (D91). Token NAMES are unchanged from the prototype so every screen moves at once; values are V5. */
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
 

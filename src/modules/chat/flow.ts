@@ -1,7 +1,7 @@
 // PURE flow logic: given a question set and the answers saved so far, what comes next? No database, no clock, no
 // randomness. The service feeds it rows from the database; tests feed it plain objects.
 //
-// The order of questions is the order in the set: the name, the basics, then the scored items. "Where am I?" is never
+// The order of questions is the order in the set: the basics with the name placed by `nameAfter`, then the scored items. "Where am I?" is never
 // stored as a counter: it is recomputed as the first question without a saved answer.
 import type { QuestionSet, Stage } from "./question-set";
 import { fnv1a, variantFor } from "./variants";
@@ -14,11 +14,28 @@ export type OrderEntry = { id: string; stage: StageId; kind: "name" | "basics" |
 
 /** Every question in the order it is asked. */
 export function questionOrder(set: QuestionSet): OrderEntry[] {
+  const basics = set.basics.map((b): OrderEntry => ({ id: b.id, stage: "basics", kind: "basics" }));
+  // The name sits after the basics question named by `nameAfter`; with none (or an unknown one) it comes first.
+  const nameAt = set.nameAfter ? basics.findIndex((b) => b.id === set.nameAfter) + 1 : 0;
+  const nameEntry: OrderEntry = { id: set.name.id, stage: "basics", kind: "name" };
   return [
-    { id: set.name.id, stage: "basics", kind: "name" },
-    ...set.basics.map((b): OrderEntry => ({ id: b.id, stage: "basics", kind: "basics" })),
+    ...basics.slice(0, nameAt),
+    nameEntry,
+    ...basics.slice(nameAt),
     ...set.items.map((item): OrderEntry => ({ id: item.id, stage: item.stage, kind: "question" })),
   ];
+}
+
+/**
+ * The Home mini-chat answer (an option id such as "school") as a saved answer of the set's home question, or null when
+ * the set has no home question or the option is unknown. Nothing from the client is trusted: the id must be one of the
+ * question's own options, and what is stored is that option's position.
+ */
+export function homeAnswer(set: QuestionSet, optionId: unknown): { questionId: string; value: number } | null {
+  if (typeof optionId !== "string" || !set.homeQuestionId) return null;
+  const question = set.basics.find((b) => b.id === set.homeQuestionId);
+  const value = question ? question.options.findIndex((o) => o.id === optionId) : -1;
+  return question && value !== -1 ? { questionId: question.id, value } : null;
 }
 
 /** Stage order as it appears in the set: basics first, then each stage in the order its items first appear. */
@@ -123,7 +140,7 @@ export function isReachable(set: QuestionSet, answers: SavedAnswers, hasName: bo
   return target !== -1 && target <= limit;
 }
 
-/** Meera's short line after an answer: the chosen option's reply for basics, a rotating generic line for the rest. */
+/** Mira's short line after an answer: the chosen option's reply for basics, a rotating generic line for the rest. */
 export function acknowledgementFor(set: QuestionSet, attemptId: string, questionId: string, value: number): string {
   const basic = set.basics.find((b) => b.id === questionId);
   if (basic) return basic.options[value]?.acknowledgement ?? "";

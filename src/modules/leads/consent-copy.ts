@@ -12,7 +12,7 @@ export type ConsentCopy = {
 const CONSENT_1_0_0_DRAFT: ConsentCopy = {
   version: "1.0.0-draft",
   draft: true,
-  text: "I agree that the team can call me on this number about my career report and courses.",
+  text: "I agree that the team can call me on this number about careers and courses.",
 };
 
 export const CONSENT_COPIES: Readonly<Record<string, ConsentCopy>> = {

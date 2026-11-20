@@ -41,6 +41,7 @@ async function finishReport(learner: Learner, ageIndex = 2) {
   const started = await startOrResumeAttempt(learner);
   if (!started.ok) throw new Error(started.code);
   const { attemptId } = started;
+  await submitAnswer(learner, attemptId, "b-status", 0); // status is asked first (set 1.1.0), then the name, then age
   await submitAnswer(learner, attemptId, "b-age", ageIndex);
   for (let guard = 0; guard < 100; guard++) {
     const res = await getNextStep(learner, attemptId);
@@ -238,7 +239,7 @@ describe("admin callback list", () => {
     });
   });
 
-  it("shows the newest request first with the name, phone, role, time and what the learner told Meera", async () => {
+  it("shows the newest request first with the name, phone, role, time and what the learner told Mira", async () => {
     const [older, newer] = [await makeLearner(), await makeLearner()];
     await finishReport(older, 2);
     await finishReport(newer, 0);
@@ -264,6 +265,7 @@ describe("admin callback list", () => {
       consentVersion: CURRENT_CONSENT.version,
     });
     expect(mine[0]!.topInterests.length).toBeLessThanOrEqual(3);
+    expect(mine[0]!.activity).toBe("Designing things"); // the warm-up answer (D89), first option
     expect(mine[1]).toMatchObject({ preferredTime: "morning", age: "18 to 21" });
     expect(mine[0]).not.toHaveProperty("contactRole");
   });
@@ -367,6 +369,8 @@ describe("CSV download", () => {
     const line = res.csv.split("\r\n").find((l) => l.includes("91 66666 66666"));
     expect(line).toBeDefined();
     expect(line).toContain(",Asha,91 66666 66666,Afternoon,15 to 17,");
+    expect(line).toContain(",Designing things,"); // "Loses track of time doing"
+    expect(res.csv.split("\r\n")[0]).toContain("Loses track of time doing");
     expect(line).not.toContain("+91");
     expect(res.count).toBe(res.csv.split("\r\n").length - 2); // minus the header and the trailing break
   });
@@ -436,7 +440,7 @@ describe("the team email job", () => {
     return { learner, id: made.lead.id };
   };
 
-  it("sends one email to the team with the phone, the time and what Meera learned, and no name", async () => {
+  it("sends one email to the team with the phone, the time and what Mira learned, and no name", async () => {
     const { id, learner } = await lead(1);
     const send = vi.fn(async () => {});
     const now = new Date("2026-11-05T12:00:00Z");
@@ -452,6 +456,7 @@ describe("the team email job", () => {
       age: "15 to 17",
     });
     expect(Array.isArray(data.topInterests)).toBe(true);
+    expect(data.activity).toBe("Designing things");
     expect(JSON.stringify(data)).not.toContain(learner.name);
     const [row] = await rows(learner.userId);
     expect(row!.alertedAt?.toISOString()).toBe(now.toISOString());
@@ -581,5 +586,90 @@ describe("the alert sweep (D76)", () => {
     expect(
       send.mock.calls.filter((call) => (call as unknown as [string, string, { leadId: string }])[2].leadId === id),
     ).toHaveLength(1);
+  });
+});
+
+describe("a callback from Home, with no report (D85)", () => {
+  const TEAM = "team@example.com";
+  const home = { consent: true, source: "home" } as const;
+
+  it("saves a lead with no attempt and the source home, without needing a report", async () => {
+    const learner = await makeLearner();
+    const res = ok(await createCallback(learner, { ...home, preferredTime: "morning" }, phoneOf(PHONE)));
+    expect(res.created).toBe(true);
+    const [row] = await rows(learner.userId);
+    expect(row).toMatchObject({ source: "home", attemptId: null, status: "new", phone: PHONE });
+  });
+
+  it("still needs a finished report when the request comes from the report button", async () => {
+    const learner = await makeLearner();
+    expect(await createCallback(learner, { consent: true }, phoneOf(PHONE))).toEqual({ ok: false, code: "no_report" });
+    expect(await createCallback(learner, { consent: true, source: "report" }, phoneOf(PHONE))).toEqual({
+      ok: false,
+      code: "no_report",
+    });
+  });
+
+  it("keeps the other rules: consent tick, a known source, a phone, and one NEW lead per learner", async () => {
+    const learner = await makeLearner();
+    expect(await createCallback(learner, { consent: false, source: "home" }, phoneOf(PHONE))).toEqual({
+      ok: false,
+      code: "consent_required",
+    });
+    const bad = { consent: true, source: "billboard" } as unknown as Parameters<typeof createCallback>[1];
+    expect(await createCallback(learner, bad, phoneOf(PHONE))).toEqual({ ok: false, code: "invalid_input" });
+    expect(await createCallback(learner, home, phoneOf(null))).toEqual({ ok: false, code: "no_phone" });
+    const first = ok(await createCallback(learner, home, phoneOf(PHONE)));
+    const again = ok(await createCallback(learner, home, phoneOf(PHONE)));
+    expect(again.created).toBe(false);
+    expect(again.lead.id).toBe(first.lead.id);
+    expect(await rows(learner.userId)).toHaveLength(1);
+  });
+
+  it("shows the consent wording from Home without a report, and still none on the report page", async () => {
+    const learner = await makeLearner();
+    expect(await getConsentWording(learner.userId, "home")).toEqual({
+      text: CURRENT_CONSENT.text,
+      version: CURRENT_CONSENT.version,
+      draft: CURRENT_CONSENT.draft,
+    });
+    expect(await getConsentWording(learner.userId)).toBeNull();
+    expect(CURRENT_CONSENT.text).not.toMatch(/career report/i);
+  });
+
+  it('says "No report yet" in the admin list and the CSV, then shows the newest report once they finish the quiz', async () => {
+    const learner = await makeLearner();
+    ok(await createCallback(learner, home, phoneOf("+917777777777")));
+    const find = async () => (await listOf()).rows.find((r) => r.phone === "+91 77777 77777")!;
+
+    const before = await find();
+    expect(before).toMatchObject({ source: "home", hasReport: false, age: null, topInterests: [] });
+    const csvBefore = ok(await exportLeadsCsv(admin, "all", namesFromDb));
+    const lineBefore = csvBefore.csv.split("\r\n").find((l) => l.includes("77777 77777"))!;
+    expect(lineBefore).toContain("No report yet");
+    expect(lineBefore).toContain(",Home,");
+
+    await finishReport(learner, 3); // finishes the quiz after asking
+    const after = await find();
+    expect(after).toMatchObject({ source: "home", hasReport: true, age: "22 to 25" });
+    expect(after.topInterests.length).toBeGreaterThan(0);
+  });
+
+  it("sends the team email with no report fields, and still no name", async () => {
+    const learner = await makeLearner();
+    const made = ok(await createCallback(learner, { ...home, preferredTime: "evening" }, phoneOf(PHONE)));
+    const send = vi.fn(async () => {});
+    await sendCallbackAlert({ leadId: made.lead.id }, { to: TEAM, send, now: () => new Date() });
+    const [, , data] = send.mock.calls[0] as unknown as [string, string, Record<string, unknown>];
+    expect(data).toMatchObject({
+      leadId: made.lead.id,
+      reportId: null,
+      source: "home",
+      hasReport: false,
+      age: null,
+      activity: null,
+      topInterests: [],
+    });
+    expect(JSON.stringify(data)).not.toContain(learner.name);
   });
 });

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { brand } from "@/config/brand";
 
-// V5 footer, dark single-row form (D81). Privacy, Terms and Refunds links are added when those pages exist.
+// V5 footer, dark single-row form (D91). Privacy, Terms and Refunds links are added when those pages exist.
 const LINKS = [
   { href: "/#faq", label: "FAQ" },
   { href: "/learn", label: "Courses" },

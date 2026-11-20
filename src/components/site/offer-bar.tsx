@@ -2,7 +2,7 @@ import { Gift } from "lucide-react";
 import { CopyCode } from "@/components/site/copy-code";
 import { sampleOffer } from "@/content/samples";
 
-// V5 offer bar: a near-black (ink) strip above the header. The offer is sample content (D82): no real coupon exists yet, and the
+// V5 offer bar: a near-black (ink) strip above the header. The offer is sample content (D92): no real coupon exists yet, and the
 // price at checkout always comes from the server. Set `sampleOffer` to null to hide the bar.
 export function OfferBar() {
   if (!sampleOffer) return null;

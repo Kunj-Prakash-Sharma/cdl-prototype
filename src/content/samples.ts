@@ -1,4 +1,4 @@
-// SAMPLE CONTENT (D82). Everything in this file is made up so the screens can match the V5 design before the real
+// SAMPLE CONTENT (D92). Everything in this file is made up so the screens can match the V5 design before the real
 // content exists. Each item is replaced or removed before launch (E14-S5); search for `samples` to find every use.
 // Never put real personal data here.
 
@@ -12,7 +12,7 @@ export const sampleOffer: { text: string; highlight: string; code: string; ends:
 
 // ---- Home page (V5-Home) ----
 
-/** Launch-offer pill in the hero. Display only: the real price is an open client input (D82). */
+/** Launch-offer pill in the hero. Display only: the real price is an open client input (D92). */
 export const sampleLaunchOffer = { label: "Launch offer", before: "₹999", free: "FREE", after: "for a limited time" };
 
 export type SampleStory = {
@@ -77,7 +77,7 @@ export const sampleStories: SampleStory[] = [
   },
 ];
 
-/** Career coach card. Invented person and claims: needs the client's real coach and call terms (D82). */
+/** Career coach card. Invented person and claims: needs the client's real coach and call terms (D92). */
 export const sampleCoach = {
   name: "Gaurav Sharma",
   initials: "GS",
@@ -96,7 +96,7 @@ export const sampleChatPreview = {
 
 /**
  * Persona title and tagline on the report hero. Invented: the real title needs `chat` report data and client-approved
- * wording (D82). The report shows this only outside production.
+ * wording (D92). The report shows this only outside production.
  */
 export const sampleReportPersona = {
   title: "The Curious Thinker",
@@ -104,7 +104,7 @@ export const sampleReportPersona = {
 };
 
 /**
- * Strengths and growth areas on the report. Invented scores and wording (D82): the real ones come from combining the
+ * Strengths and growth areas on the report. Invented scores and wording (D92): the real ones come from combining the
  * interest and personality scores, which `chat` does not do yet. Shown only outside production.
  */
 export const sampleReportStrengths = {

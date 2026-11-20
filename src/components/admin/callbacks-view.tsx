@@ -117,9 +117,13 @@ export function CallbacksView({ view, filters }: { view: AdminLeadsView; filters
                     </a>
                   </td>
                   <td className={cn(td, "text-slate-600")}>
-                    {[row.age, row.studying, row.goal].filter(Boolean).join(" · ") || "—"}
+                    {row.hasReport
+                      ? [row.age, row.studying, row.goal, row.activity].filter(Boolean).join(" · ") || "—"
+                      : "No report yet"}
                   </td>
-                  <td className={cn(td, "text-slate-600")}>{row.topInterests.join(", ") || "No clear lead"}</td>
+                  <td className={cn(td, "text-slate-600")}>
+                    {row.hasReport ? row.topInterests.join(", ") || "No clear lead" : "No report yet"}
+                  </td>
                   <td className={td}>
                     <StatusSelect leadId={row.id} status={row.status} label={row.name || row.phone} />
                   </td>

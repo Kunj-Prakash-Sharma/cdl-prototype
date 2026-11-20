@@ -6,7 +6,7 @@ import type { SampleStory } from "@/content/samples";
 import { cn } from "@/lib/format";
 
 // V5 "Students like you" carousel. The only client code on the home page besides the course cards: two arrow buttons
-// that scroll a CSS scroll-snap rail. Content is sample data (D82).
+// that scroll a CSS scroll-snap rail. Content is sample data (D92).
 
 const TONES: Record<SampleStory["tone"], { bg: string; text: string; dot: string }> = {
   brand: { bg: "bg-brand-100", text: "text-brand-600", dot: "bg-brand-600" },

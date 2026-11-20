@@ -50,6 +50,13 @@
       "when": 1794834536124,
       "tag": "0006_common_bulldozer",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795067744577,
+      "tag": "0007_living_anthem",
+      "breakpoints": true
     }
   ]
 }

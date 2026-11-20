@@ -3,7 +3,7 @@ import type { Progress } from "@/modules/chat/types";
 
 /**
  * The side panel next to the quiz on desktop (V5): how far along, the launch offer, and a privacy line. Phones skip it
- * (the step bar already shows the percentage). The offer is sample content (D82); the V5 "minutes left" estimate and
+ * (the step bar already shows the percentage). The offer is sample content (D92); the V5 "minutes left" estimate and
  * the "How we score" link are not built (no timing data, no page yet).
  */
 export function QuizRail({ progress }: { progress: Progress }) {

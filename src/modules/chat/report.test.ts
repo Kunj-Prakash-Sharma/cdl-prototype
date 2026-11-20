@@ -103,6 +103,37 @@ describe("buildReport: interests", () => {
   });
 });
 
+describe("buildReport: persona (D81, D88)", () => {
+  it("carries the persona of the top Holland letter, with its own wording", () => {
+    const view = buildReport(result(), copy); // top letter I
+    expect(view.persona).toEqual({ id: "I", ...copy.personas.I });
+    expect(view.persona.strengths).toHaveLength(3);
+    expect(view.persona.growth).toHaveLength(2);
+  });
+
+  it("changes with the top letter", () => {
+    const view = buildReport(result({ holland: { letters: ["S", "A", "I"], close: false } }), copy);
+    expect(view.persona.id).toBe("S");
+  });
+
+  it("gives a flat profile the generic persona, so the report still has a headline", () => {
+    const view = buildReport(result({ holland: { flat: true } }), copy);
+    expect(view.persona).toEqual({ id: "explorer", ...copy.personas.explorer });
+    expect(view.flatNote).toBe(copy.flatNote);
+  });
+
+  it("is read with the wording version stamped on the result", () => {
+    const older: ReportCopy = {
+      ...copy,
+      version: "0.9.0-test",
+      personas: { ...copy.personas, I: { ...copy.personas.I, name: "The Old Name" } },
+    };
+    const view = buildReport(result({ reportVersion: older.version }), older);
+    expect(view.persona.name).toBe("The Old Name");
+    expect(buildReport(result(), copy).persona.name).toBe(copy.personas.I.name);
+  });
+});
+
 describe("buildReport: what a report must never contain", () => {
   it("has no percentile, salary, fit, aptitude, values or learner-count fields, and carries the footer", () => {
     const view = buildReport(result(), copy);

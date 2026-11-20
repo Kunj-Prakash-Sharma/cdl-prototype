@@ -8,6 +8,8 @@ import { authUser } from "@/modules/auth/schema";
 export const leadStatus = pgEnum("lead_status", ["new", "contacted", "closed"]);
 /** Not used since D79 (no minor flow): every lead is "learner". The column and the value "parent" stay so no migration drops data. */
 export const leadContactRole = pgEnum("lead_contact_role", ["learner", "parent"]);
+/** Where the request came from (D85): the Home coach form, or the button on the report. */
+export const leadSource = pgEnum("lead_source", ["home", "report"]);
 export const leadPreferredTime = pgEnum("lead_preferred_time", ["morning", "afternoon", "evening"]);
 
 export const leads = pgTable(
@@ -17,8 +19,10 @@ export const leads = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => authUser.id, { onDelete: "cascade" }),
-    // The chat attempt whose report the request came from. No foreign key: leads never import chat's schema.
-    attemptId: uuid("attempt_id").notNull(),
+    // The chat attempt whose report the request came from. Empty for a request made from Home (D85). No foreign key:
+    // leads never import chat's schema.
+    attemptId: uuid("attempt_id"),
+    source: leadSource("source").notNull().default("report"),
     phone: text("phone").notNull(), // PII. E.164, the number the learner consented to be called on
     contactRole: leadContactRole("contact_role").notNull().default("learner"),
     preferredTime: leadPreferredTime("preferred_time"),

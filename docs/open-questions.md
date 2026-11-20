@@ -41,21 +41,24 @@ From the Scope of Work. Dates are "to give" unless stated.
 | Admin phone numbers: how many and which (expect 2 to 4); they get the admin role at login (D64) | to give date | open |
 | Legal review: no age gate with many users under 18 (DPDP Act) | client | open |
 | Report personality cards (15) are **DRAFT text** (D72). Copy the client-approved wording from the client sample page into `report-copy.ts` and remove the draft marker before any real learner sees a report | Us | Before launch | open |
+| Persona copy for the 7 personas (D81, D88): names, taglines, 3 strengths and 2 growth areas each. **DRAFT** in `report-copy.ts` until approved | Us + client | Before launch | open |
+| RIASEC-to-course mapping for the 8 V5 sample courses (D86) is temporary; client supplies the real one (#4665) | Client | with the real courses | open |
+| V5 Home mini-chat (4 own personas) duplicates Discover: recommend replacing it with a "Start discovery" button | Design + client | before the Home build | open |
 | Legal review of the under-18 consent route (D71): the login/terms line telling parents to log in for a learner under 18, and the age-based consent wording on the callback form. Exact wording needs the client's lawyer | client | open |
 
-## V5 design vs earlier decisions (D81, Nov 17, 2026)
-The V5 screens show things that earlier decisions rule out or that have no data yet. Settled item by item in D82 (Nov 18, 2026); two items stay open until their screen is built.
+## V5 design vs earlier decisions (D91, Nov 17, 2026)
+The V5 screens show things that earlier decisions rule out or that have no data yet. Settled item by item in D92 (Nov 18, 2026); two items stay open until their screen is built.
 | Item in V5 | Conflicts with / needs | Backend change if accepted | Status |
 |---|---|---|---|
-| Guide is called **"MIRA"** | Docs and code say Meera | No (one value in `src/config/brand.ts`) | **Decided (D82):** Mira |
-| **Certificates** (course card meta, "Your certificates", certificate dialog) | Out of Phase 1 (CLAUDE.md, design-system) | Yes: completion records, certificate issuing | **Decided (D82):** not built |
-| **Payment method and bank picker** on the course page | Card data never touches our servers; hosted checkout only | Yes: `commerce` module with Razorpay hosted checkout (V5 screen can only be the review step) | **Decided (D82):** not built; hosted checkout only |
+| Guide is called **"MIRA"** | Docs and code say Meera | No (one value in `src/config/brand.ts`) | **Decided (D92):** Mira |
+| **Certificates** (course card meta, "Your certificates", certificate dialog) | Out of Phase 1 (CLAUDE.md, design-system) | Yes: completion records, certificate issuing | **Decided (D92):** not built |
+| **Payment method and bank picker** on the course page | Card data never touches our servers; hosted checkout only | Yes: `commerce` module with Razorpay hosted checkout (V5 screen can only be the review step) | **Decided (D92):** not built; hosted checkout only |
 | **"How we score"** page | D72 skipped it (V2 sample) | No for a static page | **Decided (2026-11-18):** not built for now; no link to it anywhere (report, quiz rail). Add it back only when the client asks |
-| **Coupon NEWYEAR26 and 25% off prices**, offer bar | Final prices and discounts are an open client input | Yes for real coupons (`commerce`); no for a static offer bar | **Decided (D82):** sample content, no real coupon |
-| **Student stories** with names on the home page | Needs real, approved stories (no invented people or stats) | No | **Decided (D82):** sample content until real stories |
-| Report **persona title** ("The Curious Thinker") and **scored strengths** ("Problem solving 94") | Not in the report data; wording needs client approval (like D69) | Yes: `chat` report data and `report-copy.ts` | **Decided (D82):** sample content, not shown in production |
-| **"Choose two"** answer type in the quiz | Question set has single-choice and scale only; scoring and stored answers assume one value | Yes: `chat` question set, answer storage, scoring | **Decided (D82):** sample UI, answer not stored or scored |
-| **Courses, course page, My Learning** with real data | Courses are a static file; no orders, entitlements or progress yet | Yes: `catalog`, `commerce`, `video` modules (big features, spec first) | **Decided (D82):** V5 on sample data now, wired later |
+| **Coupon NEWYEAR26 and 25% off prices**, offer bar | Final prices and discounts are an open client input | Yes for real coupons (`commerce`); no for a static offer bar | **Decided (D92):** sample content, no real coupon |
+| **Student stories** with names on the home page | Needs real, approved stories (no invented people or stats) | No | **Decided (D92):** sample content until real stories |
+| Report **persona title** ("The Curious Thinker") and **scored strengths** ("Problem solving 94") | Not in the report data; wording needs client approval (like D69) | Yes: `chat` report data and `report-copy.ts` | **Decided (D92):** sample content, not shown in production |
+| **"Choose two"** answer type in the quiz | Question set has single-choice and scale only; scoring and stored answers assume one value | Yes: `chat` question set, answer storage, scoring | **Decided (D92):** sample UI, answer not stored or scored |
+| **Courses, course page, My Learning** with real data | Courses are a static file; no orders, entitlements or progress yet | Yes: `catalog`, `commerce`, `video` modules (big features, spec first) | **Decided (D92):** V5 on sample data now, wired later |
 | **Course search** on V5 Courses | E7 says search is not in Phase 1 | No (client-side filter of the list) | **Decided (2026-11-18):** kept, client-side filter |
 | **"Book a free call"** on the home page (phone form, no report needed) | Callbacks need a finished report and a logged-in learner (D71) | Yes: `leads` (anonymous callback request with consent, rate limit and bot check) | open: today the button goes to /discover (home, 2026-11-18)
 | **Career coach card** (name, "free 15-min call", "English or Hindi", "replies within a day") | Real coach and call terms are client inputs | No | **Sample content** in `content/samples.ts` until the client confirms (home, 2026-11-18)

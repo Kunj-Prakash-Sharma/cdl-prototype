@@ -1,4 +1,4 @@
-# Spec: Chat (Meera quiz, scoring, report)
+# Spec: Chat (Mira quiz, scoring, report)
 
 - **Status:** draft
 - **Owner:** Vijay
@@ -6,10 +6,10 @@
 - **Source of truth for items and scoring:** [../requirements/assessment.md](../requirements/assessment.md). This spec says how to build it; that doc says what the questions, keys, thresholds and examples are. If they disagree, fix the doc first.
 
 ## Goal
-A learner (a **guest is enough, D78**; phone OTP comes before the report) chats with Meera through about 26 quick-tap questions (4 basics, 10 OCEAN, 12 RIASEC), gets a saved report (OCEAN strengths and growth areas, RIASEC interest areas, example career families, suggested courses), and can reopen it, print it as PDF, or retake.
+A learner (a **guest is enough, D78**; phone OTP comes before the report) chats with Mira through about 26 quick-tap questions (4 basics, 10 OCEAN, 12 RIASEC), gets a saved report (OCEAN strengths and growth areas, RIASEC interest areas, example career families, suggested courses), and can reopen it, print it as PDF, or retake.
 
 ## Scope
-- Question-set config (versioned) with 2 to 3 variants per item and Meera acknowledgement lines.
+- Question-set config (versioned) with 2 to 3 variants per item and Mira acknowledgement lines.
 - Per-tap answer saving via server action; resume where the learner left off.
 - Pure scoring function exactly as in assessment.md section 6.
 - Attempts: every start creates an attempt; all kept; report page shows the **latest completed** one.
@@ -40,7 +40,7 @@ A learner (a **guest is enough, D78**; phone OTP comes before the report) chats 
 ### Module `src/modules/chat/`
 | File | Role |
 |---|---|
-| `question-set.ts` | Versioned config: `QuestionSet` v`1.0.0` (shape in assessment.md section 7), `thresholds`, `scales`, Meera `acknowledgements: string[]`. Data only, no logic. Replaces prototype `questions.ts` |
+| `question-set.ts` | Versioned config: `QuestionSet` v`1.0.0` (shape in assessment.md section 7), `thresholds`, `scales`, Mira `acknowledgements: string[]`. Data only, no logic. Replaces prototype `questions.ts` |
 | `variants.ts` | `pickVariant(sessionId, itemId, count): number` (hash of `sessionId + itemId`, modulo count; use a stable hash such as FNV-1a, not `Math.random`) |
 | `scoring.ts` | **Pure** `scoreAttempt(answers: Record<string, number>, set: QuestionSet): ScoreResult`. No imports from db, env, or time. Replaces prototype `scoring.ts` entirely |
 | `report.ts` | **Pure** `buildReport(result: ScoreResult, basics: Basics): ReportView` (strength/growth cards from OCEAN bands, Holland code, career families, copy). Report copy lives in `report-copy.ts` |
@@ -69,6 +69,7 @@ Functions take a `Learner` (`{ userId, name }`, built by the caller from auth's 
 - `restartAttempt(learner, attemptId)` (E4-S12): "Start again": marks THAT attempt `abandoned` (answers kept) and starts a new one. The screen names the attempt it showed, so a stale tab cannot end a different one: an attempt that is already closed gives `attempt_closed` (the page reloads), a missing or foreign id gives `not_found`. Same return shape as `startOrResumeAttempt`.
 - `getNextStep(learner, attemptId)`: the first question without a saved answer, recomputed each time (no stored counter). A `NextStep` carries text, scale labels and progress for the UI, never keys, scores or sources: `{ kind: "name" | "basics" | "question" | "done", ... }`.
 - `submitAnswer(learner, attemptId, questionId, value)`: upsert; rejects unknown questions, values outside the scale or option list, the name, and questions not reached yet (`out_of_order`; earlier ones can be changed). The server picks and stores the variant. Returns `{ next, acknowledgement }`.
+- `applyHomeAnswer(learner, attemptId, optionId)` (D87): the Home mini-chat answer (an option id of the set's `homeQuestionId`, e.g. `school`), saved only while the attempt has no answers; otherwise `applied: false`. Unknown option: `invalid_input`. Question set 1.1.0 asks status, name, age, goal (`nameAfter`); 1.0.0 attempts keep name-first.
 - `finishAttempt(learner, attemptId)`: scores with the attempt's own set, stores result + status in **one transaction**; idempotent; `incomplete` or `stage_invalid` (with the stage) when it cannot score.
 - `retryStage(learner, attemptId, stage)`: clears that stage's answers, only if it really scored invalid.
 - `retake(learner)`: a new attempt, unless one is open, which is resumed (no pile of empty attempts).

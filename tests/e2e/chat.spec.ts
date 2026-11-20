@@ -33,14 +33,14 @@ async function requestCode(page: Page, phone: string): Promise<string> {
   throw new Error("the bot check never produced a token");
 }
 
-/** Logs in with a fresh number and opens the chat at the name step. */
+/** Logs in with a fresh number and opens the chat at the name step (the status question is answered on the way). */
 async function openChat(page: Page): Promise<string> {
   const phone = newLearnerPhone();
   await page.goto("/login?next=%2Fdiscover");
   const code = await requestCode(page, phone);
   await enterCode(page, code);
   await expect(page).toHaveURL(/\/discover$/, { timeout: 15_000 });
-  await expect(page.getByTestId("name-input")).toBeVisible();
+  await answerStatus(page);
   // The guide says what it is before asking anything (E4-S1: a virtual guide, not a human).
   await expect(page.getByText("virtual guide, not a human")).toBeVisible();
   return phone;
@@ -67,15 +67,25 @@ async function answerWith(page: Page, button: Locator) {
   await expect(moved.or(terminal).first()).toBeVisible();
 }
 
+// The quiz asks "what are you doing now" first, then the name (D87): answer it so tests can carry on from the name step.
+async function answerStatus(page: Page) {
+  // A learner who already answered it (a number reused by an earlier run) is waiting at the name step: nothing to tap.
+  const name = page.getByTestId("name-input");
+  const status = page.getByTestId("choice-0");
+  await expect(name.or(status)).toBeVisible();
+  if (!(await name.isVisible())) await answerWith(page, status);
+  await expect(name).toBeVisible();
+}
+
 async function sendName(page: Page, name: string) {
   await page.getByTestId("name-input").fill(name);
   await page.getByTestId("name-send").click();
 }
 
-/** Name and the tap questions, ending on the first scored question. */
+/** Name and the remaining tap questions (status came first), ending on the first scored question. */
 async function finishBasics(page: Page, name = "Asha") {
   await sendName(page, name);
-  for (let i = 0; i < basicsCount; i++) {
+  for (let i = 0; i < basicsCount - 1; i++) {
     await answerWith(page, page.getByTestId("choice-0"));
   }
   await expect(page.getByTestId("question-text")).toBeVisible();
@@ -190,7 +200,7 @@ test.describe("chat", () => {
     await expect(page.getByTestId("name-input")).toHaveCount(0);
 
     await page.getByTestId("restart-button").click();
-    await expect(page.getByTestId("name-input")).toBeVisible();
+    await answerStatus(page); // a new quiz starts at the status question, then the name
     await expect(page.getByTestId("stop-screen")).toHaveCount(0);
   });
 

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   CURRENT_QUESTION_SET,
   OCEAN_DIMENSIONS,
+  QUESTION_SET_1_0_0,
+  QUESTION_SET_1_1_0,
   QUESTION_SETS,
   RIASEC_DIMENSIONS,
   getQuestionSet,
@@ -9,7 +11,7 @@ import {
 } from "./question-set";
 import { QUESTION_POOL, getPoolItem } from "./question-pool";
 
-const set = CURRENT_QUESTION_SET;
+const set = QUESTION_SET_1_0_0; // the shape tests below describe 1.0.0; 1.1.0 is tested at the end
 const ocean = set.items.filter((i) => i.stage === "ocean");
 const riasec = set.items.filter((i) => i.stage === "riasec");
 const allVariantTexts = set.items.flatMap((i) => i.variants.map((variant) => variant.text));
@@ -135,7 +137,7 @@ describe("question set 1.0.0: wording rules (assessment.md section 5)", () => {
   });
 
   it("never hardcodes the guide's name in the data (it comes from brand config)", () => {
-    expect(JSON.stringify(set)).not.toMatch(/meera/i);
+    expect(JSON.stringify(set)).not.toMatch(/mira/i);
   });
 });
 
@@ -163,7 +165,7 @@ describe("question set 1.0.0: scales, thresholds, basics", () => {
     }
   });
 
-  it("has a few Meera acknowledgement lines", () => {
+  it("has a few Mira acknowledgement lines", () => {
     expect(set.acknowledgements.length).toBeGreaterThanOrEqual(3);
   });
 });
@@ -249,5 +251,41 @@ describe("no minor flow (D79)", () => {
     for (const basic of CURRENT_QUESTION_SET.basics) {
       for (const option of basic.options) expect(Object.keys(option)).not.toContain("minor");
     }
+  });
+});
+
+describe("question set 1.1.0: same questions, new order (D87)", () => {
+  const next = QUESTION_SET_1_1_0;
+
+  it("is the current set and is registered", () => {
+    expect(CURRENT_QUESTION_SET).toBe(next);
+    expect(getQuestionSet("1.1.0")).toBe(next);
+  });
+
+  it("keeps every ID, item and score rule of 1.0.0, so scoring is unchanged", () => {
+    expect(next.items).toBe(QUESTION_SET_1_0_0.items);
+    expect(next.thresholds).toEqual(QUESTION_SET_1_0_0.thresholds);
+    for (const old of QUESTION_SET_1_0_0.basics) expect(next.basics.find((b) => b.id === old.id)).toBe(old);
+  });
+
+  it("asks status first, then the name, then age, goal and the warm-up question (D89)", () => {
+    expect(next.basics.map((b) => b.id)).toEqual(["b-status", "b-age", "b-goal", "b-activity"]);
+    expect(next.nameAfter).toBe("b-status");
+  });
+
+  it("names a real basics question as the one the Home chat also asks", () => {
+    expect(next.basics.map((b) => b.id)).toContain(next.homeQuestionId);
+  });
+
+  it("has the warm-up question with 5 options, each with a short reply, and it is not an item (never scored)", () => {
+    const activity = next.basics.find((b) => b.id === "b-activity")!;
+    expect(activity.prompt).toBe("What do you lose track of time doing?");
+    expect(activity.options).toHaveLength(5);
+    for (const option of activity.options) {
+      expect(option.label.trim()).not.toBe("");
+      expect(option.acknowledgement.trim()).not.toBe("");
+    }
+    expect(next.items.some((item) => item.id === "b-activity")).toBe(false);
+    expect(QUESTION_SET_1_0_0.basics.some((b) => b.id === "b-activity")).toBe(false); // the shipped set is unchanged
   });
 });

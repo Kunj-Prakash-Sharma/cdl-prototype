@@ -12,7 +12,7 @@ import { brand } from "@/config/brand";
 import { cn } from "@/lib/format";
 import type { SessionView } from "@/modules/auth/types";
 
-// V5 header (D81): Career Discovery, Courses, My Learning, then Log in or the account menu.
+// V5 header (D91): Career Discovery, Courses, My Learning, then Log in or the account menu.
 // The saved report is reached from Career Discovery and the My SELF card (E5-S4), so it has no nav link.
 // My Learning shows no course count until purchases come from the server (commerce): the old count read this
 // browser's demo storage, so on a shared device it showed someone else's purchases.

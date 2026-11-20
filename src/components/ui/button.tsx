@@ -5,7 +5,7 @@ import { cn } from "@/lib/format";
 type Variant = "primary" | "secondary" | "ghost" | "dark" | "light" | "sun";
 type Size = "sm" | "md" | "lg";
 
-// V5 pill buttons (D81): bold label, 1.5px border on every variant so filled and outline buttons line up,
+// V5 pill buttons (D91): bold label, 1.5px border on every variant so filled and outline buttons line up,
 // at least 44px tall (48px from md up).
 const base =
   "inline-flex items-center justify-center gap-2 rounded-full border-[1.5px] font-bold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:pointer-events-none disabled:opacity-45 active:scale-[0.98] whitespace-nowrap";

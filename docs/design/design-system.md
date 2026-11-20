@@ -1,6 +1,6 @@
 # Design system
 
-**Source of truth (D81, Nov 17, 2026):** the **Version 5** screens of the "SELF Website Redesign" design canvas. The prototype (`prototype-v0`, cdl-prototype.vercel.app) is now only a reference for behaviour that V5 does not show. Tokens live in `src/app/globals.css` (`@theme`). Use tokens, never raw hex values.
+**Source of truth (D91, Nov 17, 2026):** the **Version 5** screens of the "SELF Website Redesign" design canvas. The prototype (`prototype-v0`, cdl-prototype.vercel.app) is now only a reference for behaviour that V5 does not show. Tokens live in `src/app/globals.css` (`@theme`). Use tokens, never raw hex values.
 
 **Migration state:** the tokens already carry the V5 values (same token names as before, so every screen changed colour at once). Screens are ported to the V5 layout one at a time with `/ui-port`; until a screen is ported it keeps its prototype layout and may still use the old serif accent or `text-gradient`. Track progress in [../prototype/reuse-map.md](../prototype/reuse-map.md#v5-screens-d81).
 
@@ -35,7 +35,7 @@ Radii: pills and buttons `rounded-full`; cards `rounded-[20px]` (22 for large); 
 - **Pill badge:** `brand-100` fill, `brand-700` text, a small `brand-600` dot.
 - **Hero background:** `.hero-glow`: two soft radial glows (violet top right, peach left) on `paper`.
 - **Header (`site/navbar.tsx`):** white, bottom `line` border, sticky; star logo (`LogoMark`) plus the product name in Outfit with wide tracking; links Career Discovery, Courses, My Learning, then Log in or the account menu; ink, current and hover `brand-600`. Below `md` the links move into the phone menu.
-- **Offer bar (`site/offer-bar.tsx`):** `ink` (same near-black as the footer), white text, `brand-200` highlight, a dashed white code chip that copies on tap (`site/copy-code.tsx`). Its offer is sample content (`sampleOffer` in `src/content/samples.ts`, D82); set it to `null` to hide the bar. No real coupon: checkout prices come from the server.
+- **Offer bar (`site/offer-bar.tsx`):** `ink` (same near-black as the footer), white text, `brand-200` highlight, a dashed white code chip that copies on tap (`site/copy-code.tsx`). Its offer is sample content (`sampleOffer` in `src/content/samples.ts`, D92); set it to `null` to hide the bar. No real coupon: checkout prices come from the server.
 - **Footer (`site/footer.tsx`):** the dark single-row form: `ink` background, product name, links, "© year name · India". Privacy, Terms and Refunds links are added with those pages.
 - **Chat (ported, row 4):** guide bubbles left in soft `brand-50` with a square bottom-left corner; a violet `GuideAvatar` heads the card; the composer is a pill with a 44px send button; quick replies are `brand-200`-bordered pills. Quiz buttons are round 1-to-n buttons, selected = `brand-600` fill with a soft ring.
 - **Course card:** coloured top band per category with image, play button, "Free preview" and lesson-count tags; body with title, description, meta, price row and Buy button.
@@ -56,7 +56,7 @@ Most users are on phones. Build the base (unprefixed) classes for phone, then sc
 "SELF" is a working name. Name, logo and colours go in `src/config/brand.ts` plus the theme tokens, so a rebrand touches config only. Never hardcode the product name or the guide name in components or copy.
 
 ## Not built even though V5 shows it
-Settled in D82 (table in [../open-questions.md](../open-questions.md)). **Not built:** certificates, an on-page payment form (hosted checkout only). **Sample content** (all in `src/content/samples.ts`, replaced before launch): offer bar coupon and 25% off prices, named student stories, the report persona title and strength scores (never shown in production), the "Choose two" question (UI only). **Ask when built:** course search, "How we score". Also still out of Phase 1: ratings, review counts, learner counts ("120,000+ learners"), instructor names, share buttons, "Top X%" benchmarks, "demo" copy.
+Settled in D92 (table in [../open-questions.md](../open-questions.md)). **Not built:** certificates, an on-page payment form (hosted checkout only). **Sample content** (all in `src/content/samples.ts`, replaced before launch): offer bar coupon and 25% off prices, named student stories, the report persona title and strength scores (never shown in production), the "Choose two" question (UI only). **Ask when built:** course search, "How we score". Also still out of Phase 1: ratings, review counts, learner counts ("120,000+ learners"), instructor names, share buttons, "Top X%" benchmarks, "demo" copy.
 
 ## New screens
 OTP login, learner dashboard, quiz, admin and legal pages are built in the same kit. Admin uses the same tokens in a denser, table-based layout (not in V5).

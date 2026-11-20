@@ -19,12 +19,22 @@ export type TraitCard = { title: string; note: string; tip: string };
 export type TraitCopy = { name: string; cards: Record<OceanBand, TraitCard> };
 export type InterestCopy = { name: string; description: string };
 
+/**
+ * One persona per top interest type, plus a generic one for a flat profile (D81, D88). Which one a learner gets is
+ * decided by `personaIdFor` (persona.ts); this is only the wording.
+ */
+export type PersonaId = RiasecDimension | "explorer";
+export type PersonaBlock = { title: string; note: string };
+export type PersonaCopy = { name: string; tagline: string; strengths: PersonaBlock[]; growth: PersonaBlock[] };
+
 export type ReportCopy = {
   version: string;
   /** True until the client's approved wording replaces this text. Shown on the report as a visible tag. */
   draft: boolean;
   traits: Record<OceanDimension, TraitCopy>;
   interests: Record<RiasecDimension, InterestCopy>;
+  /** DRAFT until the client approves the personas (open-questions.md): 3 strengths and 2 growth areas each. */
+  personas: Record<PersonaId, PersonaCopy>;
   careerFamilies: CareerFamilies;
   /** Heading of the line that shows the tip of the lowest-scoring trait. */
   tryFirstLabel: string;
@@ -146,6 +156,115 @@ const REPORT_COPY_1_0_0_DRAFT: ReportCopy = {
     S: { name: "Social", description: "Helping people: teaching, caring, guiding and working together." },
     E: { name: "Enterprising", description: "Leading and persuading: starting things, selling and taking charge." },
     C: { name: "Conventional", description: "Organising: keeping things accurate, tidy and running smoothly." },
+  },
+  // DRAFT persona wording of our own (D81, D88): names, taglines and blocks are for the client to approve or replace.
+  personas: {
+    R: {
+      name: "The Hands-On Builder",
+      tagline: "You like to make things work and see the result with your own eyes.",
+      strengths: [
+        { title: "Practical", note: "You prefer real things you can try, fix or build over long talk." },
+        { title: "Steady under pressure", note: "You stay focused on the task when others get distracted." },
+        { title: "Good with tools and systems", note: "You pick up how machines and setups work quickly." },
+      ],
+      growth: [
+        { title: "Share your plan", note: "Tell people what you are making and why, so they can help you." },
+        { title: "Try something new", note: "Once in a while, take on a job outside your usual comfort zone." },
+      ],
+    },
+    I: {
+      name: "The Curious Thinker",
+      tagline: "You want to know how and why things work, and you enjoy finding the answer.",
+      strengths: [
+        { title: "Asks good questions", note: "You look past the obvious and dig into what is really going on." },
+        { title: "Analytical", note: "You like to break a problem into parts and work through it." },
+        { title: "Learns on your own", note: "You can teach yourself a new topic when it interests you." },
+      ],
+      growth: [
+        { title: "Turn ideas into action", note: "Set a small deadline so a good idea becomes something you finish." },
+        { title: "Explain it simply", note: "Practise sharing what you found in plain words for other people." },
+      ],
+    },
+    A: {
+      name: "The Imaginative Creator",
+      tagline: "You see new ways to say, make and design things, and you like to express yourself.",
+      strengths: [
+        { title: "Original ideas", note: "You come up with fresh angles that other people do not think of." },
+        { title: "Expressive", note: "You can show a feeling or an idea through words, images or sound." },
+        { title: "Sees the big picture", note: "You notice the look and feel of things, not only the facts." },
+      ],
+      growth: [
+        { title: "Finish what you start", note: "Pick one idea and take it all the way to a finished piece." },
+        { title: "Welcome feedback", note: "Ask a friend what works and what does not, then use it to improve." },
+      ],
+    },
+    S: {
+      name: "The Caring Helper",
+      tagline: "You get energy from supporting people and helping them grow.",
+      strengths: [
+        { title: "Good listener", note: "People feel heard when they talk to you." },
+        { title: "Works well in a team", note: "You help a group get along and share the work fairly." },
+        { title: "Patient teacher", note: "You can explain things kindly and at the other person's pace." },
+      ],
+      growth: [
+        { title: "Look after yourself too", note: "Make time for your own needs, not only everyone else's." },
+        { title: "Say no kindly", note: "You do not have to help with everything. Pick what matters most." },
+      ],
+    },
+    E: {
+      name: "The Bold Leader",
+      tagline: "You like to start things, take charge and bring people along with you.",
+      strengths: [
+        { title: "Takes initiative", note: "You step forward when something needs to get going." },
+        { title: "Persuasive", note: "You can explain an idea in a way that makes people want to join in." },
+        {
+          title: "Comfortable with risk",
+          note: "You are willing to try something even when the result is not certain.",
+        },
+      ],
+      growth: [
+        { title: "Listen before you lead", note: "Ask for other views first, then decide." },
+        { title: "Plan the details", note: "Pair your big goals with a few clear steps so nothing slips." },
+      ],
+    },
+    C: {
+      name: "The Steady Organiser",
+      tagline: "You like things clear, accurate and in good order, and others can count on you.",
+      strengths: [
+        { title: "Careful and accurate", note: "You notice details and catch mistakes before they cause trouble." },
+        { title: "Reliable", note: "When you say you will do something, it gets done." },
+        { title: "Good at systems", note: "You make a tidy plan, a list or a routine that keeps work running." },
+      ],
+      growth: [
+        {
+          title: "Be open to change",
+          note: "Try a new way of doing something now and then, even if the old way works.",
+        },
+        {
+          title: "Speak up with ideas",
+          note: "Share your suggestions, since your careful thinking is useful to others.",
+        },
+      ],
+    },
+    explorer: {
+      name: "The Open-Minded Explorer",
+      tagline: "Many kinds of work interest you, which is a good place to start trying things out.",
+      strengths: [
+        {
+          title: "Curious about a lot",
+          note: "You can see yourself in several kinds of work, so you keep your options open.",
+        },
+        { title: "Adaptable", note: "You can settle into new people, places and tasks without much trouble." },
+        { title: "Fresh eyes", note: "You bring ideas from one area into another." },
+      ],
+      growth: [
+        { title: "Try a few small things", note: "Test two or three areas for a week each and notice what you enjoy." },
+        {
+          title: "Notice what energises you",
+          note: "After each try, write down what felt easy and what felt like a chore.",
+        },
+      ],
+    },
   },
   careerFamilies: CAREER_FAMILIES_1_0_0,
   tryFirstLabel: "Try this first",

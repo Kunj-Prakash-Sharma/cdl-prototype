@@ -4,7 +4,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { brand } from "@/config/brand";
 import "./globals.css";
 
-// V5 design (D81): Manrope for body text, Outfit for headings. Both are variable fonts, so no weight list is needed.
+// V5 design (D91): Manrope for body text, Outfit for headings. Both are variable fonts, so no weight list is needed.
 const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin"],

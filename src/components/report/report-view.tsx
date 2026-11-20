@@ -10,11 +10,11 @@ import { CourseLink, PrintButton, ReportLink } from "./report-actions";
 import { Letter, Radar, TRAIT_BG, TYPE_BG } from "./report-parts";
 import { ReportPrint } from "./report-print";
 
-// The free report, drawn from the data `getLatestReport` returns (E5-S1), in the V5 look (D81). All wording that belongs
+// The free report, drawn from the data `getLatestReport` returns (E5-S1), in the V5 look (D91). All wording that belongs
 // to the report (cards, interest names, career families, notes, footer) comes from the report data (report-copy.ts);
 // only page chrome lives here.
 //
-// BACKEND GAPS (D82, open-questions.md), not built here: the persona title and tagline ("The Curious Thinker"), the
+// BACKEND GAPS (D92, open-questions.md), not built here: the persona title and tagline ("The Curious Thinker"), the
 // combined "Strengths" and "Areas to grow" scores, the next-step course price/image/lesson count, and the named career
 // coach. They need `chat` report data and client-approved wording first. Plain-language scale ends ("Reserved" to
 // "Outgoing") also wait for wording.
@@ -79,7 +79,7 @@ function Section({
 
 export function ReportView({ report, children }: { report: LatestReport; children?: ReactNode }) {
   const next = report.courses[0];
-  // Persona and strengths are sample content (D82): never shown to real learners in production.
+  // Persona and strengths are sample content (D92): never shown to real learners in production.
   const showSamples = env.NODE_ENV !== "production";
   const sectionLinks = showSamples
     ? [...SECTION_LINKS.slice(0, 2), ["rp-str", "Strengths"] as const, SECTION_LINKS[2]]
@@ -320,7 +320,7 @@ export function ReportView({ report, children }: { report: LatestReport; childre
           )}
         </Section>
 
-        {/* 03 Strengths and growth: SAMPLE content outside production (D82), see content/samples.ts */}
+        {/* 03 Strengths and growth: SAMPLE content outside production (D92), see content/samples.ts */}
         {showSamples && (
           <Section
             id="rp-str"

@@ -8,11 +8,11 @@ import { brand } from "@/config/brand";
 import { sampleChatPreview, sampleCoach, sampleLaunchOffer, sampleOffer, sampleStories } from "@/content/samples";
 import { COURSES } from "@/modules/catalog/courses";
 
-// V5 home (D81). Sections: hero + guide preview, courses, student stories, career coach, FAQ, closing CTA.
+// V5 home (D91). Sections: hero + guide preview, courses, student stories, career coach, FAQ, closing CTA.
 // Gaps against the artboard (see docs/prototype/reuse-map.md row 7):
 //  - The artboard's chat runs inside this page. It starts on /discover instead (client feedback 4973), so the card
 //    here is a static preview and its quick replies are links.
-//  - Course prices, "with NEWYEAR26" prices and Buy now / cart wait for `commerce` and `catalog` (D82).
+//  - Course prices, "with NEWYEAR26" prices and Buy now / cart wait for `commerce` and `catalog` (D92).
 //  - "Book a free call" needs an anonymous callback request; callbacks need a finished report today (D71).
 
 const SHOP_COURSE_COUNT = 8;
