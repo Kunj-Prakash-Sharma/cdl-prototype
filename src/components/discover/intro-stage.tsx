@@ -6,9 +6,24 @@ import { Badge, SageAvatar } from "@/components/ui/misc";
 import { actions } from "@/lib/store";
 
 const PARTS = [
-  { icon: MessageCircle, title: "A quick chat", time: "~2 min", body: "Tell Sage about your education, interests, strengths and goals." },
-  { icon: Puzzle, title: "Three assessments", time: "~8 min", body: "Personality, aptitude puzzles and what you value in work." },
-  { icon: ChartColumn, title: "Your career report", time: "Instant", body: "Profile, strengths, top matches and a learning path." },
+  {
+    icon: MessageCircle,
+    title: "A quick chat",
+    time: "~2 min",
+    body: "Tell Sage about your education, interests, strengths and goals.",
+  },
+  {
+    icon: Puzzle,
+    title: "Three assessments",
+    time: "~8 min",
+    body: "Personality, aptitude puzzles and what you value in work.",
+  },
+  {
+    icon: ChartColumn,
+    title: "Your career report",
+    time: "Instant",
+    body: "Profile, strengths, top matches and a learning path.",
+  },
 ];
 
 export function IntroStage() {
@@ -16,13 +31,15 @@ export function IntroStage() {
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-20">
       <div className="text-center">
         <div className="relative mx-auto w-fit">
-          <span className="animate-pulse-ring absolute inset-0 rounded-full bg-brand-400/40" />
+          <span className="absolute inset-0 animate-pulse-ring rounded-full bg-brand-400/40" />
           <SageAvatar size="lg" className="relative" />
         </div>
-        <Badge tone="brand" className="mt-6">CDL · AI Career Discovery</Badge>
+        <Badge tone="brand" className="mt-6">
+          CDL · AI Career Discovery
+        </Badge>
         <h1 className="mx-auto mt-4 max-w-2xl text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">
           Hi, I&apos;m Sage. Let&apos;s discover{" "}
-          <span className="font-serif font-normal italic text-gradient">your path</span> together.
+          <span className="text-gradient font-serif font-normal italic">your path</span> together.
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-lg text-slate-600">
           About 12 minutes, all on this page. There are no wrong answers — just be honest and go with your gut.
@@ -31,7 +48,7 @@ export function IntroStage() {
 
       <div className="mt-12 grid gap-4 sm:grid-cols-3">
         {PARTS.map((part, i) => (
-          <div key={part.title} className="relative rounded-3xl bg-white p-6 ring-1 ring-slate-200/80 shadow-soft">
+          <div key={part.title} className="relative rounded-3xl bg-white p-6 shadow-soft ring-1 ring-slate-200/80">
             <div className="flex items-center justify-between">
               <span className="grid size-11 place-items-center rounded-2xl bg-brand-50 text-brand-700">
                 <part.icon className="size-5" aria-hidden />

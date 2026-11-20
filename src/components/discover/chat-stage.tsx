@@ -13,7 +13,7 @@ import {
   STRENGTHS,
   optionLabel,
   type Option,
-} from "@/lib/data/discovery";
+} from "@/modules/chat/questions";
 import { cn } from "@/lib/format";
 import { actions, useAppState, type Profile } from "@/lib/store";
 
@@ -91,7 +91,10 @@ const STEPS: ChatStep[] = [
     key: "goal",
     kind: "single",
     options: GOALS,
-    messages: () => ["That's a strong combination.", "Last one for now: where do you see yourself in the next 3–5 years?"],
+    messages: () => [
+      "That's a strong combination.",
+      "Last one for now: where do you see yourself in the next 3–5 years?",
+    ],
   },
 ];
 
@@ -139,11 +142,20 @@ function UserBubble({ children }: { children: ReactNode }) {
 
 function Typing() {
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-end gap-2.5" aria-label="Sage is typing">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="flex items-end gap-2.5"
+      aria-label="Sage is typing"
+    >
       <SageAvatar size="sm" />
       <span className="flex gap-1 rounded-2xl rounded-bl-md bg-slate-100 px-4 py-4">
         {[0, 1, 2].map((i) => (
-          <span key={i} className="size-2 animate-bounce rounded-full bg-slate-400" style={{ animationDelay: `${i * 0.15}s` }} />
+          <span
+            key={i}
+            className="size-2 animate-bounce rounded-full bg-slate-400"
+            style={{ animationDelay: `${i * 0.15}s` }}
+          />
         ))}
       </span>
     </motion.div>
@@ -172,7 +184,7 @@ export function ChatStage() {
 
   return (
     <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_320px] lg:py-10">
-      <section className="flex flex-col overflow-hidden rounded-3xl bg-white ring-1 ring-slate-200/80 shadow-soft">
+      <section className="flex flex-col overflow-hidden rounded-3xl bg-white shadow-soft ring-1 ring-slate-200/80">
         <header className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <div className="flex items-center gap-3">
             <SageAvatar />
@@ -197,7 +209,10 @@ export function ChatStage() {
           )}
         </header>
 
-        <div ref={scrollRef} className="scrollbar-thin h-[min(560px,58dvh)] space-y-3 overflow-y-auto px-4 py-6 sm:px-6">
+        <div
+          ref={scrollRef}
+          className="h-[min(560px,58dvh)] scrollbar-thin space-y-3 overflow-y-auto px-4 py-6 sm:px-6"
+        >
           {STEPS.slice(0, chatStep).map((step) => (
             <div key={step.key} className="space-y-3">
               {step.messages(profile).map((m, i) => (
@@ -346,7 +361,7 @@ function MultiChoice({ step, initial }: { step: Extract<ChatStep, { kind: "multi
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold ring-1 transition-all",
                 on
-                  ? "bg-brand-600 text-white ring-brand-600 shadow-[0_6px_16px_-8px_rgb(90_69_242/0.8)]"
+                  ? "bg-brand-600 text-white shadow-[0_6px_16px_-8px_rgb(90_69_242/0.8)] ring-brand-600"
                   : "bg-white text-slate-700 ring-slate-200 hover:-translate-y-0.5 hover:text-brand-700 hover:ring-brand-300 disabled:opacity-40 disabled:hover:translate-y-0",
               )}
             >
@@ -382,7 +397,7 @@ function ProfilePanel({ profile, chatStep }: { profile: P; chatStep: number }) {
   return (
     <aside className="hidden lg:block">
       <div className="sticky top-36 space-y-4">
-        <div className="rounded-3xl bg-white p-5 ring-1 ring-slate-200/80 shadow-soft">
+        <div className="rounded-3xl bg-white p-5 shadow-soft ring-1 ring-slate-200/80">
           <div className="flex items-center justify-between">
             <p className="text-sm font-bold text-ink">What Sage has learned</p>
             <span className="text-xs font-semibold text-brand-700">
@@ -403,12 +418,15 @@ function ProfilePanel({ profile, chatStep }: { profile: P; chatStep: number }) {
                     {has && <Check className="size-3" strokeWidth={3} />}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{row.label}</p>
+                    <p className="text-[11px] font-semibold tracking-wider text-slate-400 uppercase">{row.label}</p>
                     {has ? (
                       Array.isArray(row.value) ? (
                         <div className="mt-1 flex flex-wrap gap-1">
                           {row.value.map((v) => (
-                            <span key={v} className="rounded-md bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
+                            <span
+                              key={v}
+                              className="rounded-md bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700"
+                            >
                               {v}
                             </span>
                           ))}

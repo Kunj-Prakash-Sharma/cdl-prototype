@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { APTITUDE_QUESTIONS, LIKERT_ITEMS } from "./data/discovery";
+import { APTITUDE_QUESTIONS, LIKERT_ITEMS } from "@/modules/chat/questions";
 
 /**
  * Local, demo-only app state. Everything lives in localStorage so the

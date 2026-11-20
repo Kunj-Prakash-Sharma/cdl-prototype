@@ -4,12 +4,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, ArrowRight, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { LIKERT_ITEMS, LIKERT_SCALE } from "@/lib/data/discovery";
+import { LIKERT_ITEMS, LIKERT_SCALE } from "@/modules/chat/questions";
 import { cn } from "@/lib/format";
 import { actions, useAppState } from "@/lib/store";
 import { SectionComplete, StageShell } from "./stage-shell";
 
-const SIZES = ["size-14 sm:size-16", "size-11 sm:size-12", "size-9 sm:size-10", "size-11 sm:size-12", "size-14 sm:size-16"];
+const SIZES = [
+  "size-14 sm:size-16",
+  "size-11 sm:size-12",
+  "size-9 sm:size-10",
+  "size-11 sm:size-12",
+  "size-14 sm:size-16",
+];
 
 export function PersonalityStage() {
   const { likert } = useAppState();
@@ -22,10 +28,13 @@ export function PersonalityStage() {
   const item = LIKERT_ITEMS[index];
   const finished = index >= LIKERT_ITEMS.length;
 
-  const go = useCallback((to: number) => {
-    setDirection(to > index ? 1 : -1);
-    setIndex(to);
-  }, [index]);
+  const go = useCallback(
+    (to: number) => {
+      setDirection(to > index ? 1 : -1);
+      setIndex(to);
+    },
+    [index],
+  );
 
   const choose = useCallback(
     (value: number) => {
@@ -55,7 +64,12 @@ export function PersonalityStage() {
 
   if (finished) {
     return (
-      <StageShell icon={Brain} part="Assessment 1 of 3" title="Personality & interests" subtitle="How you like to think, work and spend your energy.">
+      <StageShell
+        icon={Brain}
+        part="Assessment 1 of 3"
+        title="Personality & interests"
+        subtitle="How you like to think, work and spend your energy."
+      >
         <SectionComplete
           title="Personality section complete"
           body="Great work. Next up: six quick aptitude puzzles. Take your time — there's no timer."
@@ -103,7 +117,7 @@ export function PersonalityStage() {
         ))}
       </div>
 
-      <div className="relative overflow-hidden rounded-3xl bg-white ring-1 ring-slate-200/80 shadow-soft">
+      <div className="relative overflow-hidden rounded-3xl bg-white shadow-soft ring-1 ring-slate-200/80">
         <AnimatePresence mode="wait" initial={false} custom={direction}>
           <motion.div
             key={item.id}
@@ -117,11 +131,15 @@ export function PersonalityStage() {
             <p className="text-center text-sm font-semibold text-slate-400">
               Statement {index + 1} of {LIKERT_ITEMS.length}
             </p>
-            <h2 className="mx-auto mt-4 max-w-xl text-balance text-center text-2xl font-bold leading-snug tracking-tight text-ink sm:text-3xl">
+            <h2 className="mx-auto mt-4 max-w-xl text-center text-2xl leading-snug font-bold tracking-tight text-balance text-ink sm:text-3xl">
               “{item.text}”
             </h2>
 
-            <div className="mt-10 flex items-center justify-center gap-2.5 sm:gap-5" role="radiogroup" aria-label="Your answer">
+            <div
+              className="mt-10 flex items-center justify-center gap-2.5 sm:gap-5"
+              role="radiogroup"
+              aria-label="Your answer"
+            >
               {LIKERT_SCALE.map((opt, i) => {
                 const on = selected === opt.value;
                 const agree = opt.value > 3;

@@ -4,8 +4,8 @@ import Link from "next/link";
 import { ArrowRight, BookOpen, Play, Sparkles } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge, Eyebrow, ProgressBar } from "@/components/ui/misc";
-import { allLessons, getCourse, type Course } from "@/lib/data/courses";
-import { isDiscoveryComplete } from "@/lib/scoring";
+import { allLessons, getCourse, type Course } from "@/modules/catalog/courses";
+import { isDiscoveryComplete } from "@/modules/chat/scoring";
 import { useAppState, useHydrated } from "@/lib/store";
 import { CourseThumb } from "./course-thumb";
 
@@ -68,9 +68,13 @@ export function MyLearning() {
               <Link
                 key={c.slug}
                 href={`/learn/${c.slug}`}
-                className="group flex flex-col gap-5 rounded-3xl bg-white p-4 ring-1 ring-slate-200/80 shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift sm:flex-row sm:items-center sm:p-5"
+                className="group flex flex-col gap-5 rounded-3xl bg-white p-4 shadow-soft ring-1 ring-slate-200/80 transition hover:-translate-y-0.5 hover:shadow-lift sm:flex-row sm:items-center sm:p-5"
               >
-                <CourseThumb slug={c.slug} className="aspect-video w-full shrink-0 rounded-2xl sm:aspect-auto sm:h-28 sm:w-48" iconClassName="size-12" />
+                <CourseThumb
+                  slug={c.slug}
+                  className="aspect-video w-full shrink-0 rounded-2xl sm:aspect-auto sm:h-28 sm:w-48"
+                  iconClassName="size-12"
+                />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone="slate">{c.category}</Badge>
@@ -86,7 +90,11 @@ export function MyLearning() {
                   </div>
                 </div>
                 <span className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-brand-600 px-5 text-sm font-semibold text-white shadow-glow">
-                  {done.length ? <Play className="size-4 fill-current" aria-hidden /> : <ArrowRight className="size-4" aria-hidden />}
+                  {done.length ? (
+                    <Play className="size-4 fill-current" aria-hidden />
+                  ) : (
+                    <ArrowRight className="size-4" aria-hidden />
+                  )}
                   {done.length ? "Continue" : "Start"}
                 </span>
               </Link>

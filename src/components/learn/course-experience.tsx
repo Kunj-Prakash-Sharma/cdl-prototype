@@ -25,10 +25,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, Badge, ProgressBar, Rating } from "@/components/ui/misc";
 import { useToast } from "@/components/ui/toast";
-import { getCareer } from "@/lib/data/careers";
-import { allLessons, getCourse, type Course, type ResourceType } from "@/lib/data/courses";
+import { getCareer } from "@/modules/chat/careers";
+import { allLessons, getCourse, type Course, type ResourceType } from "@/modules/catalog/courses";
 import { cn, formatCompact, formatMinutes, formatPrice } from "@/lib/format";
-import { computeResults, isDiscoveryComplete } from "@/lib/scoring";
+import { computeResults, isDiscoveryComplete } from "@/modules/chat/scoring";
 import { actions, useAppState } from "@/lib/store";
 import { CheckoutModal } from "./checkout-modal";
 import { VideoPlayer } from "./video-player";
@@ -79,7 +79,7 @@ export function CourseExperience({ slug }: { slug: string }) {
   }, [owned, slug, lesson.id]);
 
   const purchaseCard = (
-    <div className="rounded-3xl bg-white p-6 ring-1 ring-slate-200/80 shadow-soft">
+    <div className="rounded-3xl bg-white p-6 shadow-soft ring-1 ring-slate-200/80">
       {owned ? (
         <>
           <div className="flex items-center justify-between">
@@ -101,7 +101,12 @@ export function CourseExperience({ slug }: { slug: string }) {
             <div className="mt-5 rounded-2xl bg-linear-to-br from-sun-100 to-brand-50 p-4 text-center">
               <Trophy className="mx-auto size-8 text-sun-500" aria-hidden />
               <p className="mt-2 font-bold text-ink">Course complete!</p>
-              <Button size="sm" variant="dark" className="mt-3" onClick={() => toast("Certificate downloaded", `${course.title} — certificate of completion (demo).`)}>
+              <Button
+                size="sm"
+                variant="dark"
+                className="mt-3"
+                onClick={() => toast("Certificate downloaded", `${course.title} — certificate of completion (demo).`)}
+              >
                 <Download className="size-4" aria-hidden /> Download certificate
               </Button>
             </div>
@@ -119,7 +124,11 @@ export function CourseExperience({ slug }: { slug: string }) {
           <Button size="lg" className="mt-5 w-full" onClick={() => setCheckout(true)}>
             <Lock className="size-4" aria-hidden /> Enrol now
           </Button>
-          <Button variant="secondary" className="mt-2.5 w-full" onClick={() => select(lessons.find((l) => l.preview)!.id)}>
+          <Button
+            variant="secondary"
+            className="mt-2.5 w-full"
+            onClick={() => select(lessons.find((l) => l.preview)!.id)}
+          >
             <CirclePlay className="size-4" aria-hidden /> Watch free preview
           </Button>
           <ul className="mt-6 space-y-2.5 text-sm text-slate-600">
@@ -135,7 +144,9 @@ export function CourseExperience({ slug }: { slug: string }) {
               </li>
             ))}
           </ul>
-          <p className="mt-5 border-t border-slate-100 pt-4 text-center text-xs text-slate-400">7-day refund · Demo checkout, no real payment</p>
+          <p className="mt-5 border-t border-slate-100 pt-4 text-center text-xs text-slate-400">
+            7-day refund · Demo checkout, no real payment
+          </p>
         </>
       )}
     </div>
@@ -249,7 +260,9 @@ export function CourseExperience({ slug }: { slug: string }) {
               >
                 {t}
                 {t === "resources" && (
-                  <span className="ml-1.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-500">{course.resources.length}</span>
+                  <span className="ml-1.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-500">
+                    {course.resources.length}
+                  </span>
                 )}
               </button>
             ))}
@@ -262,7 +275,10 @@ export function CourseExperience({ slug }: { slug: string }) {
                 <h3 className="text-lg font-bold text-ink">What you&apos;ll learn</h3>
                 <ul className="mt-4 grid gap-3 sm:grid-cols-2">
                   {course.outcomes.map((o) => (
-                    <li key={o} className="flex items-start gap-3 rounded-2xl bg-white p-4 text-sm text-slate-700 ring-1 ring-slate-200/80">
+                    <li
+                      key={o}
+                      className="flex items-start gap-3 rounded-2xl bg-white p-4 text-sm text-slate-700 ring-1 ring-slate-200/80"
+                    >
                       <Check className="mt-0.5 size-4 shrink-0 text-emerald-500" strokeWidth={3} aria-hidden />
                       {o}
                     </li>
@@ -300,12 +316,14 @@ export function CourseExperience({ slug }: { slug: string }) {
                     );
                   })}
                 </div>
-                {results && <p className="mt-2 text-xs text-slate-400">Highlighted roles appear in your career report.</p>}
+                {results && (
+                  <p className="mt-2 text-xs text-slate-400">Highlighted roles appear in your career report.</p>
+                )}
               </div>
               <div className="flex gap-4 rounded-3xl bg-white p-6 ring-1 ring-slate-200/80">
                 <Avatar initials={course.instructor.initials} className="size-14 text-base" />
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Your instructor</p>
+                  <p className="text-xs font-semibold tracking-wider text-slate-400 uppercase">Your instructor</p>
                   <p className="mt-1 font-bold text-ink">{course.instructor.name}</p>
                   <p className="text-sm text-brand-700">{course.instructor.role}</p>
                   <p className="mt-2 text-sm leading-relaxed text-slate-600">{course.instructor.bio}</p>
@@ -324,7 +342,12 @@ export function CourseExperience({ slug }: { slug: string }) {
                   const Icon = RESOURCE_ICON[r.type];
                   return (
                     <li key={r.id} className="flex items-center gap-4 p-4">
-                      <span className={cn("grid size-11 shrink-0 place-items-center rounded-xl", owned ? "bg-brand-50 text-brand-700" : "bg-slate-100 text-slate-400")}>
+                      <span
+                        className={cn(
+                          "grid size-11 shrink-0 place-items-center rounded-xl",
+                          owned ? "bg-brand-50 text-brand-700" : "bg-slate-100 text-slate-400",
+                        )}
+                      >
                         <Icon className="size-5" aria-hidden />
                       </span>
                       <div className="min-w-0 flex-1">
@@ -334,7 +357,11 @@ export function CourseExperience({ slug }: { slug: string }) {
                         </p>
                       </div>
                       {owned ? (
-                        <Button size="sm" variant="secondary" onClick={() => toast("Download started", `${r.title} (demo file)`)}>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => toast("Download started", `${r.title} (demo file)`)}
+                        >
                           <Download className="size-4" aria-hidden /> <span className="hidden sm:inline">Download</span>
                         </Button>
                       ) : (
@@ -351,17 +378,17 @@ export function CourseExperience({ slug }: { slug: string }) {
         {/* Sidebar */}
         <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
           <div className="hidden lg:block">{purchaseCard}</div>
-          <div className="rounded-3xl bg-white ring-1 ring-slate-200/80 shadow-soft">
+          <div className="rounded-3xl bg-white shadow-soft ring-1 ring-slate-200/80">
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
               <p className="font-bold text-ink">Course content</p>
               <p className="text-xs text-slate-500">
                 {lessons.length} lessons · {course.hours} hrs
               </p>
             </div>
-            <div className="scrollbar-thin max-h-[560px] overflow-y-auto p-2">
+            <div className="max-h-[560px] scrollbar-thin overflow-y-auto p-2">
               {course.modules.map((m, mi) => (
                 <div key={m.id} className="py-2">
-                  <p className="px-3 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  <p className="px-3 pb-1.5 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
                     Module {mi + 1} · {m.title}
                   </p>
                   {m.lessons.map((l) => {
@@ -381,7 +408,13 @@ export function CourseExperience({ slug }: { slug: string }) {
                         <span
                           className={cn(
                             "grid size-7 shrink-0 place-items-center rounded-full",
-                            isDone ? "bg-emerald-500 text-white" : isCurrent ? "bg-brand-600 text-white" : isLocked ? "bg-slate-100 text-slate-400" : "bg-brand-50 text-brand-600",
+                            isDone
+                              ? "bg-emerald-500 text-white"
+                              : isCurrent
+                                ? "bg-brand-600 text-white"
+                                : isLocked
+                                  ? "bg-slate-100 text-slate-400"
+                                  : "bg-brand-50 text-brand-600",
                           )}
                         >
                           {isDone ? (
@@ -393,12 +426,19 @@ export function CourseExperience({ slug }: { slug: string }) {
                           )}
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className={cn("block truncate text-sm", isCurrent ? "font-semibold text-ink" : isLocked ? "text-slate-500" : "text-slate-700")}>
+                          <span
+                            className={cn(
+                              "block truncate text-sm",
+                              isCurrent ? "font-semibold text-ink" : isLocked ? "text-slate-500" : "text-slate-700",
+                            )}
+                          >
                             {l.title}
                           </span>
                           <span className="flex items-center gap-2 text-[11px] text-slate-400">
                             {formatMinutes(l.minutes)}
-                            {l.preview && !owned && <span className="font-semibold text-emerald-600">Free preview</span>}
+                            {l.preview && !owned && (
+                              <span className="font-semibold text-emerald-600">Free preview</span>
+                            )}
                           </span>
                         </span>
                       </button>

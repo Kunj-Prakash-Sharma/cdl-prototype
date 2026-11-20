@@ -47,9 +47,18 @@ export function SectionComplete({
   children?: ReactNode;
 }) {
   return (
-    <div className="rounded-3xl bg-white p-8 text-center ring-1 ring-slate-200/80 shadow-soft sm:p-12">
+    <div className="rounded-3xl bg-white p-8 text-center shadow-soft ring-1 ring-slate-200/80 sm:p-12">
       <div className="mx-auto grid size-16 place-items-center rounded-full bg-emerald-50">
-        <svg viewBox="0 0 24 24" className="size-8 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <svg
+          viewBox="0 0 24 24"
+          className="size-8 text-emerald-500"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
           <path d="M5 12.5l4.5 4.5L19 7.5" className="animate-draw [stroke-dasharray:24] [stroke-dashoffset:24]" />
         </svg>
       </div>

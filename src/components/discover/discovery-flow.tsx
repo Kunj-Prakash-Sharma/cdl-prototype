@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { isDiscoveryComplete } from "@/lib/scoring";
+import { isDiscoveryComplete } from "@/modules/chat/scoring";
 import { useAppState, useHydrated, type Stage } from "@/lib/store";
 import { AnalyzingStage } from "./analyzing-stage";
 import { AptitudeStage } from "./aptitude-stage";
