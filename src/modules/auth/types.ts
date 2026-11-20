@@ -8,8 +8,11 @@ export const AUTH_ERROR_CODES = [
   "cooldown",
   "daily_limit",
   "ip_limit",
+  "device_limit",
+  "sms_cutoff",
   "send_failed",
   "bad_code",
+  "bad_credentials",
   "expired",
   "locked",
   "unauthorized",
@@ -30,6 +33,9 @@ export type SessionView = {
   name: string; // empty until the learner gives it in the chat
   phoneMasked: string;
 };
+
+/** Who is on the page: a verified learner, or a guest (D80). A guest is NOT logged in for anything but the quiz. */
+export type VisitorView = { userId: string; isGuest: boolean; name: string };
 
 export type SendOtpOk = { resendAfterSec: number; expiresInSec: number };
 export type VerifyOtpOk = { isNewUser: boolean; next: string };

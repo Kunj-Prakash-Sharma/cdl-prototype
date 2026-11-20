@@ -1,0 +1,112 @@
+"use server";
+
+// Server actions for the quiz screens. Thin: zod-validate the input, accept a guest or a learner (a visitor with no session is sent back to /discover), rate-limit, call the service, return a typed `{ ok, code }`. Expected failures never throw, and
+// ownership of the attempt is checked inside the service on every call (a stranger's attempt id gets `not_found`).
+import { z } from "zod";
+import { logger } from "@/lib/logger";
+import { requireLearnerOrGuest, requireUser, updateProfileName } from "@/modules/auth/service";
+import { ANSWER_LIMIT_PER_MINUTE, ANSWER_LIMIT_WINDOW_MS, createLimiter } from "./limits";
+import * as chat from "./service";
+import type { ChatResult, Learner } from "./types";
+
+// performance.now() is monotonic: a clock change on the server cannot lock a learner out or let a flood through.
+const answerLimiter = createLimiter(ANSWER_LIMIT_PER_MINUTE, ANSWER_LIMIT_WINDOW_MS);
+
+const attemptSchema = z.object({ attemptId: z.string().uuid() });
+const answerSchema = attemptSchema.extend({ questionId: z.string().min(1).max(64), value: z.number() });
+// The service enforces the real rules (letters only, 30 characters, blocked words); this only bounds the input size.
+const nameSchema = attemptSchema.extend({ name: z.string().max(200) });
+const stageSchema = attemptSchema.extend({ stage: z.string().min(1).max(32) });
+
+const invalid = { ok: false, code: "invalid_input" } as const;
+
+async function currentLearner(): Promise<Learner> {
+  // A guest is enough for the quiz (D78); everything else (callbacks, buying, video) still needs a verified learner.
+  const visitor = await requireLearnerOrGuest();
+  return { userId: visitor.userId, name: visitor.name };
+}
+
+/** A crash in the database layer must not leak details to the browser: log it, answer "unknown". */
+async function guarded<T extends object>(run: () => Promise<ChatResult<T>>): Promise<ChatResult<T>> {
+  try {
+    return await run();
+  } catch (err) {
+    // requireUser redirects by throwing an error Next recognises by its digest; let Next handle only those.
+    if (err && typeof err === "object" && "digest" in err && String(err.digest).startsWith("NEXT_")) throw err;
+    logger.error("chat action failed", { error: err });
+    return { ok: false, code: "unknown" };
+  }
+}
+
+export async function startAttempt() {
+  return guarded(async () => chat.startOrResumeAttempt(await currentLearner()));
+}
+
+/** "Start again" on the continue-or-restart screen (D75): closes the attempt the screen showed and starts a new one. */
+export async function restartAttempt(input: unknown) {
+  const parsed = attemptSchema.safeParse(input);
+  if (!parsed.success) return invalid;
+  return guarded(async () => chat.restartAttempt(await currentLearner(), parsed.data.attemptId));
+}
+
+/** Retake: a new attempt, or the open one if there is one (no pile of empty attempts). */
+export async function retake() {
+  return guarded(async () => chat.retake(await currentLearner()));
+}
+
+const homeAnswerSchema = attemptSchema.extend({ optionId: z.string().min(1).max(32) });
+
+/** The Home mini-chat answer, sent once when the quiz opens (D87). The service refuses an unknown option or a quiz under way. */
+export async function applyHomeAnswer(input: unknown) {
+  const parsed = homeAnswerSchema.safeParse(input);
+  if (!parsed.success) return invalid;
+  return guarded(async () => chat.applyHomeAnswer(await currentLearner(), parsed.data.attemptId, parsed.data.optionId));
+}
+
+export async function submitAnswer(input: unknown) {
+  const parsed = answerSchema.safeParse(input);
+  if (!parsed.success) return invalid;
+  return guarded(async () => {
+    const learner = await currentLearner();
+    const limit = answerLimiter.hit(learner.userId, performance.now());
+    if (!limit.ok) return { ok: false, code: "rate_limited", retryAfterSec: limit.retryAfterSec } as const;
+    return chat.submitAnswer(learner, parsed.data.attemptId, parsed.data.questionId, parsed.data.value);
+  });
+}
+
+/** The one typed answer. A blocked word ends the attempt (`name_blocked`: show the stop screen with the helpline). */
+export async function submitName(input: unknown) {
+  const parsed = nameSchema.safeParse(input);
+  if (!parsed.success) return invalid;
+  return guarded(async () => {
+    const learner = await currentLearner();
+    const limit = answerLimiter.hit(learner.userId, performance.now());
+    if (!limit.ok) return { ok: false, code: "rate_limited", retryAfterSec: limit.retryAfterSec } as const;
+    return chat.submitName(learner, parsed.data.attemptId, parsed.data.name, updateProfileName);
+  });
+}
+
+export async function finishAttempt(input: unknown) {
+  const parsed = attemptSchema.safeParse(input);
+  if (!parsed.success) return invalid;
+  return guarded(async () => chat.finishAttempt(await currentLearner(), parsed.data.attemptId));
+}
+
+export async function retryStage(input: unknown) {
+  const parsed = stageSchema.safeParse(input);
+  if (!parsed.success) return invalid;
+  return guarded(async () => chat.retryStage(await currentLearner(), parsed.data.attemptId, parsed.data.stage));
+}
+
+const reportActionSchema = z.object({ action: z.enum(chat.REPORT_ACTIONS) });
+
+/** Records a click on a report button (save, pdf, callback, courses). Fixed codes only, nothing from the learner is stored. */
+export async function trackReportAction(input: unknown) {
+  const parsed = reportActionSchema.safeParse(input);
+  if (!parsed.success) return invalid;
+  return guarded(async () => {
+    // Only a verified learner has a report to click on (a guest sees the fixed sample behind the gate).
+    const session = await requireUser("/discover/report");
+    return chat.recordReportAction({ userId: session.userId, name: session.name }, parsed.data.action);
+  });
+}

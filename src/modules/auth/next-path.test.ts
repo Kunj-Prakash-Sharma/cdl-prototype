@@ -16,9 +16,15 @@ describe("safeNextPath", () => {
     "/ok\nSet-Cookie: a=b",
     "/login",
     "/login/verify",
+    "/admin/login",
     "",
   ])("falls back for %j", (raw) => {
     expect(safeNextPath(raw)).toBe("/discover");
+  });
+
+  it("never returns the admin login page, and keeps other admin paths", () => {
+    expect(safeNextPath("/admin/login", "/admin/callbacks")).toBe("/admin/callbacks");
+    expect(safeNextPath("/admin/users?page=2", "/admin/callbacks")).toBe("/admin/users?page=2");
   });
 
   it("falls back for null and undefined, and honours a custom fallback", () => {

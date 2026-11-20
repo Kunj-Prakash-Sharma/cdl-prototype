@@ -16,6 +16,14 @@ A learner logs in with a phone number and an SMS code. The client team logs in t
 - Funnel events `otp_sent`, `otp_verified`.
 - SMS via `@/integrations/sms` (`fake` in dev, prints a masked number).
 
+## Guest accounts (D78, D80, Nov 16, not built yet)
+- Better Auth `anonymous` plugin, inside `modules/auth` only. A guest user is made when the visitor taps Start (bot check and D74 limits apply), never on page load. Kept 7 days; a pg-boss job deletes older anonymous users and their unfinished attempts.
+- On phone-OTP success the plugin's `onLinkAccount` calls `linkGuest`: it sets `auth_user.linkedUserId` on the guest and copies the typed name to the real user. The guest row is KEPT (`disableDeleteAnonymousUser`). The chat re-points its own rows lazily (`linkedGuestIds(userId)` in the auth service) and the worker deletes guests after 7 days (`expiredGuestIds`, `deleteGuests`). If the number already has a report, the newest quiz wins (chat side).
+- `startGuestSession({captchaToken})` goes through the Better Auth handler (Turnstile + per-IP limit `/sign-in/anonymous`, 30 an hour in production); a visitor who already has a session gets ok and no new guest.
+- `getSession()` returns null for guests; `getVisitor()` / `requireLearnerOrGuest()` are for the quiz only. Admin lists and counts hide guests. Migration 0005 adds `isAnonymous`, `linkedUserId`.
+- `requireUser()` refuses anonymous users (leads, buying, paid video). `requireLearnerOrGuest()` is for the chat only. Admin user lists hide anonymous users.
+- Free lecture previews make no account (anonymous analytics id only, D66).
+
 ## Out of scope
 - Email/password or social login (B2B, later).
 - Real SMS adapter (MSG91): added when DLT registration is done; separate small PR.
@@ -41,11 +49,12 @@ A learner logs in with a phone number and an SMS code. The client team logs in t
 - Wrong codes: Better Auth allows 5 tries per code; we count them and lock the number for 15 minutes on the 5th wrong try.
 - The built-in `email` column holds a placeholder (`<phone>@phone.invalid`); the optional real email is `contactEmail`.
 - Per-IP limit is 10 per hour in production and 100 elsewhere (so dev and Playwright logins from one IP keep working).
+- **Device limit and SMS spend cutoff (D74, Nov 6):** device = random id in an httpOnly cookie `device_id` (kept only as an HMAC), checked in `sendOtp` after the per-number pre-check: 10 codes per device per day in production, 100 elsewhere. The spend cutoff is one shared counter (`SMS_DAILY_CAP` per rolling 24 hours, default 5000 in production) checked inside the send hook, after the bot check and before the per-number record. Both live in `auth_otp_throttle` under the keys `dev:<hmac>` and `sms:total`. A device limit does not stop a bot that drops cookies; the IP limit, Turnstile and the cutoff do.
 - **Deploy note:** behind the AWS load balancer, set `advanced.ipAddress.trustedProxies` so a client cannot spoof `x-forwarded-for` and dodge the IP limit.
 
 ## UI contract (so the frontend can change without backend rework)
 - Actions never throw for expected cases. They return `{ ok: true, ... }` or `{ ok: false, code, retryAfterSec? }`.
-- Codes (fixed list, exported as a type from `modules/auth`): `invalid_phone`, `captcha_failed`, `cooldown`, `daily_limit`, `ip_limit`, `send_failed`, `bad_code`, `expired`, `locked`, `unauthorized`, `forbidden`. The UI owns all wording.
+- Codes (fixed list, exported as a type from `modules/auth`): `invalid_phone`, `captcha_failed`, `cooldown`, `daily_limit`, `ip_limit`, `device_limit`, `sms_cutoff`, `send_failed`, `bad_code`, `expired`, `locked`, `unauthorized`, `forbidden`. The UI owns all wording.
 - `sendOtp` ok result: `{ ok: true, resendAfterSec, expiresInSec }`. `verifyOtp` ok result: `{ ok: true, isNewUser, next }`, where `next` is the safe return path.
 - Guards redirect to `/login?next=<path>`; `next` must be a same-site relative path (reject anything else).
 - `getSession()` returns a plain serialisable object (`{ userId, role, name, phoneMasked }`), never the raw phone.
@@ -61,18 +70,29 @@ A learner logs in with a phone number and an SMS code. The client team logs in t
 ## Decisions (closed Oct 28, 2026; recorded as D64)
 | # | Topic | Decision |
 |---|---|---|
-| 1 | Country codes | India +91 only |
-| 2 | Login required | Before starting the chat, before buying, and for **any video playback, including the free first lesson** (the free lesson only skips payment; login lets us see where each viewer stops and resumes). Home page and course detail pages stay open |
+| 1 | Country codes | India +91 only. *Nov 2, 2026 (D65): login will also accept an email with the same OTP method; needs its own spec, not built yet* |
+| 2 | Login required | *Nov 16 (D78): NOT before the chat any more; the quiz is open to guests and the phone OTP gates the report.* Before buying, and for **paid video playback**. *Nov 2, 2026 (D66): free lecture previews need no login (this replaces the earlier "free first lesson needs login"; preview analytics use an anonymous session id).* Home page and course detail pages stay open |
 | 3 | Session length | 30 days |
 | 4 | Returning user | Sees the saved report; can retake (new attempt, old report stays until the new one completes) |
 | 5 | OTP rules | 6 digits, 5 min expiry, 5 tries, then locked 15 min |
-| 6 | Limits | Resend wait 30 s, 5 codes per number per day, 10 per IP per hour |
+| 6 | Limits | Resend wait 30 s, 5 codes per number per day, 10 per IP per hour. *Nov 6 (D74): IP limit raised to 60 per hour (shared mobile and campus IPs); plus 10 per device per day and a total SMS cutoff per day* |
 | 7 | Bot check fails | "Try again" message; no SMS sent |
 | 8 | Profile edits | Name editable (same check as chat); phone change needs a new OTP; email optional |
 | 9 | Admins | Allow-list of phone numbers set by us (`ADMIN_PHONES`); count to be fixed with the client (expect 2 to 4) |
 | 10 | Terms tick | Yes, once the client's legal pages exist; no tick shown until then |
 | 11 | SMS registration late | Temporary fixed code for allow-listed invited numbers only. Needs its own guard (explicit env flag and number list), separate from `pickAdapter`. Must be removed before public launch |
 | 12 | Data deletion | Manual in Phase 1; document the steps |
+
+## Admin login with email + password (E3-S6, D77)
+A second way into `/admin` for the client team. Phone-OTP admins (`ADMIN_PHONES`) keep working: this is an addition, not a replacement. The client still has to confirm which method they want for admins.
+- **Accounts:** created ONLY by `npm run admin:create -- <email>` (no public sign-up: Better Auth `emailAndPassword.disableSignUp`). The script makes the user with role `admin`, an empty name and a **random 24-character password it prints once** (never stored in clear, never logged). `--reset` sets a new random password for an existing email-admin (the only way to reset: no email sending yet). It refuses an email that belongs to a phone account (`.invalid` placeholder emails) or to an existing non-admin. Email addresses are lowercased.
+- **Screen:** `/admin/login` (email, password, Turnstile) with a link "Log in with a phone number instead" to `/login?next=/admin`. It sits OUTSIDE the `(admin)` route group (that layout requires an admin, so the login page would redirect to itself) and is excluded from the `proxy.ts` matcher.
+- **Guards:** a logged-out visitor to `/admin/*` is sent to `/admin/login?next=...` (proxy and `requireAdmin`). A logged-in learner is still sent home. `requireAdmin()` stays the real check.
+- **Action `adminSignIn`:** zod input; look up the lock for this email (HMAC key `admin:<email>`, reuses `auth_otp_throttle`: 5 wrong passwords lock it for 15 minutes, same as OTP; the wrong-password count restarts when a lock starts and after every successful login, so one typo after a lock never locks again); call Better Auth through `auth.handler` so the Turnstile check and the per-IP limit (10 per minute in production) run; map failures to codes. **One code, `bad_credentials`, for an unknown email and a wrong password** (no account enumeration; Better Auth hashes a dummy password for unknown emails, so timing matches). The lock counts attempts for ANY email, known or not, so "locked" says nothing about whether an account exists. After a successful sign-in the role must be `admin`, otherwise that user's sessions are deleted (by user id, in the database) and the answer is `bad_credentials`.
+- **Codes added:** `bad_credentials`. Reused: `invalid_input`, `captcha_failed`, `ip_limit`, `locked`, `unknown`.
+- **No PII in logs or events:** the email is never logged; failures log the code only.
+- **Not built:** forgot-password and change-password screens, email verification, 2FA.
+- **Tests:** unit (code mapping), integration (script function: creates an admin who can sign in, refuses duplicates and phone placeholders, reset works, old password stops working; action: wrong password and unknown email look identical, lock after 5 failures, learner role refused), e2e (admin logs in with email + password, wrong password message, logged-out `/admin` goes to `/admin/login`, no redirect loop).
 
 ## Edge cases
 - Wrong code repeated: lock after N tries. Expired code: ask to resend.

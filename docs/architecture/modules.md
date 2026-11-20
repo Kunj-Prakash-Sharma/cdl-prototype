@@ -35,7 +35,7 @@ Five modules, each owning its data. Admin and analytics are not modules: admin i
 | Module | Owns | Outside dependency (via wrapper) |
 |---|---|---|
 | `auth` | OTP login, sessions, learner profile (name, number, optional email), roles | `sms` |
-| `chat` | Meera flow, OCEAN and RIASEC question sets with wording variants as versioned config ([assessment.md](../requirements/assessment.md)), answers, scoring rules, report | none (no AI, D62) |
+| `chat` | Mira flow, OCEAN and RIASEC question sets with wording variants as versioned config ([assessment.md](../requirements/assessment.md)), answers, scoring rules, report | none (no AI, D62) |
 | `catalog` | Courses, lessons, quiz questions, prices, bundles, publish state. Inside it: `video/` (upload, encoding jobs, status, thumbnails) and `learning/` (playback authorisation, progress and resume, quiz marking) | `video`, `storage`, `queue` |
 | `commerce` | Products, orders, payments, entitlements, receipts, manual access grant | `payments`, `email` |
 | `leads` | Callback requests, consent flag, instant email alert, Excel export, webhook | `email` |
@@ -43,7 +43,7 @@ Five modules, each owning its data. Admin and analytics are not modules: admin i
 Split a file when it passes about 300 lines; do not pre-split.
 
 ## Boundary rules
-1. Modules talk to each other **only through `service.ts`**. Never import another module's `repo`, `schema` or `actions`.
+1. Modules talk to each other **only through `service.ts`**. Never import another module's `repo`, `schema` or `actions`. *One exception (2026-11-03): a table may import another module's table object to declare a foreign key (for example `chat_attempts.user_id` references `auth_user`), and for nothing else. No queries, no reads, no writes.*
 2. Route handlers and server actions are thin: validate input (zod), check the session/role, call a service, return.
 3. Business logic lives in `service.ts`; DB access lives in `repo.ts`.
 4. Scoring is a **pure function** in `modules/chat`, unit-tested, and never uses the AI.

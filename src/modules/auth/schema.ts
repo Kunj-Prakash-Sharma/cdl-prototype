@@ -19,6 +19,10 @@ export const authUser = pgTable("auth_user", {
   banReason: text(),
   banExpires: timestamp({ withTimezone: true }),
   contactEmail: text(), // PII. Optional real email chosen by the learner
+  // Guest (anonymous) users, D80. A guest is made when a visitor taps Start; `linkedUserId` is set when the guest
+  // verifies a phone, so other modules can claim the guest's rows for the real user. Deleted after 7 days by the worker.
+  isAnonymous: boolean().default(false),
+  linkedUserId: text(),
 });
 
 export const authSession = pgTable(

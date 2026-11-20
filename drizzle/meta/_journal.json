@@ -8,6 +8,55 @@
       "when": 1793188454600,
       "tag": "0000_milky_shaman",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793692009416,
+      "tag": "0001_pale_rattler",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793864596802,
+      "tag": "0002_cultured_spot",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793876718865,
+      "tag": "0003_clear_screwball",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793877379454,
+      "tag": "0004_last_mikhail_rasputin",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794832760645,
+      "tag": "0005_neat_meteorite",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794834536124,
+      "tag": "0006_common_bulldozer",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795067744577,
+      "tag": "0007_living_anthem",
+      "breakpoints": true
     }
   ]
 }

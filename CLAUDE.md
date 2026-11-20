@@ -1,6 +1,6 @@
 # SELF — Claude instructions
 
-Phase 1 of SELF: a mobile-first career-discovery + learning site (Meera chat → report → paid courses), built as a **modular monolith** (one Next.js app = pages + API, plus a worker, one repo). "SELF" is a working name: never hardcode it (use `src/config/brand.ts`).
+Phase 1 of SELF: a mobile-first career-discovery + learning site (Mira chat → report → paid courses), built as a **modular monolith** (one Next.js app = pages + API, plus a worker, one repo). "SELF" is a working name: never hardcode it (use `src/config/brand.ts`).
 
 @AGENTS.md
 
@@ -42,6 +42,16 @@ Run `nvm use` first (Node 22; the shell may default to 23).
 - **No AI in the quiz (D62).** Questions come from pre-approved wording variants (`docs/requirements/assessment.md`). Scoring is a pure, unit-tested function of question IDs and answer values.
 - The only typed input in the chat is the name (letters, max 30, self-harm/abuse word check).
 - Video access is signed + expiring and checked against entitlements.
+
+## Security rules
+- Validate every input with zod at the boundary (server actions, route handlers, webhooks). Never trust the client, including hidden fields and `?next=`.
+- Every route, page and server action that needs a login calls `requireUser()` or `requireAdmin()`. Check ownership too: a logged-in user may only touch their own records.
+- Database access only through Drizzle (parameterized). No string-built SQL.
+- No secrets in code or in `NEXT_PUBLIC_*` variables. Secrets live in env, validated in `src/config`. Only `.env.example` is committed, with dummy values.
+- Never render user input as raw HTML (`dangerouslySetInnerHTML`). Never put user input in a redirect URL without the same-site path check.
+- Error responses use fixed codes and messages. No stack traces, SQL or internal ids sent to the browser.
+- Anything that costs money or sends messages (SMS, email, AI) needs a rate limit and a bot check.
+- Adding a dependency: check it is maintained and needed. CI runs `npm audit`, secret scanning and Semgrep; fix findings, do not silence them.
 
 ## UI rules
 - Use design tokens from `src/app/globals.css`; no raw hex. Mobile-first; check at 375px and desktop.

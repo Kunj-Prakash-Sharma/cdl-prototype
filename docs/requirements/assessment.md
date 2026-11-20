@@ -1,38 +1,38 @@
 # Assessment: OCEAN and RIASEC question sets
 
-What the Meera quiz asks, how answers are scored, and how the report is built. Decision: [D62](../decisions.md) (fixed question variants replace AI rewording). Related: D18 (no raw chat text), D46 (only the name is typed), D47 (careers part of the report), D60 (assessment shape). Module: `chat` in [../architecture/modules.md](../architecture/modules.md).
+What the Mira quiz asks, how answers are scored, and how the report is built. Decision: [D62](../decisions.md) (fixed question variants replace AI rewording). Related: D18 (no raw chat text), D46 (only the name is typed), D47 (careers part of the report), D60 (assessment shape). Module: `chat` in [../architecture/modules.md](../architecture/modules.md).
 
 > **Status: draft.** All item wording below is a draft for the client to approve (see [../open-questions.md](../open-questions.md)). Scoring thresholds also need sign-off.
 
 ## 1. Summary
 - About 26 quick-tap questions (D60 says "about 25"): **4 basics, 10 OCEAN (2 per trait), 12 RIASEC (2 per type)**. Order: basics, OCEAN, RIASEC.
 - Each question has a fixed **question ID** and **2 to 3 pre-approved variants** (wordings). The AI is not used anywhere in the quiz. Scoring is a pure, unit-tested function that sees question IDs and answer values only.
-- OCEAN items are written in the style of the **IPIP** (public domain, commercial use allowed). RIASEC items are **our own** (no free validated set has a clear commercial licence for reworded items).
+- OCEAN items are written in the style of the **IPIP** (public domain, commercial use allowed). RIASEC items are plain-language rewrites of **ORVIS** activities (hosted on the IPIP site, public domain, confirmed in the source paper 2026-11-03). Both come from a 50-question **pool** for client review ([item-sources.md](item-sources.md)); the quiz asks a chosen subset per set version (set 1.0.0 asks 10 + 12). Updated 2026-11-02 (D68).
 - Two items per scale is short. Treat results as **a first look**: broad bands for OCEAN, a top-3 interest area for RIASEC. No percentiles, no precise scores, no claims of clinical or scientific validation.
 
 ## 2. Sources and licensing
 | Source | Use for | Verdict | Notes |
 |---|---|---|---|
-| IPIP Big Five markers (ipip.ori.org) | OCEAN item style | **Use** | Public domain: "permission has already been automatically granted ... for any person to use IPIP items, scales, and inventories for any purpose, commercial or non-commercial". No attribution needed. Citing Goldberg is good practice. Source: [ipip.ori.org/newPermission.htm](https://ipip.ori.org/newPermission.htm), [50-item key](https://ipip.ori.org/newBigFive5broadKey.htm). **Re-read the quote before launch** (our research fetched it through a summarising tool) |
-| IPIP RIASEC scales | RIASEC | **Does not exist** | The IPIP index lists only ORVIS (8 vocational scales), not Holland types. [Scale index](https://ipip.ori.org/newIndexofScaleLabels.htm) |
-| Our own RIASEC items | RIASEC | **Use** | Written by us, so no licence and free to write variants. **Not validated.** Describe as "based on Holland's six interest types", never as a validated test |
+| IPIP Big Five markers (ipip.ori.org) | OCEAN item style | **Use** | Public domain: "permission has already been automatically granted ... for any person to use IPIP items, scales, and inventories for any purpose, commercial or non-commercial". No attribution needed. Citing Goldberg is good practice. Source: [ipip.ori.org/newPermission.htm](https://ipip.ori.org/newPermission.htm), [50-item key](https://ipip.ori.org/newBigFive5broadKey.htm). **Re-read by Vijay on 2026-10-30: open to use** (quote and per-item mapping in [item-sources.md](item-sources.md)) |
+| IPIP RIASEC scales | RIASEC | **Does not exist** | The IPIP index lists only ORVIS (8 vocational scales), not Holland types; ORVIS is used with a mapping to Holland types (next rows). [Scale index](https://ipip.ori.org/newIndexofScaleLabels.htm) |
+| ORVIS (Oregon Vocational Interest Scales, 8 scales on ipip.ori.org) | RIASEC | **Use, licence confirmed 2026-11-03** | Rewrites of ORVIS activities, mapped to Holland types as in Pozzebon et al. 2010. The IPIP home page says its items and scales are public domain but does not name ORVIS; the ORVIS page has no licence text, but the 2010 paper that introduces ORVIS calls it public domain throughout (read 2026-11-03, details in [item-sources.md](item-sources.md)). **Not validated after rewording.** Describe as "based on Holland's six interest types", never as a validated test |
 | O\*NET Mini-IP (30 items) | RIASEC | **Later upgrade** | Free, 5 items per type, alpha about .73 ([manual](https://www.onetcenter.org/dl_files/IP_Manual.pdf)). Verbatim use is CC BY-ND; any reworded variant needs the O\*NET Tools Developer License (credit O\*NET and DOL, say it was modified, "validate" the product; meaning unclear). The page does not state commercial terms. **Email O\*NET before using it.** [Licence page](https://www.onetcenter.org/license_tools.html) |
 | O\*NET Database (occupation RIASEC data) | Career families | **Optional** | CC BY 4.0 with attribution. Can seed career families. See section 8 |
 | BFI-2 | OCEAN | **Rejected** | Non-commercial research only; commercial use needs a request (unverified, pages were not fetchable) |
 | NEO-PI-R / NEO-FFI, Holland SDS | Both | **Rejected** | Proprietary, sold commercially |
 
 ## 3. Question-set design
-Versioned config in `modules/chat` (see section 7). Fixed IDs never change meaning; if an item's meaning or key changes, it gets a new ID.
+Versioned config in `modules/chat` (see section 7). Fixed IDs never change meaning; if an item's meaning or key changes, it gets a new ID. Live IDs are the IDs of the approved 50-question pool (D68); the IDs below are set 1.0.0 (D69), and which pool questions are asked is the set's choice.
 
 | Stage | IDs | Count | Input |
 |---|---|---|---|
 | Basics | `b-name`, `b-age`, `b-status`, `b-goal` | 4 | Name is typed (D46); age band, studying/working/other, goal are taps. Not scored |
-| OCEAN | `o-O-1`, `o-O-2`, `o-C-1`, `o-C-2`, `o-E-1`, `o-E-2`, `o-A-1`, `o-A-2`, `o-N-1`, `o-N-2` | 10 | 5-point tap |
-| RIASEC | `r-R-1`, `r-R-2`, `r-I-1`, `r-I-2`, `r-A-1`, `r-A-2`, `r-S-1`, `r-S-2`, `r-E-1`, `r-E-2`, `r-C-1`, `r-C-2` | 12 | 5-point tap |
+| OCEAN | `o-O-1`, `o-O-4`, `o-C-1`, `o-C-5`, `o-E-1`, `o-E-4`, `o-A-2`, `o-A-4`, `o-N-1`, `o-N-3` | 10 | 5-point tap |
+| RIASEC | `r-R-1`, `r-R-4`, `r-I-2`, `r-I-3`, `r-A-1`, `r-A-2`, `r-S-1`, `r-S-2`, `r-E-1`, `r-E-2`, `r-C-1`, `r-C-2` | 12 | 5-point tap |
 
 **Answer scales** (fixed labels, shown the same for every variant):
-- OCEAN, "How much does this sound like you?": 1 Not like me · 2 A little · 3 Somewhat · 4 Mostly · 5 Just like me.
-- RIASEC, "How much would you enjoy this?": 1 Not at all · 2 A little · 3 Okay · 4 Quite a lot · 5 Love it.
+- OCEAN, "How much does this sound like you?": 1 Not at all me · 2 A little like me · 3 Somewhat like me · 4 Mostly me · 5 Exactly me. (Client change, 2026-11-03: evenly stepped labels instead of two extremes and one "somewhat".)
+- RIASEC, "How much would you enjoy this?": 1 Not at all · 2 A little · 3 Somewhat · 4 Quite a lot · 5 A lot. (Changed on 2026-11-03 to match the same even steps; replaces "Okay" and "Love it". The client's note named the personality scale only, so confirm this one.)
 
 **Neuroticism is shown as "emotional steadiness".** The `N` dimension is keyed so a high score means steady and calm. `o-N-1` is worded steady (+), `o-N-2` is worded worried (-, reversed). Never show it as "neuroticism" or as a problem.
 
@@ -47,12 +47,12 @@ Versioned config in `modules/chat` (see section 7). Fixed IDs never change meani
 Checklist for every variant (writer and client reviewer):
 1. Same idea and same direction as the base item. A reverse item stays reverse.
 2. One idea per sentence. No "and"/"or" that asks two things.
-3. Plain words, about class 8 reading level, short sentences, works for ages about 15 and up. No jargon.
+3. Plain words, about class 8 reading level, short sentences, works for ages about 14 and up, Indian English learners. No jargon.
 4. No leading or flattering phrasing; no "good" or "bad" answer is obvious.
 5. No clinical, diagnostic or medical words (anxiety, depression, disorder). No judgments about people.
 6. No salary, rank, percentile, or "best/worst" language.
 7. Hindi and other languages are later (the config supports adding them; scope.md).
-8. Max about 90 characters, fits 375px without scrolling.
+8. Max about 90 characters (longer is fine within this, if it adds clarity, not a second idea), fits 375px without scrolling.
 
 **Versioning:** editing a variant's wording is a patch (`1.0.0` to `1.0.1`, no re-approval of scoring). Adding or removing an item, changing a key or dimension, or changing the scale is a **new set version** (`1.1.0`); results keep the set version they were scored with.
 
@@ -68,6 +68,19 @@ Input: map of `questionId` to value 1 to 5, plus the set version. No other input
 7. **Close top 3:** if `score(1st) - score(3rd) <= 13`, the three are within about one answer step: show them as a group ("your top interests are close") with the letters in rank order, no claim of a strict order.
 8. **No clear lead (flat):** if `max - min <= 13` across all six types, there is no Holland code; show a gentle "broad interests" message and suggest courses by the basics' goal instead.
 9. Thresholds (37/62, 13) live in config, not code, and need client sign-off.
+
+**Provenance of these rules** (added 2026-10-30; checked against sources, no outside source was found for the rules marked "ours"):
+| Rule | Source |
+|---|---|
+| Reverse key `6 - value`, then average the items | Standard practice for IPIP scales (the IPIP key page marks + / - items; it does not print the formula) |
+| Holland types in the order R, I, A, S, E, C; code = top 3 types in rank order | Holland (1973) hexagon; see [Holland Codes](https://en.wikipedia.org/wiki/Holland_Codes) |
+| Tie-break R, I, A, S, E, C | **Ours.** No published tie rule found |
+| 0 to 100 rescale and OCEAN bands 37/62 | **Ours** (roughly thirds). No source |
+| Close top 3 and flat profile at spread <= 13 (about one answer step) | **Ours.** No source |
+| Minimum 80% of a stage answered | **Ours.** No source |
+| "Steps of 12.5" and the spread of 13 | Hold only for **2 items per trait**. With 3 to 5 items per trait the score steps are finer, so the spread and the bands must be re-checked when the quiz length is chosen (they are config) |
+| Straight-lining = all answers in a stage the same | **Ours** (a simple heuristic) |
+All "ours" rules sit in config, can change in a new set version, and need client sign-off (section 9). They are for a first-look quiz, not a validated test.
 
 ### Worked examples (use as unit-test fixtures)
 Raw answers are entered values; `-` items are shown after reversal.
@@ -111,53 +124,24 @@ type Item = {
 Stored answer: `sessionId`, `questionId`, `variantId`, `value` (1 to 5), `setVersion`, `answeredAt`. Stored result: `sessionId`, `setVersion`, per-dimension score, status (`ok`/`incomplete`/`invalid`/`flat`), `hollandCode`. **No question text and no free text stored** (D18). Name and basics follow the profile data rules (name is PII). OCEAN `A` (Agreeableness) and RIASEC `A` (Artistic) share a letter, so always key by stage + dimension.
 
 ## 8. Report mapping
-- **OCEAN:** strengths (Higher bands) and growth areas (Lower bands) as short, plain sentences, e.g. Higher Conscientiousness -> "You follow through", Lower -> "Growth: break big tasks into small steps". Middle shows no card. Neuroticism appears only as **emotional steadiness**. Footer line: "This is a first look based on a few questions. It is not a diagnosis or a clinical test."
+- **OCEAN:** strengths (Higher bands) and growth areas (Lower bands) as short, plain sentences, e.g. Higher Conscientiousness -> "You follow through", Lower -> "Growth: break big tasks into small steps". **Every trait gets a card in every band** (client-approved style B, 2026-11-03): a strength note for Higher, a **Balance** note for Middle, a strength note for Lower, each with a short tip, so neither end reads as better. A "Try this first" line shows the tip of the trait with the lowest score (ties: first in O, C, E, A, N order). The 15 cards (5 traits, 3 bands) are the approved copy in the client page; they go into `report-copy.ts` as data. Neuroticism appears only as **emotional steadiness**. Footer line (shown on the whole report, OCEAN and RIASEC): "This is a first look based on a few questions. It is not a diagnosis, a clinical test or a validated test. The interest areas are based on Holland's six interest types." **Temporary line** until the client and a lawyer confirm the wording (section 9); draft wording; client and lawyer approve (section 9).
 - **RIASEC:** top interest areas (the Holland code letters, plain names), 3 to 5 **example career families** per area, and **suggested courses** from the catalog. Career families come from a hand-curated list per RIASEC type (seed from the prototype `careers.ts`, **strip % fit, salary and anything per-person**). Optional later: derive from the O\*NET Database with the required attribution.
 - **Never shown:** aptitude, work values, percentile, "top N%", salary, % fit, certificates, learner counts (CLAUDE.md, scope.md).
 
 ## 9. Open items
 | Item | Owner | Status |
 |---|---|---|
-| Client approval of all item wording and variants, and report copy | Client | open (in open-questions.md) |
-| Sign-off on thresholds: bands 37/62, close spread 13, minimum 80%, tie order R-I-A-S-E-C | Client + lead | open |
+| Client approval of the 50-question pool wording and report cards (style B) | Client | **approved 2026-11-03** (D69). Variants: the pool has one wording per question, so D62's 2 to 3 variants are still open |
+| Sign-off on thresholds: bands 37/63, close spread 13, minimum 80%, tie order R-I-A-S-E-C | Client + lead | **approved 2026-11-03**; the quiz keeps 2 per trait or type, so they fit as designed |
 | How RIASEC is described to users (no "validated" claim) | Client + lawyer | open |
 | Lawyer review of the "not a diagnosis" footer | Client | open |
 | Career family source: hand-curated now, O\*NET Database later? | Lead | open |
-| Optional upgrade: email O\*NET about Mini-IP use with variants | Lead | not started |
+| Optional upgrade: email O\*NET about Mini-IP use with variants (their licence pages disagree: CC BY 4.0 vs CC BY-ND; commercial use not stated). Draft written 2026-10-30; Vijay sends | Lead | draft ready, not sent |
+| Client approval of the question sources (the pool) | Client | approved 2026-11-03 |
+| Quiz length decided 2026-11-03: **10 personality + 12 interests (2 per trait or type)**, 3 wordings per question (approved pool wording = variant 1; variants 2 and 3 drafted by us, shown to the client before launch). Open: which 2 pool questions per trait or type are asked (one agree-keyed and one reverse-keyed for each personality trait), then rebuild the question set from the pool as a new version | Lead | open |
+| ORVIS licence and Holland mapping | Team | **done 2026-11-03**: paper read, public domain, mapping matches the appendix (details in [item-sources.md](item-sources.md)) |
 | `src/modules/chat/questions.ts` and `scoring.ts` are prototype code (aptitude, values, percentile, % fit). Rewrite them in the chat feature, with its own spec (`/feature-spec`) | Dev | not started |
-| `src/integrations/ai/` is no longer used by the quiz. Remove it in the chat feature spec | Dev | not started |
+| `src/integrations/ai/` is no longer used by the quiz. Remove it in the chat feature spec | Dev | **done 2026-11-04** (still in git history) |
 
-## 10. Draft item wording
-All drafts. `+` = agree-keyed, `-` = reversed. Variant 1 is the base wording.
-
-### OCEAN ("How much does this sound like you?")
-| ID | Trait | Key | Variant 1 | Variant 2 |
-|---|---|---|---|---|
-| `o-O-1` | Openness | + | I enjoy trying new ideas. | I like learning things I have never tried. |
-| `o-O-2` | Openness | - | I prefer to do things the usual way. | I would rather stick to what I already know. |
-| `o-C-1` | Conscientiousness | + | I finish what I start. | Once I begin something, I see it through. |
-| `o-C-2` | Conscientiousness | - | I leave my work until the last minute. | I put things off until I am almost out of time. |
-| `o-E-1` | Extraversion | + | I start conversations easily. | Meeting new people feels easy for me. |
-| `o-E-2` | Extraversion | - | In a group, I stay in the background. | I like to keep quiet when I am with many people. |
-| `o-A-1` | Agreeableness | + | I notice when someone around me is upset. | I care about how other people feel. |
-| `o-A-2` | Agreeableness | - | I am not very interested in other people's problems. | I would rather focus on my own things than on others' troubles. |
-| `o-N-1` | Emotional steadiness | + | I stay calm when things go wrong. | I keep my cool under pressure. |
-| `o-N-2` | Emotional steadiness | - | Small problems can make me feel very stressed. | I get upset easily. |
-
-### RIASEC ("How much would you enjoy this?")
-| ID | Type | Variant 1 | Variant 2 |
-|---|---|---|---|
-| `r-R-1` | Realistic | Fixing or building something with my hands. | Repairing a machine or making something from parts. |
-| `r-R-2` | Realistic | Working outdoors or with tools and equipment. | Spending a day with tools, machines or nature. |
-| `r-I-1` | Investigative | Figuring out how something works by testing it. | Solving a tricky puzzle or science problem. |
-| `r-I-2` | Investigative | Researching a question until I find the answer. | Exploring to understand why things happen. |
-| `r-A-1` | Artistic | Drawing, writing, designing or making music. | Creating something original, like art, a story or a song. |
-| `r-A-2` | Artistic | Coming up with new, creative ideas for a project. | Designing how something should look or feel. |
-| `r-S-1` | Social | Helping someone learn something new. | Teaching or coaching a friend. |
-| `r-S-2` | Social | Supporting people who are going through a hard time. | Listening to people and helping with their problems. |
-| `r-E-1` | Enterprising | Leading a team to reach a goal. | Taking charge of a group project. |
-| `r-E-2` | Enterprising | Convincing others to back my idea. | Starting a small business or selling something. |
-| `r-C-1` | Conventional | Organising information, files or schedules neatly. | Keeping lists and records in perfect order. |
-| `r-C-2` | Conventional | Following clear steps to get a task exactly right. | Checking details and numbers to avoid mistakes. |
-
-Add a third variant to any item the client wants more variety on, following the rules in section 5.
+## 10. Question wording
+The wording lives in one place: [item-sources.md](item-sources.md) lists the approved 50-question pool and the live set 1.0.0 with its three wordings per question. The code is `src/modules/chat/question-pool.ts` (pool) and `question-set.ts` (which questions are asked). Variant 1 is the client-approved wording; variants 2 and 3 are our drafts until the client sees them. `+` = agree-keyed, `-` = reversed. Follow the rules in section 5 when adding or changing a variant.

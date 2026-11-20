@@ -1,4 +1,4 @@
-# Spec: Chat (Meera quiz, scoring, report)
+# Spec: Chat (Mira quiz, scoring, report)
 
 - **Status:** draft
 - **Owner:** Vijay
@@ -6,10 +6,10 @@
 - **Source of truth for items and scoring:** [../requirements/assessment.md](../requirements/assessment.md). This spec says how to build it; that doc says what the questions, keys, thresholds and examples are. If they disagree, fix the doc first.
 
 ## Goal
-A logged-in learner chats with Meera through about 26 quick-tap questions (4 basics, 10 OCEAN, 12 RIASEC), gets a saved report (OCEAN strengths and growth areas, RIASEC interest areas, example career families, suggested courses), and can reopen it, print it as PDF, or retake.
+A learner (a **guest is enough, D78**; phone OTP comes before the report) chats with Mira through about 26 quick-tap questions (4 basics, 10 OCEAN, 12 RIASEC), gets a saved report (OCEAN strengths and growth areas, RIASEC interest areas, example career families, suggested courses), and can reopen it, print it as PDF, or retake.
 
 ## Scope
-- Question-set config (versioned) with 2 to 3 variants per item and Meera acknowledgement lines.
+- Question-set config (versioned) with 2 to 3 variants per item and Mira acknowledgement lines.
 - Per-tap answer saving via server action; resume where the learner left off.
 - Pure scoring function exactly as in assessment.md section 6.
 - Attempts: every start creates an attempt; all kept; report page shows the **latest completed** one.
@@ -18,13 +18,21 @@ A logged-in learner chats with Meera through about 26 quick-tap questions (4 bas
 - Funnel analytics (no PII), inactivity event (D58).
 - Docs-first changes already done: D62, modules.md, integrations.md, CLAUDE.md. Remaining doc updates are listed in "Cleanup" below.
 
+## Guest quiz and the report gate (D78, D80, Nov 16, built)
+- Actions use `requireLearnerOrGuest()`; `/discover` leaves the proxy matcher and moves to the `(quiz)` route group (no login guard). A visitor with no session sees `GuestStart` (Start button, bot check) which calls auth's `startGuestSession`; `REPORT_GATE=before_chat` keeps the old login-first rule.
+- `claimLinkedGuests(userId)` (chat service) re-points a linked guest's attempts to the learner in one transaction under an advisory lock; called at the top of every entry point that reads attempts; when both have an open attempt the older is abandoned. `getReportForVisitor` returns the real report for a learner and, for a guest, only `SAMPLE_REPORT` (`sample-report.ts`, constants only) plus `finished`. The `ReportGate` component shows it blurred with the OTP form. The worker job `auth.guest_cleanup` (daily) claims, then deletes guests older than 7 days, never one with a lead. Attempts belong to the guest user until the OTP re-points them (auth.md).
+- The typed name stays pending on the guest attempt and moves to the profile on claim. No chat text is stored (D18).
+- `finishAttempt` works for guests and saves the score. `getLatestReport` for a guest returns `{ ok: false, code: "verify_required" }` and the page shows ONE fixed sample report behind the gate: made-up numbers, generic text, same design, same for everyone, nothing from the learner (no name, no Holland code). The real report is fetched only after the OTP succeeds.
+- Gate text: the report will be linked to this number (no word "account"). Verified learners skip the gate, also after a retake. `REPORT_GATE` config holds the position.
+- Funnel events (codes only): `guest_started`, `report_gate_shown`, `otp_verified` with `from_guest`, `guest_claimed`; `visitor_id` is a random id, never PII.
+
 ## Out of scope
 - Callback request and consent: belongs to the `leads` spec; report only has a button that links to it.
 - Share links, certificates, aptitude, values, percentile, salary, % fit (not Phase 1).
 - My SELF dashboard card for the report (later; link only).
 - Hindi/other languages (config supports it; no copy now).
 - Real client wording: drafts in assessment.md until approved. Build with the drafts.
-- Under-13 stop or any age gate (client choice; lawyer review stays open).
+- Under-13 stop or any age gate, and any minor/parent flow (D79; lawyer review stays open).
 - AI of any kind.
 
 ## Files and interfaces
@@ -32,16 +40,16 @@ A logged-in learner chats with Meera through about 26 quick-tap questions (4 bas
 ### Module `src/modules/chat/`
 | File | Role |
 |---|---|
-| `question-set.ts` | Versioned config: `QuestionSet` v`1.0.0` (shape in assessment.md section 7), `thresholds`, `scales`, Meera `acknowledgements: string[]`. Data only, no logic. Replaces prototype `questions.ts` |
+| `question-set.ts` | Versioned config: `QuestionSet` v`1.0.0` (shape in assessment.md section 7), `thresholds`, `scales`, Mira `acknowledgements: string[]`. Data only, no logic. Replaces prototype `questions.ts` |
 | `variants.ts` | `pickVariant(sessionId, itemId, count): number` (hash of `sessionId + itemId`, modulo count; use a stable hash such as FNV-1a, not `Math.random`) |
 | `scoring.ts` | **Pure** `scoreAttempt(answers: Record<string, number>, set: QuestionSet): ScoreResult`. No imports from db, env, or time. Replaces prototype `scoring.ts` entirely |
 | `report.ts` | **Pure** `buildReport(result: ScoreResult, basics: Basics): ReportView` (strength/growth cards from OCEAN bands, Holland code, career families, copy). Report copy lives in `report-copy.ts` |
 | `careers.ts` | Reduced: Holland type to 3 to 5 example career families each, plain names only (D47). Delete salary, outlook, % fit, matching maths from the prototype file |
-| `name-check.ts` | `validateName(raw): { ok: true; value: string } \| { ok: false; reason: "format" \| "blocked" }`. Letters (incl. spaces, apostrophe, hyphen), max 30, blocklist for self-harm/abuse words (list provided with helpline copy by client; ship a small placeholder list, flagged) |
+| `name-check.ts` | `validateName(raw, lists?): { ok: true; value: string } \| { ok: false; reason: "format" \| "blocked" \| "abusive" }`. Letters (spaces, apostrophe, hyphen and combining marks allowed), max 30 (JS string length), **allowed scripts only: Latin, nine Indian scripts and Arabic for Urdu, one script per word** (closes the look-alike bypass; "आशा Verma" is fine), stored in NFKC form. Two blocklists with different outcomes: **self-harm** phrases give `blocked` (helpline stop screen, attempt ended); **abuse** words give `abusive` (ask again, no helpline, attempt stays open, because a real name can collide with an abuse word). Lists are data in `name-blocklist.ts`: a TEMPORARY English + Hinglish + Devanagari set (abuse terms from the LDNOOBW list, CC BY 4.0, credit required; self-harm phrases are our own, unreviewed), to be replaced by the client's list |
 | `schema.ts` | Drizzle tables (below) |
 | `repo.ts` | DB access only |
 | `service.ts` | Public API, below |
-| `actions.ts` | Server actions: `startAttempt`, `submitAnswer`, `submitName`, `finishAttempt`, `retake`. zod-validated, thin |
+| `actions.ts` | Server actions: `startAttempt`, `retake`, `submitAnswer`, `submitName`, `finishAttempt`, `retryStage`. zod-validated, thin; each calls `requireUser()` (a logged-out visitor is sent to login) and never reads a user id from the client. `submitName` passes auth's `updateProfileName` to the service as the name saver, so chat never touches auth. Unexpected errors are logged without personal data and answered as `unknown` |
 
 ### Types (shapes; fix exact names while coding)
 ```ts
@@ -55,13 +63,19 @@ type ScoreResult =
 Scoring is per stage; a stage that is `invalid` or `incomplete` blocks the report for that stage (assessment.md section 6).
 
 ### `service.ts` (public to other modules and pages)
-- `startOrResumeAttempt(userId): Promise<{ attemptId; next: NextStep }>`: resumes the latest unfinished attempt, else creates one.
-- `getNextStep(attemptId): Promise<NextStep>`: `{ kind: "name" | "basics" | "question"; itemId; variantId; text; scale; progress }` or `{ kind: "done" }`.
-- `submitAnswer(attemptId, itemId, value): Promise<NextStep>`: upsert by (attempt, item); rejects values outside the item's scale and unknown item IDs; stores the variant that `pickVariant` assigned.
-- `finishAttempt(attemptId): Promise<ScoreResult>`: runs `scoreAttempt`, stores result, sets status.
-- `getLatestReport(userId): Promise<ReportView | null>`.
-- `retake(userId): Promise<{ attemptId }>`.
-- Other modules call only these. `commerce`/`catalog` never read chat tables.
+Functions take a `Learner` (`{ userId, name }`, built by the caller from auth's `requireUser()`) and return `{ ok: true, ... }` or `{ ok: false, code }` (never throw for expected cases). Codes: `invalid_input`, `not_found` (missing **or someone else's** attempt, the same answer), `attempt_closed`, `out_of_order`, `incomplete`, `stage_invalid`, `not_allowed`, `unknown`. Every attempt function checks ownership and loads the question set from the attempt's own `set_version`.
+- `startOrResumeAttempt(learner)`: resumes the open attempt, else creates one (race-safe through the unique index). An open attempt older than `CHAT_RESUME_DAYS` (D75) is marked `abandoned` first, so a fresh one is created. Returns `{ attemptId, resumed, next }`.
+- `getResumeOffer(learner)` (E4-S12, D75): `{ kind: "none" }`, or `{ kind: "offer", attemptId, answered, total }` when there is a live open attempt with at least one saved answer that has been untouched for `CHAT_INACTIVITY_MINUTES` (a quick refresh just resumes). Read-only: never creates or closes anything. The page shows "Continue or start again" for an offer.
+- `restartAttempt(learner, attemptId)` (E4-S12): "Start again": marks THAT attempt `abandoned` (answers kept) and starts a new one. The screen names the attempt it showed, so a stale tab cannot end a different one: an attempt that is already closed gives `attempt_closed` (the page reloads), a missing or foreign id gives `not_found`. Same return shape as `startOrResumeAttempt`.
+- `getNextStep(learner, attemptId)`: the first question without a saved answer, recomputed each time (no stored counter). A `NextStep` carries text, scale labels and progress for the UI, never keys, scores or sources: `{ kind: "name" | "basics" | "question" | "done", ... }`.
+- `submitAnswer(learner, attemptId, questionId, value)`: upsert; rejects unknown questions, values outside the scale or option list, the name, and questions not reached yet (`out_of_order`; earlier ones can be changed). The server picks and stores the variant. Returns `{ next, acknowledgement }`.
+- `applyHomeAnswer(learner, attemptId, optionId)` (D87): the Home mini-chat answer (an option id of the set's `homeQuestionId`, e.g. `school`), saved only while the attempt has no answers; otherwise `applied: false`. Unknown option: `invalid_input`. Question set 1.1.0 asks status, name, age, goal (`nameAfter`); 1.0.0 attempts keep name-first.
+- `finishAttempt(learner, attemptId)`: scores with the attempt's own set, stores result + status in **one transaction**; idempotent; `incomplete` or `stage_invalid` (with the stage) when it cannot score.
+- `retryStage(learner, attemptId, stage)`: clears that stage's answers, only if it really scored invalid.
+- `retake(learner)`: a new attempt, unless one is open, which is resumed (no pile of empty attempts).
+- `abandonAttempt(learner, attemptId)`: ends an attempt for good (blocked name); never resumed.
+- `getLatestResult(userId)`: the newest completed attempt's result, or null. (`getLatestReport` with course suggestions is 4d.)
+- Pure helpers: `flow.ts` (order, progress, next step, answer checks), `result.ts` (score to row and back), `types.ts` (client-safe types). Other modules call only `service.ts`. `commerce`/`catalog` never read chat tables.
 
 ### Integrations used
 - `@/integrations/analytics`: `track(sessionId, event, props)`. **No `ai` integration** (D62).
@@ -69,9 +83,10 @@ Scoring is per stage; a stage that is `invalid` or `incomplete` blocks the repor
 - Catalog: `catalog.service.coursesForInterests(letters: string[]): Promise<CourseSummary[]>` (**new**, see below). Chat never imports catalog `repo`/`schema`.
 
 ### Schema changes (Drizzle; run `npm run db:generate`, never edit a committed migration)
-- `chat_attempts`: `id` uuid pk, `user_id` (fk to auth user), `set_version` text, `status` enum (`in_progress`, `completed`, `invalid`, `abandoned`), `started_at`, `last_answer_at`, `completed_at` null. Session id for analytics = attempt id.
-- `chat_answers`: `attempt_id` fk, `question_id` text, `variant_id` text, `value` smallint (1 to 5 for scored items; option index for basics), `answered_at`. **Unique (attempt_id, question_id)** for upsert. No question text, no free text (D18). The name is **not** stored here.
-- `chat_results`: `attempt_id` pk/fk, `set_version`, `scores` jsonb (per-dimension numbers and bands), `holland` text null (e.g. `ISA`), `holland_close` boolean, `flat` boolean, `ocean_status`, `riasec_status`, `created_at`.
+- `chat_attempts`: `id` uuid pk, `user_id` (foreign key to `auth_user`, cascade on delete: the one allowed cross-module import, for the foreign key only, see modules.md), `set_version` text, `status` enum (`in_progress`, `completed`, `invalid`, `abandoned`), `started_at`, `last_answer_at`, `completed_at` null. Session id for analytics = attempt id. **A partial unique index allows only one `in_progress` attempt per learner** (two tabs cannot both create one).
+- `chat_answers`: `attempt_id` fk, `question_id` text, `variant_id` text (null for basics), `value` smallint (1 to 5 for scored items; option index for basics), `answered_at`. **Primary key (attempt_id, question_id)** gives the upsert. No question text, no free text (D18). The name is **not** stored here.
+- `chat_results`: `attempt_id` pk/fk, `set_version`, `scores` jsonb (per-dimension numbers and bands), `holland` text null (e.g. `ISA`), `holland_close` boolean, `flat` boolean, **`stage_status` jsonb** (one entry per stage, e.g. `{"ocean":"ok","riasec":"ok"}`, so a new stage needs no new column; replaces the two `ocean_status` / `riasec_status` columns), `created_at`.
+- Column names are snake_case. Migration: `drizzle/0001_pale_rattler.sql`.
 - Basics (`b-age`, `b-status`, `b-goal`) are rows in `chat_answers` like any other.
 - **PII columns:** none new. `user_id` links to the auth profile where the name lives; comment this in `schema.ts`.
 - Catalog: add `riasec_types` (text array, e.g. `{I,S}`) to the course table via the catalog module (own migration, set in admin later; seed placeholders). `coursesForInterests` returns published courses whose `riasec_types` overlap the code, ranked by overlap count then course order.
@@ -79,18 +94,20 @@ Scoring is per stage; a stage that is `invalid` or `incomplete` blocks the repor
 ### Routes / actions
 - `/discover` (exists): the chat flow. Auth guard `(learner)` already redirects to `/login` (OTP before start).
 - `/discover/report`: server component; reads `getLatestReport`; owner only; empty state links back to `/discover`.
-- Server actions above. No REST handlers needed (D42).
+- Server actions above. No REST handlers needed (D42). The UI contract is the typed result: `{ ok: true, ... }` or `{ ok: false, code, retryAfterSec? }`; codes are in `types.ts` (the UI owns all wording).
 
 ### UI (port with `/ui-port`; tokens only, 375px + desktop)
 Reuse and adapt prototype components in `src/components/discover/` (see [../prototype/reuse-map.md](../prototype/reuse-map.md)):
-- `discovery-flow.tsx`: stage machine becomes about, OCEAN, RIASEC, report; state from the server (no `localStorage`).
-- `chat-stage.tsx`: bubbles, typing indicator, chips; steps and acknowledgements from config; only the name is typed; the side panel becomes a bottom sheet.
-- `personality-stage.tsx`: the Likert UI renders both OCEAN and RIASEC from config (labels per scale).
-- `analyzing-stage.tsx`: loader while `finishAttempt` runs.
+- **Built (2026-11-03):** `chat-flow.tsx` draws whatever the server's `NextStep` says (no stage machine, no `localStorage`); `chat-card.tsx` (name and tap questions in the prototype's bubble look), `scale-question.tsx` (the round-button scale: statement, labels and number of buttons come from the step), `quiz-stepper.tsx` (the step bar under the navbar: a check for finished parts, a highlighted current circle, filling lines, a percentage; labels from the “labels” in the set, hidden on phones), `stage-header.tsx` (badge, title, subtitle, "n/total answered" and one bar segment per question), `status-screens.tsx` (finishing loader, try again, stop screen, temporary saved-result view), `helpline-link.tsx`, `chat-messages.ts` (UI-owned wording for error codes). `page.tsx` resumes or starts the attempt on the server, and shows the saved result with a retake button to a learner who finished and has nothing open.
+- **Part headings are data in the question set** (`stageCopy` for each part and `finishLabel`, draft wording until the client approves it) and travel with the progress, so the step bar and heading hardcode no part name. The scale card is not remounted per question: only its content slides out and in (like the prototype), and there is no hover tooltip on the answer buttons.
+- **No hardcoding (D68), enforced by `no-hardcoding.test.ts`:** no UI file may contain question ids, counts, part names, scale words, the guide or product name, a raw colour, or an import of server-only question data.
+- Deleted: `discovery-flow`, `intro-stage`, `chat-stage`, `personality-stage`, `aptitude-stage`, `values-stage`, `analyzing-stage`, `stepper`, `stage-shell`.
 - `results-report.tsx`: **rewrite** to the report in assessment.md section 8; print stylesheet; radar chart generalised to N axes (5 OCEAN + 6 RIASEC) or two charts.
 - **Delete** `aptitude-stage.tsx`, `values-stage.tsx` and aptitude/values/percentile code paths.
 - A "Try again" screen for `invalid` stages (copy: "Your answers were all the same. Want to try that part again?").
-- The self-harm stop screen with the helpline message (copy and link from the client; placeholder until then).
+- **Finish opens the report (E4-S11, 2026-11-06):** when the last answer is scored, `chat-flow.tsx` calls `router.replace("/discover/report")`; the finishing screen stays until the report loads. The saved-result screen (with "See my report" and "Take it again") is what `/discover` shows afterwards.
+- **A helpline link that is always visible** on every chat screen, the stop screen and the report (D70). It is the primary safety measure and does not depend on any text matching. Wording, number and link are data in `src/config/helpline.ts` (placeholder until the client supplies them).
+- The self-harm stop screen with the same helpline message (the name check is the backup; copy and link from the client; placeholder until then).
 
 ## Rules and invariants that apply
 - No raw chat text stored; answers by question ID + variant ID + value (D18). The name goes to the profile only.
@@ -106,25 +123,27 @@ Reuse and adapt prototype components in `src/components/discover/` (see [../prot
 - Refresh or resume mid-quiz: same variants (deterministic pick), resumes at the first unanswered item.
 - Double tap / retry: upsert, no duplicate rows. Answer for an item already answered overwrites it (allow "back" one step only if the UI offers it).
 - Out-of-range value, unknown item ID, item from a later stage: rejected.
-- Name fails format: ask again; name hits the blocklist: stop screen with the helpline, attempt marked `abandoned`, no name saved, no further questions.
+- Name fails format, mixes scripts or uses a script that is not allowed: ask again (`name_format`). Name is an abuse word: ask again, no helpline, the attempt stays open (`name_format`). Name hits the self-harm list: stop screen with the helpline, attempt marked `abandoned`, no name saved, no further questions (`name_blocked`).
 - Straight-lining: stage `invalid`, offer retry of that stage; the attempt does not complete until fixed (rows for that stage cleared on retry).
 - Incomplete (abandoned after D58 inactivity): `chat_exited` fires; the attempt stays resumable; it never produces a report until complete.
+- Returning to an open attempt (D75): with at least one answer and away for `CHAT_INACTIVITY_MINUTES` or more, the learner chooses Continue or Start again (a quick refresh just resumes). After `CHAT_RESUME_DAYS` (default 30) without an answer the attempt expires: it is marked `abandoned` and a new one starts (a learner with a saved result sees it with the retake button, not a silent new attempt).
 - Question set version changes mid-attempt: the attempt keeps its `set_version`; score against that version (keep old set configs in the repo, never delete).
 - Flat RIASEC: no Holland code; the report shows the "broad interests" message and suggests courses by the basics' goal only if the catalog supports it (else just "browse courses").
 - Report opened with no completed attempt: empty state.
 - Two tabs: last write wins per item; no corruption (unique key).
 - Retake: a new attempt; old report stays visible until the new one completes.
-- Rate limit on `submitAnswer` per user (simple per-minute cap) to stop scripted floods.
+- Rate limit: 60 answers or names per learner per minute (`limits.ts`, in memory per app instance, so with several instances the real cap is higher: enough to stop a scripted flood, not for billing). Over the cap answers `rate_limited` with `retryAfterSec`.
+- Blocked name: `name_blocked`, the attempt is ended (abandoned), nothing is saved. Bad format: `name_format`, ask again. A stranger's blocked-word request cannot end someone else's attempt (ownership is checked first).
 
 ## Cleanup (done as part of this feature)
 - Delete or rewrite prototype `src/modules/chat/questions.ts`, `scoring.ts`, aptitude/values/percentile code, the `careers.ts` matching maths, and unused `lib/store.ts` chat state.
-- Remove `src/integrations/ai/` and the `AI_PROVIDER` switch (`src/lib/env-schema.ts`, `.env.example`, any docs link).
+- ~~Remove `src/integrations/ai/` and the `AI_PROVIDER` switch (`src/lib/env-schema.ts`, `.env.example`, any docs link).~~ **Done 2026-11-04.**
 - Update `docs/requirements/architecture.md` event list and `src/integrations/analytics/types.ts` for the events below.
 - Reuse map: mark discovery rows **done** as ported.
 
 ## Analytics (typed in `EventMap`; no PII)
 Existing in `src/integrations/analytics/types.ts`: `chat_started`, `chat_step` (stage, messageNumber, inputType, secondsTaken; one per answer, gives the exit point for D18), `chat_exited` (lastStage, lastMessageNumber; D58), `report_viewed`, `report_action`.
-**Add:** `chat_stage_completed { stage, setVersion }`, `chat_completed { setVersion, hollandClose: boolean, flat: boolean }`, `chat_invalid { stage }`, `chat_retake {}`.
+**Added (built 2026-11-04):** `chat_stage_completed { stage, setVersion }`, `chat_completed { setVersion, hollandClose: boolean, flat: boolean, durationSeconds }`, `chat_invalid { reason: "stage_invalid" | "name_rejected", stage? }` (`name_rejected` covers every refused name so the self-harm case is not singled out), `chat_retake {}`. `chat_step` also fires for the name step. `chat_exited` is typed but not fired yet (needs a worker job over open attempts older than `CHAT_INACTIVITY_MINUTES`).
 PDF click uses existing `report_action { action: "pdf" }` (equals "report_pdf_clicked"). `sessionId` = attempt id. Never send name, age band text or any answer text. Property values are codes only (e.g. stage names).
 
 ## Verification (end to end)
@@ -132,7 +151,7 @@ Unit tests (vitest, run a single file at a time):
 - `scoring.test.ts`: the four worked examples F1 to F4 in assessment.md (F1 tie-break gives `ISA` and `close: true`; F2 `RIA` ranked; F3 invalid and flat-but-varied gives no code; F4 incomplete). Reverse keying per item; rounding half up (12.5 gives 13); OCEAN band edges 37/38 and 62/63; spread edge 13 versus 14; minimum 80%; straight-lining detection per stage; scoring ignores unknown keys.
 - `variants.test.ts`: deterministic for the same input; every index reachable over many sessions; same polarity (assert each variant exists under an item with a single `key`).
 - `question-set.test.ts`: IDs unique; counts 4/10/12; every scored item has 2 to 3 variants; every dimension has 2 items; each OCEAN trait has one `+` and one `-`; RIASEC items all `+`; variants under 90 chars.
-- `name-check.test.ts`: letters only, max 30, blocklist, apostrophes/hyphens, trims, Unicode letters.
+- `name-check.test.ts`: letters only, max 30, both blocklists and their different outcomes, script allowlist and mixed-script words, apostrophes/hyphens, NFKC, trims, and a sample of common Indian names that must never be blocked.
 - `service.test.ts` (against test DB or mocked repo): resume, upsert, out-of-range rejection, finish writes result, retake creates a new attempt, `getLatestReport` returns the newest completed.
 - `report.test.ts`: no forbidden fields (assert absence of percentile, salary, fit); Neuroticism label is "emotional steadiness"; footer line present.
 
@@ -147,6 +166,6 @@ Before merge: `/code-review`. Not a payments/auth feature, but run `/security-re
 
 ## Open items carried
 - Client approval of item and variant wording, report copy, thresholds (open-questions.md).
-- Helpline link/wording and the blocklist words (client).
+- Helpline link/wording and the blocklist words (client). The Hindi/Hinglish list in the code is temporary and unreviewed; regional languages are not covered.
 - Auth service must expose `updateProfileName` (add to the auth spec if absent).
 - Catalog spec/admin must support `riasec_types` on courses.

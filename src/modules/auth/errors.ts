@@ -10,11 +10,12 @@ type Body = { code?: string; message?: string } | null | undefined;
 
 const CAPTCHA_CODES = new Set(["VERIFICATION_FAILED", "MISSING_RESPONSE", "UNKNOWN_ERROR"]);
 
-/** The send hook encodes a throttle as message `cooldown:23`, `daily_limit:3600` or `locked:900`. */
+/** The send hook encodes a throttle as message `cooldown:23`, `daily_limit:3600`, `locked:900` or `sms_cutoff:7200`. */
 function parseThrottle(message: string | undefined): Failure {
   const [kind, secs] = (message ?? "").split(":");
   const retryAfterSec = Number(secs);
-  const code = kind === "locked" || kind === "cooldown" || kind === "daily_limit" ? kind : "unknown";
+  const code =
+    kind === "locked" || kind === "cooldown" || kind === "daily_limit" || kind === "sms_cutoff" ? kind : "unknown";
   return Number.isFinite(retryAfterSec) && retryAfterSec > 0 ? { code, retryAfterSec } : { code };
 }
 
@@ -24,6 +25,19 @@ export function mapSendFailure(status: number, body: Body, retryAfterHeader?: st
   if (body?.code === SEND_FAILED) return { code: "send_failed" };
   if (body?.code && CAPTCHA_CODES.has(body.code)) return { code: "captcha_failed" };
   if (body?.code === "INVALID_PHONE_NUMBER") return { code: "invalid_phone" };
+  if (status === 429) {
+    const retryAfterSec = Number(retryAfterHeader);
+    return Number.isFinite(retryAfterSec) && retryAfterSec > 0
+      ? { code: "ip_limit", retryAfterSec }
+      : { code: "ip_limit" };
+  }
+  return { code: "unknown" };
+}
+
+/** A failed call to sign-in/email (through auth.handler). An unknown email and a wrong password are the same answer. */
+export function mapSignInFailure(status: number, body: Body, retryAfterHeader?: string | null): Failure {
+  if (body?.code && CAPTCHA_CODES.has(body.code)) return { code: "captcha_failed" };
+  if (body?.code === "INVALID_EMAIL_OR_PASSWORD" || body?.code === "INVALID_EMAIL") return { code: "bad_credentials" };
   if (status === 429) {
     const retryAfterSec = Number(retryAfterHeader);
     return Number.isFinite(retryAfterSec) && retryAfterSec > 0

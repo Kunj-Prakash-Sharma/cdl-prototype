@@ -13,4 +13,9 @@ export interface QueueProvider {
   enqueue(job: string, payload: object, options?: EnqueueOptions): Promise<void>;
   /** Worker only. If the handler throws, the job is retried by the queue. */
   register(job: string, handler: JobHandler): Promise<void>;
+  /**
+   * Worker only. Runs `job` on a cron schedule (5 fields, UTC). Safe to call on every worker start and from several
+   * workers: the schedule is stored once, and each tick runs the job once.
+   */
+  schedule(job: string, cron: string): Promise<void>;
 }

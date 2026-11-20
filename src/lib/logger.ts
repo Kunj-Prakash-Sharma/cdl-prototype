@@ -23,10 +23,19 @@ const REDACT = new Set([
   "message",
 ]);
 
+function framesOnly(stack: string | undefined): string | undefined {
+  return stack
+    ?.split("\n")
+    .filter((line) => line.trimStart().startsWith("at "))
+    .join("\n");
+}
+
 export function redact(value: unknown, depth = 0): unknown {
   if (value === null || typeof value !== "object" || depth > 6) return value;
   if (Array.isArray(value)) return value.map((v) => redact(v, depth + 1));
-  if (value instanceof Error) return { name: value.name, message: "[redacted]", stack: value.stack };
+  // The first lines of a stack repeat the error message (a failed query includes its parameter values), so only the
+  // frames ("at file:line") are kept: enough to find the code, nothing the learner typed.
+  if (value instanceof Error) return { name: value.name, message: "[redacted]", stack: framesOnly(value.stack) };
   return Object.fromEntries(
     Object.entries(value as Record<string, unknown>).map(([k, v]) => [
       k,

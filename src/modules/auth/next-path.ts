@@ -12,6 +12,7 @@ export function safeNextPath(raw: string | null | undefined, fallback = DEFAULT_
     const url = new URL(raw, "http://local.invalid");
     if (url.origin !== "http://local.invalid") return fallback;
     if (url.pathname === "/login" || url.pathname.startsWith("/login/")) return fallback;
+    if (url.pathname === "/admin/login") return fallback; // the admin login page is never a destination
     return `${url.pathname}${url.search}`;
   } catch {
     return fallback;

@@ -1,11 +1,19 @@
 // PRIVATE to modules/auth: database access only.
 import { createHmac } from "node:crypto";
-import { and, desc, eq, ilike, isNull, ne, or, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNull, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { escapeLike, type UserFilters } from "./admin-users";
-import { applyLock, decideSend, emptyThrottle, type SendDecision, type Throttle } from "./limits";
-import { authOtpThrottle, authUser } from "./schema";
+import {
+  applyLock,
+  decideSend,
+  decideWindow,
+  emptyThrottle,
+  type SendDecision,
+  type Throttle,
+  type WindowDecision,
+} from "./limits";
+import { authOtpThrottle, authSession, authUser } from "./schema";
 
 /** HMAC of the number: lets us count per number without keeping the number in this table. */
 export function phoneHash(phone: string): string {
@@ -49,6 +57,29 @@ export async function reserveSend(phone: string, now: Date): Promise<SendDecisio
   });
 }
 
+/** Row key of the one shared counter behind the SMS spend cutoff (D74). */
+export const SMS_TOTAL_KEY = "sms:total";
+/** Row key of one browser's counter: an HMAC of its cookie id, never the id itself. */
+export const deviceKey = (deviceId: string) => `dev:${phoneHash(`device:${deviceId}`)}`;
+
+/**
+ * Atomic "count one more, unless `cap` is already reached in the rolling day" on any counter row. Used for the device
+ * limit and the SMS spend cutoff. Two requests at once cannot both take the last slot (row lock).
+ */
+export async function reserveWindow(key: string, cap: number, now: Date): Promise<WindowDecision> {
+  return db.transaction(async (tx) => {
+    await tx.insert(authOtpThrottle).values({ phoneHash: key }).onConflictDoNothing();
+    const [row] = await tx.select().from(authOtpThrottle).where(eq(authOtpThrottle.phoneHash, key)).for("update");
+    const decision = decideWindow(toThrottle(row), now, cap);
+    if (!decision.ok) return decision;
+    await tx
+      .update(authOtpThrottle)
+      .set({ ...decision.next, updatedAt: now })
+      .where(eq(authOtpThrottle.phoneHash, key));
+    return decision;
+  });
+}
+
 /** Counts a wrong code and returns the attempt number (1 = first try). */
 export async function recordVerifyFail(phone: string): Promise<number> {
   const key = phoneHash(phone);
@@ -59,6 +90,14 @@ export async function recordVerifyFail(phone: string): Promise<number> {
     .where(eq(authOtpThrottle.phoneHash, key))
     .returning({ n: authOtpThrottle.verifyFails });
   return row?.n ?? 1;
+}
+
+/** A successful login forgets earlier wrong attempts, so typos made months apart never add up to a lock. */
+export async function clearVerifyFails(phone: string): Promise<void> {
+  await db
+    .update(authOtpThrottle)
+    .set({ verifyFails: 0, updatedAt: new Date() })
+    .where(eq(authOtpThrottle.phoneHash, phoneHash(phone)));
 }
 
 export async function verifyFailCount(phone: string): Promise<number> {
@@ -78,7 +117,8 @@ export async function lockNumber(phone: string, now: Date): Promise<void> {
     const next = applyLock(toThrottle(row), now);
     await tx
       .update(authOtpThrottle)
-      .set({ lockedUntil: next.lockedUntil, updatedAt: now })
+      // The wrong-attempt count starts again with the lock: once it runs out, the next typo must not lock again.
+      .set({ lockedUntil: next.lockedUntil, verifyFails: 0, updatedAt: now })
       .where(eq(authOtpThrottle.phoneHash, key));
   });
 }
@@ -97,9 +137,35 @@ export async function setUserRole(userId: string, role: "learner" | "admin"): Pr
   await db.update(authUser).set({ role, updatedAt: new Date() }).where(eq(authUser.id, userId));
 }
 
+/** Ends every session of a user (used when an admin password is reset). */
+export async function deleteSessionsForUser(userId: string): Promise<void> {
+  await db.delete(authSession).where(eq(authSession.userId, userId));
+}
+
+/**
+ * A guest verified a phone (D80): remember which real user it became, and hand over the name the guest typed in the quiz
+ * (the newest name wins). Only a guest can be linked, and never to itself; running it twice changes nothing more.
+ */
+export async function linkGuest(guestId: string, userId: string): Promise<void> {
+  if (guestId === userId) return;
+  await db.transaction(async (tx) => {
+    const [guest] = await tx
+      .select({ name: authUser.name, isAnonymous: authUser.isAnonymous })
+      .from(authUser)
+      .where(eq(authUser.id, guestId));
+    if (!guest?.isAnonymous) return;
+    await tx.update(authUser).set({ linkedUserId: userId, updatedAt: new Date() }).where(eq(authUser.id, guestId));
+    if (guest.name)
+      await tx.update(authUser).set({ name: guest.name, updatedAt: new Date() }).where(eq(authUser.id, userId));
+  });
+}
+
 export async function setUserName(userId: string, name: string): Promise<void> {
   await db.update(authUser).set({ name, updatedAt: new Date() }).where(eq(authUser.id, userId));
 }
+
+// Guests (anonymous users, D80) are not "users" for the admin lists and counts.
+const notGuest = sql`coalesce(${authUser.isAnonymous}, false) = false`;
 
 function userWhere(filters: Pick<UserFilters, "q" | "role">): SQL | undefined {
   const role =
@@ -110,7 +176,7 @@ function userWhere(filters: Pick<UserFilters, "q" | "role">): SQL | undefined {
         : undefined;
   const pattern = `%${escapeLike(filters.q)}%`;
   const text = filters.q ? or(ilike(authUser.name, pattern), ilike(authUser.phoneNumber, pattern)) : undefined;
-  return and(role, text);
+  return and(notGuest, role, text);
 }
 
 export type UserListRow = {
@@ -160,6 +226,53 @@ export async function userCounts(
       named: sql<number>`(count(*) filter (where ${authUser.name} <> ''))::int`,
       newThisWeek: sql<number>`(count(*) filter (where ${authUser.createdAt} >= ${weekAgo}))::int`,
     })
-    .from(authUser);
+    .from(authUser)
+    .where(notGuest);
   return row ?? { total: 0, admins: 0, named: 0, newThisWeek: 0 };
+}
+
+export async function findPhoneByUserId(userId: string): Promise<string | null> {
+  const [row] = await db.select({ phone: authUser.phoneNumber }).from(authUser).where(eq(authUser.id, userId));
+  return row?.phone ?? null;
+}
+
+export async function findNamesByUserIds(userIds: string[]): Promise<Map<string, string>> {
+  if (userIds.length === 0) return new Map();
+  const rows = await db
+    .select({ id: authUser.id, name: authUser.name })
+    .from(authUser)
+    .where(inArray(authUser.id, userIds));
+  return new Map(rows.map((row) => [row.id, row.name]));
+}
+
+/** Guests that became this real user (D80). Other modules re-point their rows from each of these ids to `userId`. */
+export async function findLinkedGuestIds(userId: string): Promise<string[]> {
+  const rows = await db
+    .select({ id: authUser.id })
+    .from(authUser)
+    .where(and(eq(authUser.linkedUserId, userId), eq(authUser.isAnonymous, true)));
+  return rows.map((row) => row.id);
+}
+
+/** Guests created before `cutoff` (oldest first), with the real user each became (null if it never verified a phone). */
+export async function findGuestsCreatedBefore(
+  cutoff: Date,
+  limit: number,
+): Promise<{ id: string; linkedUserId: string | null }[]> {
+  return db
+    .select({ id: authUser.id, linkedUserId: authUser.linkedUserId })
+    .from(authUser)
+    .where(and(eq(authUser.isAnonymous, true), sql`${authUser.createdAt} < ${cutoff}`))
+    .orderBy(authUser.createdAt)
+    .limit(limit);
+}
+
+/** Deletes guests only (the `isAnonymous` check is in the query itself, so a wrong id can never remove a real user). */
+export async function deleteGuestUsers(ids: string[]): Promise<number> {
+  if (ids.length === 0) return 0;
+  const gone = await db
+    .delete(authUser)
+    .where(and(inArray(authUser.id, ids), eq(authUser.isAnonymous, true)))
+    .returning({ id: authUser.id });
+  return gone.length;
 }

@@ -36,7 +36,7 @@ src/integrations/<name>/
 | `queue` | `enqueue(job, payload)`, `register(job, handler)` | pg-boss | SQS |
 
 ## Dropped
-- **`ai` (question rewording, Bedrock):** dropped by [D62](../decisions.md). The quiz uses pre-approved wording variants instead ([../requirements/assessment.md](../requirements/assessment.md)). The prototype folder `src/integrations/ai/` and the `AI_PROVIDER` env switch are unused; remove them in the chat feature.
+- **`ai` (question rewording, Bedrock):** dropped by [D62](../decisions.md). The quiz uses pre-approved wording variants instead ([../requirements/assessment.md](../requirements/assessment.md)). The unused prototype wrapper `src/integrations/ai/` and the `AI_PROVIDER` env switch were removed on 2026-11-04; they stay in git history (commit `09c40fd`, tag `prototype-v0`) if AI is needed later.
 
 ## Thin facades (not full wrappers)
 - **Auth:** `requireUser()`, `requireAdmin()`, `getSession()` in `modules/auth`. The rest of the app never imports Better Auth directly.

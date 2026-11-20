@@ -5,6 +5,12 @@
 export interface EventMap {
   home_viewed: { trafficSource?: string; deviceType?: string };
   chat_started: { source?: string };
+  /** A visitor tapped Start and got a guest session (D80). The session id is the guest's random id: no personal data. */
+  guest_started: Record<string, never>;
+  /** A guest finished the quiz and was shown the phone gate with the fixed sample report (D78). */
+  report_gate_shown: Record<string, never>;
+  /** A guest verified a phone and the quiz moved to the real learner (D80). `attempts` is a count. */
+  guest_claimed: { attempts: number };
   otp_sent: { result: "ok" | "failed"; attempt: number };
   otp_verified: { result: "ok" | "failed"; attempt: number };
   chat_step: {
@@ -14,6 +20,11 @@ export interface EventMap {
     secondsTaken: number;
   };
   chat_exited: { lastStage: string; lastMessageNumber: number };
+  chat_stage_completed: { stage: string; setVersion: string };
+  chat_completed: { setVersion: string; hollandClose: boolean; flat: boolean; durationSeconds: number };
+  /** `name_rejected` covers every name refusal (format, abuse word, self-harm phrase) so events never single out the sensitive case. */
+  chat_invalid: { reason: "stage_invalid" | "name_rejected"; stage?: string };
+  chat_retake: Record<string, never>;
   report_viewed: { scoresPresent: boolean; coursesSuggested: number };
   report_action: { action: "save" | "pdf" | "callback" | "courses" };
   course_viewed: { courseId: string };

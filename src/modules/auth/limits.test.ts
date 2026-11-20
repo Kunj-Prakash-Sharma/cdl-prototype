@@ -1,5 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { DAILY_CAP, LOCK_SEC, RESEND_COOLDOWN_SEC, applyLock, decideSend, type Throttle } from "./limits";
+import {
+  DAILY_CAP,
+  DAY_SEC,
+  DEVICE_DAILY_CAP,
+  DEVICE_DAILY_CAP_LOOSE,
+  LOCK_SEC,
+  RESEND_COOLDOWN_SEC,
+  SMS_DAILY_CAP_DEFAULT,
+  SMS_DAILY_CAP_LOOSE,
+  applyLock,
+  decideSend,
+  decideWindow,
+  deviceDailyCap,
+  smsDailyCap,
+  type Throttle,
+} from "./limits";
 
 const T0 = new Date("2026-10-28T10:00:00Z");
 const after = (base: Date, sec: number) => new Date(base.getTime() + sec * 1000);
@@ -57,5 +72,49 @@ describe("applyLock", () => {
   it("locks a number that has no history", () => {
     const d = decideSend(applyLock(null, T0), T0);
     expect(d.ok).toBe(false);
+  });
+});
+
+describe("decideWindow (device limit and SMS spend cutoff)", () => {
+  const countUpTo = (cap: number, at: Date) => {
+    let state: Throttle | null = null;
+    for (let i = 0; i < cap; i++) {
+      const d = decideWindow(state, at, cap);
+      if (!d.ok) throw new Error(`refused at ${i + 1} of ${cap}`);
+      state = d.next;
+    }
+    return state;
+  };
+
+  it("counts up to the cap, then refuses with the time left in the day", () => {
+    const full = countUpTo(3, T0);
+    const d = decideWindow(full, after(T0, 3600), 3);
+    expect(d).toEqual({ ok: false, retryAfterSec: DAY_SEC - 3600 });
+  });
+
+  it("starts a new day window once the first one has ended", () => {
+    const full = countUpTo(3, T0);
+    const d = decideWindow(full, after(T0, DAY_SEC), 3);
+    expect(d.ok).toBe(true);
+    if (d.ok) expect(d.next).toMatchObject({ sendCount: 1, windowStart: after(T0, DAY_SEC) });
+  });
+
+  it("a cap of 1 allows exactly one", () => {
+    const one = decideWindow(null, T0, 1);
+    expect(one.ok).toBe(true);
+    if (one.ok) expect(decideWindow(one.next, T0, 1).ok).toBe(false);
+  });
+});
+
+describe("caps by environment", () => {
+  it("device cap is real in production and loose elsewhere", () => {
+    expect(deviceDailyCap("production")).toBe(DEVICE_DAILY_CAP);
+    expect(deviceDailyCap("test")).toBe(DEVICE_DAILY_CAP_LOOSE);
+  });
+  it("sms cap: an explicit value wins, else 5000 in production and off elsewhere", () => {
+    expect(smsDailyCap("production")).toBe(SMS_DAILY_CAP_DEFAULT);
+    expect(smsDailyCap("development")).toBe(SMS_DAILY_CAP_LOOSE);
+    expect(smsDailyCap("development", 5)).toBe(5);
+    expect(smsDailyCap("production", 50)).toBe(50);
   });
 });

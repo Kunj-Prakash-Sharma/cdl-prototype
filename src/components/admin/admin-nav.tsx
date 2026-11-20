@@ -12,7 +12,7 @@ const ITEMS: Item[] = [
   { label: "Users", href: "/admin/users", icon: Users },
   { label: "Courses", href: null, icon: BookOpen },
   { label: "Purchases", href: null, icon: CreditCard },
-  { label: "Leads", href: null, icon: PhoneCall },
+  { label: "Callbacks", href: "/admin/callbacks", icon: PhoneCall },
 ];
 
 const row = "flex min-h-11 items-center gap-3 rounded-full px-3 text-sm font-semibold";

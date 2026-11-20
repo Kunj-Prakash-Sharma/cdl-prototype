@@ -5,26 +5,66 @@ import { auth } from "./auth";
 import { safeNextPath } from "./next-path";
 import { maskPhone } from "./phone";
 import { USERS_PAGE_SIZE, pageCount, type UserFilters } from "./admin-users";
-import { listUsers, setUserName, userCounts } from "./repo";
-import type { ActionResult, AdminUsersView, SessionView } from "./types";
+import { GUEST_TTL_DAYS } from "./limits";
+import {
+  deleteGuestUsers,
+  findGuestsCreatedBefore,
+  findLinkedGuestIds,
+  findNamesByUserIds,
+  findPhoneByUserId,
+  listUsers,
+  setUserName,
+  userCounts,
+} from "./repo";
+import type { ActionResult, AdminUsersView, SessionView, VisitorView } from "./types";
 
-export type { ActionResult, AdminUserRow, AdminUsersView, AuthErrorCode, Role, SessionView } from "./types";
+export type {
+  ActionResult,
+  AdminUserRow,
+  AdminUsersView,
+  AuthErrorCode,
+  Role,
+  SessionView,
+  VisitorView,
+} from "./types";
 export type { RoleFilter, UserFilters } from "./admin-users";
 export { parseUserFilters } from "./admin-users";
 
 const MAX_NAME_LENGTH = 30;
 
-/** The logged-in learner, or null. Safe to call from server components, actions and route handlers. */
-export async function getSession(): Promise<SessionView | null> {
+type SessionUser = {
+  id: string;
+  name: string;
+  role?: string | null;
+  phoneNumber?: string | null;
+  isAnonymous?: boolean | null;
+};
+
+async function currentUser(): Promise<SessionUser | null> {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) return null;
-  const user = session.user as typeof session.user & { role?: string | null; phoneNumber?: string | null };
+  return session ? (session.user as SessionUser) : null;
+}
+
+/**
+ * The logged-in learner, or null. A GUEST (anonymous user, D80) counts as logged out here, so every page, action and
+ * navbar that asks "who is logged in?" treats a guest as nobody. Only the quiz uses getVisitor() instead.
+ * Safe to call from server components, actions and route handlers.
+ */
+export async function getSession(): Promise<SessionView | null> {
+  const user = await currentUser();
+  if (!user || user.isAnonymous) return null;
   return {
     userId: user.id,
     role: user.role === "admin" ? "admin" : "learner",
     name: user.name,
     phoneMasked: user.phoneNumber ? maskPhone(user.phoneNumber) : "",
   };
+}
+
+/** A verified learner OR a guest, for the quiz only (D80). Everything that costs money or holds records uses getSession(). */
+export async function getVisitor(): Promise<VisitorView | null> {
+  const user = await currentUser();
+  return user ? { userId: user.id, isGuest: Boolean(user.isAnonymous), name: user.name } : null;
 }
 
 function loginUrl(returnTo?: string): string {
@@ -40,9 +80,26 @@ export async function requireUser(returnTo?: string): Promise<SessionView> {
   return session;
 }
 
-/** Pages: like requireUser, and sends non-admins home. */
+/**
+ * For the quiz (D80): a verified learner or a guest. With nobody there it sends the visitor to /discover, where the Start
+ * button makes the guest (never made on page load). Never use this for buying, callbacks or video: those use requireUser().
+ */
+export async function requireLearnerOrGuest(): Promise<VisitorView> {
+  const visitor = await getVisitor();
+  if (!visitor) redirect("/discover");
+  return visitor;
+}
+
+/** Admin pages: a logged-out visitor goes to the admin login page (email + password, with a link to the phone login). */
+function adminLoginUrl(returnTo?: string): string {
+  const next = returnTo ? safeNextPath(returnTo, "") : "";
+  return next ? `/admin/login?next=${encodeURIComponent(next)}` : "/admin/login";
+}
+
+/** Pages: like requireUser (but to the admin login page), and sends non-admins home. */
 export async function requireAdmin(returnTo?: string): Promise<SessionView> {
-  const session = await requireUser(returnTo);
+  const session = await getSession();
+  if (!session) redirect(adminLoginUrl(returnTo));
   if (session.role !== "admin") redirect("/");
   return session;
 }
@@ -81,4 +138,41 @@ export async function listUsersForAdmin(filters: UserFilters): Promise<AdminUser
     pageCount: pageCount(total),
     stats,
   };
+}
+
+/**
+ * The learner's raw phone number (E.164), for the one module that must call them: leads. It never goes to a browser or
+ * a log. Null when the account has no phone (for example a future email-only login, D65).
+ */
+export async function getLearnerPhone(userId: string): Promise<string | null> {
+  return findPhoneByUserId(userId);
+}
+
+/**
+ * Profile names by user id, for the admin callback list (leads reads the name live and never copies it). PII: only call
+ * it after an admin check, and never log or send the result to analytics. A learner who never gave a name has "".
+ */
+export async function getUserNames(userIds: string[]): Promise<Map<string, string>> {
+  return findNamesByUserIds(userIds);
+}
+
+/**
+ * Guests that verified a phone and became this learner (D80). The chat re-points its rows from each of them to `userId`
+ * (lazily and idempotently), so the quiz survives whether they verified at the report gate or on /login.
+ */
+export async function linkedGuestIds(userId: string): Promise<string[]> {
+  return findLinkedGuestIds(userId);
+}
+
+/**
+ * Guests older than the guest lifetime (7 days, D80), oldest first, each with the learner it became (or null). The worker
+ * lets the other modules claim the rows of a linked guest first, then deletes the guests.
+ */
+export async function expiredGuests(now: Date, limit = 200): Promise<{ id: string; linkedUserId: string | null }[]> {
+  return findGuestsCreatedBefore(new Date(now.getTime() - GUEST_TTL_DAYS * 24 * 60 * 60 * 1000), limit);
+}
+
+/** Deletes guests only; a real user's id given by mistake deletes nothing. Returns how many were removed. */
+export async function deleteGuests(ids: string[]): Promise<number> {
+  return deleteGuestUsers(ids);
 }

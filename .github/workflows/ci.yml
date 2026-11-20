@@ -14,8 +14,8 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -32,8 +32,8 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     needs: checks
-    # Same credentials and port as docker-compose.yml, so .env.example works unchanged. The e2e global setup
-    # creates and migrates the `self_test` database.
+    # Almost every browser test logs in, answers the quiz or reads a report, so they need a real database.
+    # Playwright's global setup creates `self_test` on this service and migrates it.
     services:
       postgres:
         image: postgres:16
@@ -42,25 +42,26 @@ jobs:
           POSTGRES_PASSWORD: self
           POSTGRES_DB: self
         ports:
-          - 5433:5432
+          - 5432:5432
         options: >-
           --health-cmd "pg_isready -U self -d self"
           --health-interval 3s
           --health-timeout 3s
           --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgres://self:self@localhost:5432/self_test
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
       - run: cp .env.example .env
       - run: npx playwright install --with-deps chromium
+      # Starts its own dev server on the test database (see playwright.config.ts).
       - run: npm run test:e2e
-        env:
-          CI: "1"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
           name: playwright-report
@@ -71,6 +72,32 @@ jobs:
     runs-on: ubuntu-latest
     needs: checks
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       # Build only (no push): proves the container image the app deploys from still builds.
       - run: docker build -t self-app:ci .
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Known-vulnerable dependencies (production only; fail on high or critical).
+      - run: npm audit --omit=dev --audit-level=high
+      # Secrets committed by mistake.
+      - uses: trufflesecurity/trufflehog@ddc015e5ed99942b2253d8ea16a0586a01ef2ab1 # v3.88.0
+        with:
+          extra_args: --results=verified,unknown
+      # Insecure code patterns (injection, XSS, weak crypto, ...).
+      # Official image, pinned by digest (1.100.0). `pip install semgrep` crashes at start-up on the runner's Python
+      # (a dependency imports pkg_resources, which new setuptools no longer ship), so the scan never ran.
+      - run: >-
+          docker run --rm -v "$PWD:/src" -w /src
+          semgrep/semgrep@sha256:7acf76eaa621465588fdfcc84f46fd7ea1e8337ebb1aa1ed6f4685f6eedaec25
+          semgrep scan --config p/typescript --config p/owasp-top-ten --error --metrics=off
+          --exclude node_modules --exclude .next

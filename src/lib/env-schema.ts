@@ -20,15 +20,29 @@ const schema = z
     // Comma-separated +91 numbers that get the admin role when they log in (D64 #9)
     ADMIN_PHONES: z.string().optional(),
 
+    // Where the instant "new callback request" email goes (E6-S3). One team address for now (open question #4668).
+    // Optional on purpose: the address is not decided yet. Without it the alert job fails loudly and is retried, and the
+    // lead is still saved. Make it required in production once the client gives the address.
+    CALLBACK_ALERT_EMAIL: z.email().optional(),
+
+    // Most OTP SMS we send in a rolling day, all learners together (D74). Production defaults to 5000; elsewhere it is off.
+    SMS_DAILY_CAP: z.coerce.number().int().positive().optional(),
+
     // Chat: inactivity before a session counts as lost (decision D58)
     CHAT_INACTIVITY_MINUTES: z.coerce.number().int().positive().default(30),
+
+    // Chat: days without an answer before an unfinished attempt can no longer be continued (decision D75)
+    CHAT_RESUME_DAYS: z.coerce.number().int().positive().default(30),
+
+    // Where the phone check sits (D78): "before_report" = anyone can take the quiz and the report is behind the phone gate;
+    // "before_chat" = login first, as before. One value, so the position can follow the design.
+    REPORT_GATE: z.enum(["before_report", "before_chat"]).default("before_report"),
 
     // Integration adapters (src/integrations). Add vendor names as adapters land.
     SMS_PROVIDER: provider([]),
     PAYMENTS_PROVIDER: provider([]),
     VIDEO_PROVIDER: provider([]),
     STORAGE_PROVIDER: provider([]),
-    AI_PROVIDER: provider([]),
     EMAIL_PROVIDER: provider([]),
     ANALYTICS_PROVIDER: provider([]),
     QUEUE_PROVIDER: provider(["pgboss"], "pgboss"),

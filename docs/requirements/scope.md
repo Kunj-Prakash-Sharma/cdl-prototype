@@ -6,7 +6,7 @@ Source: "SELF Phase 1 – Scope of Work.pdf", Oct 19, 2026, Kunj Sharma. Convert
 SELF is a website where students and parents take a free, friendly career chat, get a simple personal report, and then buy self-paced courses to grow their leadership and career skills. Phase 1 is the first working version, opened to invited users only.
 
 Two parts:
-- **Level 0:** a free career discovery chat with Meera, our friendly guide.
+- **Level 0:** a free career discovery chat with Mira, our friendly guide.
 - **Level 1:** self-paced courses that the user buys once and keeps.
 
 Everything else (live sessions, mentors, colleges, certificates) comes in later phases. "SELF" is a working name until the final name and website address are decided.
@@ -16,7 +16,7 @@ Everything else (live sessions, mentors, colleges, certificates) comes in later 
 - **Client team (admin):** adds courses, sets prices, and sees users, purchases and callback requests.
 
 ## The user journey
-Home page → Login (phone + OTP) → Meera chat (free, about 25 quick taps, 5 to 7 minutes) → Free report (strengths, interests, save or download PDF) → Course page (first lesson free, rest locked) → Pay online (course or bundle, receipt by email) → Learn in My SELF (videos, PDFs, quiz, progress, resume).
+Home page → Login (phone + OTP) → Mira chat (free, about 25 quick taps, 5 to 7 minutes) → Free report (strengths, interests, save or download PDF) → Course page (first lesson free, rest locked) → Pay online (course or bundle, receipt by email) → Learn in My SELF (videos, PDFs, quiz, progress, resume).
 
 Optional side action from the report: **Callback request** (saved in admin, team gets an email). A user can also open any course directly from the home page.
 
@@ -25,7 +25,7 @@ Optional side action from the report: **Callback request** (saved in admin, team
 ### Home page
 - Short introduction to SELF, a big "Start career discovery" button, the course list and an FAQ.
 
-### Career discovery chat with Meera (free)
+### Career discovery chat with Mira (free)
 - Login with phone number and a one-time code (OTP).
 - About 25 quick-tap questions in a friendly style, 5 to 7 minutes: a few basic details (name, age, studying or working, goal), then personality (OCEAN) and interest (RIASEC) questions.
 - Answers are scored by fixed rules, so results stay consistent. The chat is in English.
@@ -70,7 +70,7 @@ The first batch of courses by Nov 5, 2026 is already agreed. The client will giv
 | Brand name, logo, colours, website address and the name to show in login SMS | For design, the website, SMS login and payment setup | to give date |
 | Payment account in the client's business name | To take payments. Setup can take several days | to give date |
 | Privacy, terms and refund pages | Usually needed before a payment account is activated | to give date |
-| Approval of question wording and report wording | Meera uses standard OCEAN and RIASEC question sets. The client approves the wording | to give date |
+| Approval of question wording and report wording | Mira uses standard OCEAN and RIASEC question sets. The client approves the wording | to give date |
 | Final prices, bundles and maximum discounts | To set up the shop | to give date |
 | One team email address for callback alerts | To send an instant email for each callback request | to give date |
 
@@ -86,7 +86,7 @@ The release can move by one to two weeks. It depends on the first courses arrivi
 
 ## Points required from the client
 1. **Prices and refunds.** Final prices, bundles and the refund policy.
-2. **Sensitive messages.** If a user writes words about self-harm, Meera shows a helpline link and stops the chat. Please confirm the helpline and wording.
+2. **Sensitive messages.** If a user writes words about self-harm, Mira shows a helpline link and stops the chat. Please confirm the helpline and wording.
 3. **Report wording.** The report gives career guidance and is not a medical or psychological test result. Please approve this wording.
 
 Phase 1 includes only what is listed under "What is included". The items under "Not in Phase 1" come later. Changes after approval are handled as change requests and may move the release date.

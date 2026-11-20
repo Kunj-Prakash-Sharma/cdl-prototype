@@ -3,15 +3,25 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
-import { admin, captcha, phoneNumber } from "better-auth/plugins";
+import { admin, anonymous, captcha, phoneNumber } from "better-auth/plugins";
 import { sms } from "@/integrations/sms";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
-import { IP_HOURLY_CAP, OTP_EXPIRES_SEC, OTP_LENGTH, OTP_MAX_ATTEMPTS, SESSION_SEC } from "./limits";
+import {
+  ADMIN_PASSWORD_MIN_LENGTH,
+  ADMIN_SIGNIN_IP_PER_MIN,
+  GUEST_IP_PER_HOUR,
+  IP_HOURLY_CAP,
+  OTP_EXPIRES_SEC,
+  OTP_LENGTH,
+  OTP_MAX_ATTEMPTS,
+  SESSION_SEC,
+  smsDailyCap,
+} from "./limits";
 import { SEND_FAILED, THROTTLED } from "./errors";
 import { normalizePhone } from "./phone";
-import { reserveSend } from "./repo";
+import { linkGuest, reserveSend, reserveWindow, SMS_TOTAL_KEY } from "./repo";
 import { roleForPhone } from "./roles";
 import { authAccount, authRateLimit, authSession, authUser, authVerification } from "./schema";
 
@@ -31,6 +41,10 @@ export const auth = betterAuth({
 
   session: { expiresIn: SESSION_SEC, updateAge: 24 * 60 * 60 },
 
+  // Admin email + password (D77). Sign-up is OFF: accounts are made only by scripts/create-admin.ts, so nobody can
+  // register themselves. Learners never have a password.
+  emailAndPassword: { enabled: true, disableSignUp: true, minPasswordLength: ADMIN_PASSWORD_MIN_LENGTH },
+
   user: {
     additionalFields: {
       // PII: optional real email. The built-in `email` column holds a placeholder (see getTempEmail).
@@ -46,6 +60,8 @@ export const auth = betterAuth({
       // Real cap in production; loose in dev/test so repeated manual and Playwright logins from one IP still work.
       "/phone-number/send-otp": { window: 60 * 60, max: env.NODE_ENV === "production" ? IP_HOURLY_CAP : 100 },
       "/phone-number/verify": { window: 60, max: 20 },
+      "/sign-in/email": { window: 60, max: env.NODE_ENV === "production" ? ADMIN_SIGNIN_IP_PER_MIN : 100 },
+      "/sign-in/anonymous": { window: 60 * 60, max: env.NODE_ENV === "production" ? GUEST_IP_PER_HOUR : 100 },
     },
   },
 
@@ -54,8 +70,10 @@ export const auth = betterAuth({
       create: {
         // Allow-listed numbers become admins at sign-up; verifyOtp re-syncs the role on every login.
         before: async (user) => {
-          const phone = (user as { phoneNumber?: string }).phoneNumber;
-          return { data: { ...user, role: roleForPhone(phone) } };
+          const { phoneNumber: phone, isAnonymous } = user as { phoneNumber?: string; isAnonymous?: boolean };
+          // The anonymous plugin turns an empty name into "Anonymous"; a guest has NO name until the quiz asks for it,
+          // or the quiz would skip its name step and "Anonymous" would be copied onto the real profile (D80).
+          return { data: { ...user, role: roleForPhone(phone), ...(isAnonymous ? { name: "" } : {}) } };
         },
       },
     },
@@ -71,6 +89,15 @@ export const auth = betterAuth({
       // Runs after the bot check. Records the send against the per-number limits, then delivers the code.
       // Awaited on purpose: if the SMS provider fails, the learner sees `send_failed` (D64).
       sendOTP: async ({ phoneNumber: phone, code }) => {
+        // Spend cutoff first (D74): when the day's budget is used up, nobody gets a code, and the number's own count is not burned.
+        const budget = await reserveWindow(SMS_TOTAL_KEY, smsDailyCap(env.NODE_ENV, env.SMS_DAILY_CAP), new Date());
+        if (!budget.ok) {
+          logger.warn("sms daily cap reached: no codes are sent until the window ends");
+          throw APIError.from("TOO_MANY_REQUESTS", {
+            code: THROTTLED,
+            message: `sms_cutoff:${budget.retryAfterSec}`,
+          });
+        }
         const reserved = await reserveSend(phone, new Date());
         if (!reserved.ok) {
           throw APIError.from("TOO_MANY_REQUESTS", {
@@ -91,12 +118,21 @@ export const auth = betterAuth({
         getTempName: () => "", // the name is collected in the chat (profile), not at login
       },
     }),
+    // Guests (D80). The guest row is NOT deleted when it links (disableDeleteAnonymousUser): other modules re-point their
+    // rows to the real user first, and the worker deletes old guests later. The name is "" like a new phone user.
+    anonymous({
+      generateName: () => "",
+      disableDeleteAnonymousUser: true,
+      onLinkAccount: async ({ anonymousUser, newUser }) => {
+        await linkGuest(anonymousUser.user.id, newUser.user.id);
+      },
+    }),
     admin({ defaultRole: "learner", adminRoles: ["admin"] }),
-    // Bot check on OTP send only. The default endpoint list (sign-up/sign-in/password reset) does not cover it.
+    // Bot check on OTP send, the admin password sign-in and the guest sign-in. The default endpoint list does not cover phone OTP.
     captcha({
       provider: "cloudflare-turnstile",
       secretKey: env.TURNSTILE_SECRET_KEY ?? "",
-      endpoints: ["/phone-number/send-otp"],
+      endpoints: ["/phone-number/send-otp", "/sign-in/email", "/sign-in/anonymous"],
     }),
     nextCookies(), // must be last: lets server actions set the session cookie
   ],

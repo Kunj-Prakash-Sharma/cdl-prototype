@@ -25,10 +25,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, Badge, ProgressBar, Rating } from "@/components/ui/misc";
 import { useToast } from "@/components/ui/toast";
-import { getCareer } from "@/modules/chat/careers";
+import { getCareer } from "@/modules/chat/legacy/careers";
 import { allLessons, getCourse, type Course, type ResourceType } from "@/modules/catalog/courses";
 import { cn, formatCompact, formatMinutes, formatPrice } from "@/lib/format";
-import { computeResults, isDiscoveryComplete } from "@/modules/chat/scoring";
+import { computeResults, isDiscoveryComplete } from "@/modules/chat/legacy/scoring";
 import { actions, useAppState } from "@/lib/store";
 import { CheckoutModal } from "./checkout-modal";
 import { VideoPlayer } from "./video-player";

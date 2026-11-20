@@ -12,8 +12,15 @@ export class PgBossQueue implements QueueProvider {
     this.boss.on("error", (err) => logger.error("pg-boss error", { err }));
   }
 
+  private starting?: Promise<unknown>;
+
+  /** Safe to call more than once: the web app starts the queue on its first job, the worker at boot. */
   async start() {
-    await this.boss.start();
+    this.starting ??= this.boss.start().catch((err) => {
+      this.starting = undefined; // let the next call try again
+      throw err;
+    });
+    await this.starting;
   }
   async stop() {
     await this.boss.stop();
@@ -26,11 +33,18 @@ export class PgBossQueue implements QueueProvider {
   }
 
   async enqueue(job: string, payload: object, options?: EnqueueOptions) {
+    await this.start();
     await this.ensureQueue(job);
     await this.boss.send(job, payload, {
       ...(options?.delaySec ? { startAfter: options.delaySec } : {}),
       ...(options?.singletonKey ? { singletonKey: options.singletonKey } : {}),
     });
+  }
+
+  async schedule(job: string, cron: string) {
+    await this.start();
+    await this.ensureQueue(job);
+    await this.boss.schedule(job, cron);
   }
 
   async register(job: string, handler: JobHandler) {

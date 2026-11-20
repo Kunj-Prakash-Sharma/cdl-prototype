@@ -9,12 +9,20 @@ export type Resource = { id: string; title: string; type: ResourceType; size: st
 export type CourseCategory =
   "Data" | "Design" | "Technology" | "Business" | "Marketing" | "Finance" | "Communication" | "Sustainability";
 
+/** The six Holland interest types, by letter. Same letters as chat's RIASEC dimensions (catalog does not import chat). */
+export type RiasecType = "R" | "I" | "A" | "S" | "E" | "C";
+
 export type Course = {
   slug: string;
   title: string;
   tagline: string;
   description: string;
   category: CourseCategory;
+  /**
+   * Interest types this course suits, strongest first (E5-S3). TEMPORARY mapping on the sample courses (D67): the
+   * client's real mapping is open (#4665) and moves to the real catalog (E7).
+   */
+  riasecTypes: RiasecType[];
   level: "Beginner" | "Intermediate";
   hours: number;
   price: number;
@@ -72,6 +80,7 @@ export const COURSES: Course[] = [
     description:
       "A practical, project-first introduction to data analytics. You'll clean real datasets, write SQL to answer business questions, build dashboards and present insights that get people to act.",
     category: "Data",
+    riasecTypes: ["I", "C"],
     level: "Beginner",
     hours: 18,
     price: 2499,
@@ -143,6 +152,7 @@ export const COURSES: Course[] = [
     description:
       "Learn the full UX process the way product teams practise it: understand users, map their journeys, sketch solutions, prototype them and test with real people — ending with a portfolio-ready case study.",
     category: "Design",
+    riasecTypes: ["A", "S"],
     level: "Beginner",
     hours: 20,
     price: 2799,
@@ -214,6 +224,7 @@ export const COURSES: Course[] = [
     description:
       "Go from zero to confidently writing Python. Every concept is paired with hands-on exercises, and you'll finish by shipping two complete projects you can show off.",
     category: "Technology",
+    riasecTypes: ["I", "R"],
     level: "Beginner",
     hours: 22,
     price: 1999,
@@ -285,6 +296,7 @@ export const COURSES: Course[] = [
     description:
       "Understand what product managers really do and practise the core craft: finding problems worth solving, prioritising ruthlessly, aligning teams and measuring what matters.",
     category: "Business",
+    riasecTypes: ["E", "I"],
     level: "Beginner",
     hours: 16,
     price: 2999,
@@ -356,6 +368,7 @@ export const COURSES: Course[] = [
     description:
       "A complete, modern marketing toolkit. Learn to position a brand, create content people share, rank in search, run paid campaigns and measure what's working.",
     category: "Marketing",
+    riasecTypes: ["E", "A"],
     level: "Beginner",
     hours: 19,
     price: 2299,
@@ -427,6 +440,7 @@ export const COURSES: Course[] = [
     description:
       "Demystify how businesses make and spend money. Learn to read statements, analyse performance, build a three-statement model and communicate financial insights clearly.",
     category: "Finance",
+    riasecTypes: ["C", "E"],
     level: "Beginner",
     hours: 17,
     price: 2499,
@@ -498,6 +512,7 @@ export const COURSES: Course[] = [
     description:
       "The career skill that multiplies every other skill. Learn to structure messages, write with clarity, present with confidence and handle feedback and tough conversations.",
     category: "Communication",
+    riasecTypes: ["S", "E"],
     level: "Beginner",
     hours: 10,
     price: 1499,
@@ -575,6 +590,7 @@ export const COURSES: Course[] = [
     description:
       "Build real intuition for how machine learning and generative AI work. Train and evaluate models, explore how large language models think, and learn to build responsibly.",
     category: "Technology",
+    riasecTypes: ["I", "R"],
     level: "Intermediate",
     hours: 24,
     price: 3199,
@@ -646,6 +662,7 @@ export const COURSES: Course[] = [
     description:
       "Understand the science, frameworks and business case for sustainability. Learn to measure impact, report on ESG and design strategies that create lasting change.",
     category: "Sustainability",
+    riasecTypes: ["I", "S"],
     level: "Beginner",
     hours: 12,
     price: 1799,
