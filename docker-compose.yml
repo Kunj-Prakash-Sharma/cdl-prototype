@@ -1,5 +1,6 @@
 # Local dev database. Same major version as the managed RDS Postgres.
-# Host port is 5433 so it does not clash with a Postgres already running on 5432.
+# Host port defaults to 5433 so it does not clash with a Postgres already running on 5432.
+# If 5433 is taken too, set DB_PORT in your .env (compose reads it) and use the same port in DATABASE_URL.
 services:
   db:
     image: postgres:16
@@ -8,7 +9,7 @@ services:
       POSTGRES_PASSWORD: self
       POSTGRES_DB: self
     ports:
-      - "5433:5432"
+      - "${DB_PORT:-5433}:5432"
     volumes:
       - self-db:/var/lib/postgresql/data
     healthcheck:

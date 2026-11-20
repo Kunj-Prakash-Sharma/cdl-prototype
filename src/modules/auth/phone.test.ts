@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { maskPhone, normalizePhone, parsePhoneList } from "./phone";
+import { maskPhone, nationalDigits, normalizePhone, parsePhoneList } from "./phone";
 
 describe("normalizePhone", () => {
   it.each([
@@ -44,5 +44,21 @@ describe("parsePhoneList", () => {
   });
   it("handles undefined", () => {
     expect(parsePhoneList(undefined).size).toBe(0);
+  });
+});
+
+describe("nationalDigits", () => {
+  it.each([
+    ["98765 43210", "9876543210"],
+    ["+91 98765 43210", "9876543210"],
+    ["+919876543210", "9876543210"],
+    ["00919876543210", "9876543210"],
+    ["09876543210", "9876543210"],
+    ["987-654-3210", "9876543210"],
+    ["98765", "98765"],
+    ["9876543210123", "9876543210"],
+    ["91234567890", "9123456789"],
+  ])("%s -> %s", (raw, want) => {
+    expect(nationalDigits(raw)).toBe(want);
   });
 });

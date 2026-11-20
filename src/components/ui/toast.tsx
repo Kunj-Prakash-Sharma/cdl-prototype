@@ -39,7 +39,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               exit={{ opacity: 0, y: 8, scale: 0.96 }}
               className="pointer-events-auto flex max-w-sm items-start gap-3 rounded-2xl bg-ink px-4 py-3 text-white shadow-lift"
             >
-              <CircleCheck className="mt-0.5 size-5 shrink-0 text-emerald-400" aria-hidden />
+              <CircleCheck className="mt-0.5 size-5 shrink-0 text-teal" aria-hidden />
               <div>
                 <p className="text-sm font-semibold">{t.title}</p>
                 {t.detail && <p className="mt-0.5 text-xs text-white/65">{t.detail}</p>}

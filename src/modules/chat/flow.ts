@@ -5,7 +5,7 @@
 // stored as a counter: it is recomputed as the first question without a saved answer.
 import type { QuestionSet, Stage } from "./question-set";
 import { fnv1a, variantFor } from "./variants";
-import type { NextStep, Progress, StageId, StageProgress } from "./types";
+import type { HomeAnswered, HomeQuestion, NextStep, Progress, StageId, StageProgress } from "./types";
 
 /** Saved answers by question ID (name excluded: it lives on the profile). */
 export type SavedAnswers = Readonly<Record<string, number>>;
@@ -36,6 +36,43 @@ export function homeAnswer(set: QuestionSet, optionId: unknown): { questionId: s
   const question = set.basics.find((b) => b.id === set.homeQuestionId);
   const value = question ? question.options.findIndex((o) => o.id === optionId) : -1;
   return question && value !== -1 ? { questionId: question.id, value } : null;
+}
+
+const homeQuestionOf = (set: QuestionSet) =>
+  set.homeQuestionId ? set.basics.find((b) => b.id === set.homeQuestionId) : undefined;
+
+/** The set's home question as Home shows it (D87), or null when the set has none. */
+export function homeQuestionView(set: QuestionSet): HomeQuestion | null {
+  const question = homeQuestionOf(set);
+  if (!question) return null;
+  return { prompt: question.prompt, options: question.options.map((o) => ({ id: o.id, label: o.label })) };
+}
+
+/**
+ * The saved Home answer (`value` = option position) as the quiz shows it, from THIS set, with the step that asks the
+ * question again. Null when the set has no home question or the value is not one of its options.
+ */
+export function homeAnsweredView(set: QuestionSet, value: number, progress: Progress): HomeAnswered | null {
+  const question = homeQuestionOf(set);
+  const option = question?.options[value];
+  if (!question || !option) return null;
+  return {
+    prompt: question.prompt,
+    label: option.label,
+    acknowledgement: option.acknowledgement,
+    change: basicsStep(question, progress),
+  };
+}
+
+/** A tap question as a step: the options go out by position, which is what the learner sends back. */
+function basicsStep(basic: QuestionSet["basics"][number], progress: Progress): Extract<NextStep, { kind: "basics" }> {
+  return {
+    kind: "basics",
+    id: basic.id,
+    prompt: basic.prompt,
+    options: basic.options.map((option, index) => ({ index, label: option.label })),
+    progress,
+  };
 }
 
 /** Stage order as it appears in the set: basics first, then each stage in the order its items first appear. */
@@ -89,16 +126,11 @@ export function computeNextStep(
 
   if (entry.kind === "name") return { kind: "name", id: entry.id, prompt: set.name.prompt, progress };
 
-  if (entry.kind === "basics") {
-    const basic = set.basics.find((b) => b.id === entry.id)!;
-    return {
-      kind: "basics",
-      id: basic.id,
-      prompt: basic.prompt,
-      options: basic.options.map((option, index) => ({ index, label: option.label })),
+  if (entry.kind === "basics")
+    return basicsStep(
+      set.basics.find((b) => b.id === entry.id)!,
       progress,
-    };
-  }
+    );
 
   const item = set.items.find((i) => i.id === entry.id)!;
   const variant = variantFor(context.attemptId, item);

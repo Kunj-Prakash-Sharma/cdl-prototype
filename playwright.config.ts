@@ -4,20 +4,25 @@ import { assertTestDbUrl, loadDotEnv } from "./tests/support/test-db";
 
 loadDotEnv();
 
-// The browser tests run their own dev server on port 3100 against the test database `self_test`, so they never
-// touch your dev data and can run next to `npm run dev` (port 3000). CI does the same: its Postgres service
-// provides `self_test` (TEST_DATABASE_URL comes from .env.example). A dev server is used because the production
-// server refuses the fake SMS adapter that the login tests need.
+const ci = !!process.env.CI;
+
+// The browser tests run their own server on port 3100 against the test database `self_test`, so they never touch
+// your dev data and can run next to `npm run dev` (port 3000). CI does the same with a Postgres service
+// (.github/workflows/ci.yml). It is a dev server, not `next start`: production refuses the fake SMS adapter, and
+// almost every test logs in with a code from it.
 const port = 3100;
 const testDbUrl = assertTestDbUrl(process.env.TEST_DATABASE_URL);
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  // Prepares the test database, then opens each page once so tests do not wait for a first compile.
   globalSetup: "./tests/support/e2e-global-setup.ts",
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
-  reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
+  // One dev server compiles pages on demand; more than two browsers at once make it slow enough to time tests out.
+  workers: 2,
+  forbidOnly: ci,
+  retries: ci ? 1 : 0,
+  reporter: ci ? [["github"], ["html", { open: "never" }]] : "list",
   use: { baseURL: `http://localhost:${port}`, trace: "on-first-retry" },
   projects: [
     {
@@ -29,8 +34,8 @@ export default defineConfig({
   webServer: {
     command: `npx next dev -p ${port}`,
     url: `http://localhost:${port}`,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    reuseExistingServer: !ci,
+    timeout: 180_000,
     // Own build folder: Next 16 allows one dev server per folder, so this can run next to `npm run dev`.
     // The e2e admin numbers become admins at login; they exist only on this test server.
     env: {

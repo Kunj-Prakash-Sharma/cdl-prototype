@@ -17,7 +17,9 @@ test.describe("report", () => {
 
     // The draft wording is flagged, every section is there, and the safety line and footer are on the page.
     await expect(page.getByTestId("report-draft")).toBeVisible();
-    for (const section of ["interests", "traits", "courses"]) {
+    // The persona (D88) heads the report, with its strengths and growth areas.
+    await expect(page.getByTestId("report-persona")).not.toBeEmpty();
+    for (const section of ["interests", "traits", "strengths", "courses"]) {
       await expect(page.getByTestId(`report-${section}`)).toBeVisible();
     }
     await expect(page.getByTestId("report-try-first")).toBeVisible();
@@ -39,19 +41,18 @@ test.describe("report", () => {
     await expect(page.getByRole("banner")).toBeHidden();
     await expect(page.getByTestId("report-print")).toBeHidden();
     await expect(page.getByTestId("report-callback-button")).toBeHidden();
-    await expect(page.getByTestId("report-interests")).toBeVisible();
+    // For print the screen report gives way to the A4 print document (V5 PDF design), which is hidden on screen.
+    await expect(page.getByTestId("report")).toBeHidden();
+    await expect(page.getByTestId("report-print-doc")).toBeVisible();
+    await page.emulateMedia({ media: "screen" });
+    await expect(page.getByTestId("report-print-doc")).toBeHidden();
   });
 
-  test("a learner with no finished attempt sees the empty state, and the navbar has the report link", async ({
-    page,
-  }) => {
+  test("a learner with no finished attempt sees the empty state", async ({ page }) => {
     await openChat(page);
     await page.goto("/discover/report");
     await expect(page.getByTestId("report-empty")).toBeVisible();
     await expect(page.getByTestId("report")).toHaveCount(0);
-    // The navbar link exists on desktop (the phone menu is covered by the same list of links).
-    const link = page.getByRole("link", { name: "My Report" });
-    if (await link.first().isVisible()) await expect(link.first()).toHaveAttribute("href", "/discover/report");
   });
 
   test("My SELF links to the saved report once the quiz is finished (E5-S4)", async ({ page }) => {

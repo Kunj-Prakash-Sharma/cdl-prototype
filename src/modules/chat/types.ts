@@ -4,6 +4,7 @@
 import type { Stage, StageCopy, StageId } from "./question-set";
 
 export type { StageId };
+export type { ResultView } from "./result";
 
 /** One part of the quiz: its wording (from the set) and how far the learner is in it. */
 export type StageProgress = StageCopy & { id: StageId; answered: number; total: number };
@@ -37,6 +38,27 @@ export type NextStep =
       progress: Progress;
     }
   | { kind: "done"; progress: Progress };
+
+/**
+ * The question the Home mini-chat shows (D87), from the current question set. An option's `id` is what Home keeps in
+ * the browser and sends with `applyHomeAnswer`; the server checks it against the attempt's own set.
+ */
+export type HomeQuestion = {
+  prompt: string;
+  options: { id: string; label: string }[];
+};
+
+/**
+ * The Home answer once the quiz has saved it (D87), built from the ATTEMPT's question set (not the current one), so
+ * what is shown is what was stored. `change` is the step that asks the question again; the new tap goes through
+ * `submitAnswer` like any other basics answer.
+ */
+export type HomeAnswered = {
+  prompt: string;
+  label: string;
+  acknowledgement: string;
+  change: Extract<NextStep, { kind: "basics" }>;
+};
 
 /** Codes are the contract; the UI owns all wording (same idea as auth's error codes). */
 export const CHAT_ERROR_CODES = [

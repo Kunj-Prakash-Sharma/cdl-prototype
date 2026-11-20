@@ -41,7 +41,7 @@ export function ReportLink({
   href: string;
   action: Action;
   children: ReactNode;
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "ghost" | "light";
   testId?: string;
 }) {
   return (
