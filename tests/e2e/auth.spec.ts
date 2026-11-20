@@ -35,13 +35,18 @@ async function logOut(page: Page) {
   const accountMenu = page.getByRole("button", { name: "Account menu" });
   const openMenu = page.getByRole("button", { name: "Open menu" });
   const logOutItem = page.getByRole("menuitem", { name: "Log out" }).or(page.getByRole("button", { name: "Log out" }));
-  // A click that lands before React hydrates does nothing, so retry opening the menu until Log out shows.
+  // A click that lands before React hydrates does nothing, so retry opening the menu until Log out shows. The button
+  // toggles, so click only while it says the menu is closed: a second click would shut a menu that was slow to open.
   await expect(async () => {
     if (!(await logOutItem.isVisible())) {
-      await ((await accountMenu.isVisible()) ? accountMenu : openMenu).click();
+      const menu = (await accountMenu.isVisible()) ? accountMenu : openMenu;
+      // The phone button is renamed "Close menu" while open, so not finding "Open menu" means it is open.
+      const expanded = await menu.getAttribute("aria-expanded", { timeout: 1000 }).catch(() => "true");
+      // Short click timeout: a click that cannot land must fail fast so the loop can try again.
+      if (expanded !== "true") await menu.click({ timeout: 2000 }).catch(() => {});
     }
-    await expect(logOutItem).toBeVisible({ timeout: 1500 });
-  }).toPass({ timeout: 15_000 });
+    await expect(logOutItem).toBeVisible({ timeout: 3000 });
+  }).toPass({ timeout: 20_000 });
   await logOutItem.click();
   await expect(page).toHaveURL(/\/$/);
 }

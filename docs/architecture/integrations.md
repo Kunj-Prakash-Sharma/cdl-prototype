@@ -68,7 +68,7 @@ Status values: `not started` · `in progress` · `ready` · `installed`. "Unrese
 | Job queue | Background jobs (video status, emails) | pg-boss on our Postgres | `queue` | No external account | installed | None beyond the database |
 | Bot check | Stop scripted OTP abuse | Cloudflare Turnstile via the Better Auth captcha plugin | not wrapped | Cloudflare account | wired (OTP send, guest start, admin login); dev uses Cloudflare's always-pass test keys, production needs real keys | Free tier. Verify current terms |
 | Error tracking | Crash and error alerts | Sentry (**assumed**; the doc only says "free-tier error tracking") | via the `logger` facade | Us | not started. Wired in week 1 | Free tier |
-| Code and CI | Repo, PRs, CI workflow | GitHub, GitHub Actions (our choice; the doc only says "CI builds the image") | none | Kunj's repo (currently public) | workflow written, not run yet | Free for public repos |
+| Code and CI | Repo, PRs, CI workflow | GitHub, GitHub Actions (our choice; the doc only says "CI builds the image") | none | Kunj's repo (currently public) | runs on PRs into `dev` and pushes to `dev` (first run Nov 19, 2026). Actions pinned to commit SHAs (Semgrep rule). The e2e job has a Postgres service; the Vercel preview hook on the repo is a prototype leftover (fails, not ours: we deploy to AWS) | Free for public repos |
 
 ## 2.2 AWS resources
 All in the Mumbai region `ap-south-1` (D53). Account owner (client's or ours with a later handover) is still open.
