@@ -4,3 +4,5 @@
 export * from "@/modules/auth/schema";
 export * from "@/modules/chat/schema";
 export * from "@/modules/leads/schema";
+export * from "@/modules/catalog/schema";
+export * from "@/modules/commerce/schema";

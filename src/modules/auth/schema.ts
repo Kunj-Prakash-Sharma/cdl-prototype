@@ -23,6 +23,10 @@ export const authUser = pgTable("auth_user", {
   // verifies a phone, so other modules can claim the guest's rows for the real user. Deleted after 7 days by the worker.
   isAnonymous: boolean().default(false),
   linkedUserId: text(),
+  // Watermark id shown over lesson video (docs/specs/video.md). Pseudonymous: it identifies a learner only through this
+  // table. Never logged, never sent to analytics. Created lazily on first playback. Better Auth ignores this nullable
+  // column (checked against getAuthTables(), see the note at the top of this file).
+  watermarkId: text().unique(),
 });
 
 export const authSession = pgTable(

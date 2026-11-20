@@ -57,6 +57,13 @@
       "when": 1795067744577,
       "tag": "0007_living_anthem",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795082949026,
+      "tag": "0008_rare_peter_quill",
+      "breakpoints": true
     }
   ]
 }
