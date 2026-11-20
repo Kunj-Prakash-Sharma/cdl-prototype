@@ -1,7 +1,15 @@
 // The guest quiz and the phone gate in a real browser (D78, D80), against the TEST database.
 // Needs network access: the invisible Cloudflare Turnstile widget (dummy keys) loads from Cloudflare.
 import { expect, test } from "@playwright/test";
-import { answerScored, answerStatus, enterCode, finishBasics, requestCode, scoredCount, varied } from "../support/chat-e2e";
+import {
+  answerScored,
+  answerStatus,
+  enterCode,
+  finishBasics,
+  requestCode,
+  scoredCount,
+  varied,
+} from "../support/chat-e2e";
 import { newLearnerPhone } from "../support/e2e";
 
 test.describe("guest quiz", () => {
