@@ -8,12 +8,12 @@ Update the status and date as items close. When an item closes, record the outco
 | Mixpanel plans, pricing and free-tier limits; request India data residency (region is fixed per project, so ask before creating it) | Lead architect | Week 1 | open |
 | SMS provider choice and DLT registration under the client's legal entity. **The client handles DLT himself (Nov 2, 2026).** From him we need the approved sender name and the exact approved OTP template text; the SMS provider choice is still open | Client + lead | Start week 1 | client doing DLT; provider open |
 | ORVIS licence and Holland mapping: the 2010 paper (Pozzebon et al.) calls ORVIS public domain throughout; mapping matches its appendix. See [requirements/item-sources.md](requirements/item-sources.md) | Team | Before launch | **done 2026-11-03** |
-| Day-1 AWS checks in Mumbai: MediaConvert, ECS Express Mode (Bedrock check dropped, D62) | Developers | Day 1 | open |
+| Day-1 AWS checks in Mumbai: ECS Express Mode (MediaConvert check dropped, D91; Bedrock check dropped, D62) | Developers | Day 1 | open |
 | Repo `Kunj-Prakash-Sharma/cdl-prototype` is **public**: recommend making it private before production code lands (no branch protection; team follows branch + PR + green CI) | Kunj | Before real code is pushed | open |
 | How code reaches AWS: CI only checks and builds the image, there is no deploy step. CI runs on PRs into `dev` and pushes to `dev` only; add `main` when there is a release flow | Lead architect | Before first deploy | open |
 | AWS account owner and credits (client's account, or ours with a later handover) | Lead + client | Day 1 | open |
 | Database upgrade trigger (single zone → second zone) | CTO / tech lead | Before launch | open |
-| Video quality ladder and default quality (from the week-1 spike) | Developers | End of week 1 | open |
+| ~~Video quality ladder and default quality~~ | Developers | End of week 1 | **closed 2026-11-19** (D91): client supplies fixed 720p MP4, no ladder |
 | Confirm the vendors and AWS products we assumed but the docs never named: Sentry (error tracking), ECR (image registry), Secrets Manager, CloudWatch, GitHub Actions. See `architecture/integrations.md` | Lead architect | Week 1 | open |
 | IPIP permission page read by Tanu (open to use, commercial use allowed, no attribution asked). Quote in [requirements/item-sources.md](requirements/item-sources.md) | Tanu | Before launch | done 2026-10-30 |
 | Email O\*NET: is commercial use allowed, and which licence covers reworded items? (their pages disagree: CC BY 4.0 vs CC BY-ND). Draft written 2026-10-30. Only needed to upgrade RIASEC to the Mini-IP; no O\*NET wording is copied now | Tanu sends | Not blocking launch | draft ready, not sent |
@@ -23,6 +23,7 @@ From the Scope of Work. Dates are "to give" unless stated.
 | Input | Needed by | Status |
 |---|---|---|
 | First 3 to 4 courses (videos, PDFs, descriptions). Not blocking the build: we use sample videos until they arrive (D67) | Nov 5, 2026 | agreed |
+| Video file spec (D91): MP4 and 720p confirmed Nov 19, 2026. Still to confirm in writing: H.264 + AAC, bitrate (about 2.5 Mbps or less), **fast-start** (`moov` at the front, or we fix with `ffmpeg -movflags +faststart`), a poster per lecture (optional), and a sheet mapping each file to course and order. Planning size 4 courses x 10 lectures x 40 min; real size not known | to give date | partly confirmed |
 | Brand name, logo, colours, website address, name shown in login SMS | to give date | open |
 | Payment account in the client's business name (KYC; GST status) | to give date | open |
 | Privacy, terms and refund pages | to give date | open |
@@ -39,6 +40,8 @@ From the Scope of Work. Dates are "to give" unless stated.
 | Confirm: free lecture previews need **no login** (D66, direction from us on Nov 2, 2026; the client has not confirmed). Replaces the earlier "first lesson needs login" question | to give date | open |
 | Confirm: login by phone **or email** with the same OTP (D65, Nov 2, 2026). Spec comes later; email needs the final domain for SES | to give date | open |
 | Admin phone numbers: how many and which (expect 2 to 4); they get the admin role at login (D64) | to give date | open |
+| Confirm the video protection level with the client: watermark code plus signed links, no DRM, no download button (D40, D92). The signed URL can still be shared for up to 2 hours | to give date | open |
+| Wording of the learner notice "Lessons are watermarked with your learner ID" (video spec, D92) and where it also appears in the terms. DRAFT in `src/config/` until the client and a lawyer confirm | Us + client | Before launch | open |
 | Legal review: no age gate with many users under 18 (DPDP Act) | client | open |
 | Report personality cards (15) are **DRAFT text** (D72). Copy the client-approved wording from the client sample page into `report-copy.ts` and remove the draft marker before any real learner sees a report | Us | Before launch | open |
 | Persona copy for the 7 personas (D81, D88): names, taglines, 3 strengths and 2 growth areas each. **DRAFT** in `report-copy.ts` until approved | Us + client | Before launch | open |

@@ -36,7 +36,7 @@ Five modules, each owning its data. Admin and analytics are not modules: admin i
 |---|---|---|
 | `auth` | OTP login, sessions, learner profile (name, number, optional email), roles | `sms` |
 | `chat` | Mira flow, OCEAN and RIASEC question sets with wording variants as versioned config ([assessment.md](../requirements/assessment.md)), answers, scoring rules, report | none (no AI, D62) |
-| `catalog` | Courses, lessons, quiz questions, prices, bundles, publish state. Inside it: `video/` (upload, encoding jobs, status, thumbnails) and `learning/` (playback authorisation, progress and resume, quiz marking) | `video`, `storage`, `queue` |
+| `catalog` | Courses, lessons, quiz questions, prices, bundles, publish state. Inside it: `video/` (lesson videos, upload, replace and purge; no encoding, D91) and `learning/` (playback authorisation, progress and resume, quiz marking) | `video`, `storage`, `queue` |
 | `commerce` | Products, orders, payments, entitlements, receipts, manual access grant | `payments`, `email` |
 | `leads` | Callback requests, consent flag, instant email alert, Excel export, webhook | `email` |
 
@@ -52,7 +52,7 @@ Split a file when it passes about 300 lines; do not pre-split.
 
 ## Server actions vs REST handlers
 - **Server actions**: calls from our own screens (e.g. "request callback", "answer question").
-- **REST handlers**: anything called from outside our own pages (payment webhook, MediaConvert callback, resumable upload, worker).
+- **REST handlers**: anything called from outside our own pages (payment webhook, worker, dev-only fake upload).
 - Both call the same `service.ts`, so the logic is written once.
 
 ## Rendering
