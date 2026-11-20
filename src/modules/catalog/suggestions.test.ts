@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { COURSES } from "./courses";
-import { coursesForInterests } from "./service";
+import { coursesForInterests } from "./suggestions";
 
 describe("coursesForInterests", () => {
   it("puts the course that matches the learner's first interest on top", () => {
