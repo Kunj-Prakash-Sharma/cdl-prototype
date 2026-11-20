@@ -1,20 +1,24 @@
-export type VideoState = "awaiting_upload" | "encoding" | "ready" | "failed";
+/** Where a video is in its life. No `encoding` state: we play the client's MP4 as uploaded (D91). */
+export type VideoState = "uploading" | "ready" | "failed";
 
-export interface EncodeEvent {
-  key: string;
-  state: "ready" | "failed";
-  renditions?: string[];
-  durationSec?: number;
-  thumbnailKey?: string;
-  error?: string;
-}
+export type MarkReadyResult =
+  { ok: true; sizeBytes: number; fastStart: boolean } | { ok: false; reason: "not_found" | "empty" };
 
 export interface VideoProvider {
-  /** Returns a direct-to-storage upload URL. Encoding starts when the upload lands. */
-  createUpload(input: { videoId: string; contentType: string }): Promise<{ key: string; uploadUrl: string }>;
-  /** Maps a provider callback (e.g. MediaConvert job state) to our event; null if it is not an encode event. */
-  onEncodeEvent(payload: unknown): EncodeEvent | null;
-  /** Signed, expiring playback URL for the adaptive-stream manifest. The caller checks entitlements first. */
-  getPlayback(input: { key: string; expiresInSec: number }): Promise<{ manifestUrl: string; expiresAt: Date }>;
-  getStatus(key: string): Promise<{ state: VideoState; durationSec?: number }>;
+  /**
+   * Returns a direct-to-storage upload URL. `providerRef` is opaque: store it as
+   * `provider_ref`, never build or parse it outside the adapter.
+   * `sizeBytes` and `contentType` are signed into the URL, so the upload cannot differ from what the service validated.
+   */
+  createUpload(input: {
+    videoId: string;
+    contentType: "video/mp4";
+    sizeBytes: number;
+  }): Promise<{ providerRef: string; uploadUrl: string }>;
+  /** Checks the uploaded file exists, its size, and whether the MP4 is fast-start (`moov` before `mdat`). Duration comes from the browser, not here. */
+  markReady(providerRef: string): Promise<MarkReadyResult>;
+  /** Signed, expiring URL for the MP4. The caller checks entitlements first. */
+  getPlayback(input: { providerRef: string; expiresInSec: number }): Promise<{ url: string; expiresAt: Date }>;
+  /** Deletes the stored file. Idempotent: no error if it is already gone. */
+  remove(providerRef: string): Promise<void>;
 }

@@ -42,6 +42,8 @@ const schema = z
     SMS_PROVIDER: provider([]),
     PAYMENTS_PROVIDER: provider([]),
     VIDEO_PROVIDER: provider([]),
+    // Dev only (ignored in production): which MP4 the fake video adapter plays. Put a file in public/sample/.
+    FAKE_VIDEO_SAMPLE_URL: z.string().startsWith("/").optional(),
     STORAGE_PROVIDER: provider([]),
     EMAIL_PROVIDER: provider([]),
     ANALYTICS_PROVIDER: provider([]),
