@@ -4,9 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowUp } from "lucide-react";
 import { brand } from "@/config/brand";
 import type { NextStep } from "@/modules/chat/types";
-import { AiBubble, GuideAvatar, Typing } from "./chat-bubbles";
+import { AiBubble, GuideAvatar, Typing, UserBubble } from "./chat-bubbles";
 
 type CardStep = Extract<NextStep, { kind: "name" | "basics" }>;
+
+/** A question already answered on Home (D87), shown above the current one with a way to change it. */
+export type AnsweredStep = { prompt: string; label: string; onChange: () => void };
 
 /** True once `key` has been on screen for a moment, so the guide seems to type before it speaks. */
 function useRevealed(key: string) {
@@ -24,12 +27,17 @@ export function ChatCard({
   step,
   meta,
   ack,
+  answered,
+  hold = false,
   error,
   pending,
   onName,
   onChoose,
 }: {
   step: CardStep;
+  answered?: AnsweredStep | null;
+  /** Keep "typing" (no question, no input) while the server decides what this card should ask. */
+  hold?: boolean;
   /** The line under the guide's name: which part this is (from the server's progress). */
   meta: string;
   ack: string | null;
@@ -38,7 +46,7 @@ export function ChatCard({
   onName: (name: string) => void;
   onChoose: (index: number) => void;
 }) {
-  const revealed = useRevealed(step.id);
+  const revealed = useRevealed(step.id) && !hold;
   // After the guide has spoken, keyboard focus goes to the question (the name box focuses itself).
   const region = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -55,6 +63,26 @@ export function ChatCard({
       </header>
 
       <div ref={region} tabIndex={-1} className="flex-1 space-y-3 px-5 py-6 outline-none sm:px-8" aria-live="polite">
+        {answered && (
+          <div className="space-y-3" data-testid="home-answered">
+            <AiBubble>{answered.prompt}</AiBubble>
+            <UserBubble
+              action={
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={answered.onChange}
+                  className="min-h-11 px-2 text-sm font-bold text-brand-600 underline-offset-4 hover:underline disabled:opacity-60"
+                  data-testid="home-answer-change"
+                >
+                  Change
+                </button>
+              }
+            >
+              {answered.label}
+            </UserBubble>
+          </div>
+        )}
         {!revealed ? (
           <Typing />
         ) : (

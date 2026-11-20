@@ -3,9 +3,8 @@ import { Sparkles, Star, TrendingUp } from "lucide-react";
 import { HelplineLink } from "@/components/discover/helpline-link";
 import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/lib/format";
-import { sampleReportPersona, sampleReportStrengths } from "@/content/samples";
-import { env } from "@/lib/env";
 import type { LatestReport } from "@/modules/chat/service";
+import { personaLead } from "./persona-copy";
 import { CourseLink, PrintButton, ReportLink } from "./report-actions";
 import { Letter, Radar, TRAIT_BG, TYPE_BG } from "./report-parts";
 import { ReportPrint } from "./report-print";
@@ -14,9 +13,11 @@ import { ReportPrint } from "./report-print";
 // to the report (cards, interest names, career families, notes, footer) comes from the report data (report-copy.ts);
 // only page chrome lives here.
 //
-// BACKEND GAPS (D92, open-questions.md), not built here: the persona title and tagline ("The Curious Thinker"), the
-// combined "Strengths" and "Areas to grow" scores, the next-step course price/image/lesson count, and the named career
-// coach. They need `chat` report data and client-approved wording first. Plain-language scale ends ("Reserved" to
+// The persona (name, tagline, 3 strengths and 2 growth areas) is report data, picked from the top interest letter, or
+// the all-round one for a flat profile (D88);
+// its wording is DRAFT until the client approves it (the draft tag shows). BACKEND GAPS (D92, open-questions.md), not
+// built here: scored strengths ("Problem solving 94": D88 gives title + one line, no score), a course per growth area,
+// the next-step course price/image/lesson count, and the named career coach. Plain-language scale ends ("Reserved" to
 // "Outgoing") also wait for wording.
 
 const dayFormat = new Intl.DateTimeFormat("en-IN", {
@@ -30,6 +31,7 @@ const isoDay = (iso: string) => iso.slice(0, 10);
 const SECTION_LINKS = [
   ["rp-pers", "Personality"],
   ["rp-int", "Interests"],
+  ["rp-str", "Strengths"],
   ["rp-crs", "Courses"],
 ] as const;
 
@@ -77,13 +79,25 @@ function Section({
   );
 }
 
+/** A persona strengths or growth list: title and one line each. */
+function PersonaList({ items }: { items: LatestReport["persona"]["strengths"] }) {
+  return (
+    <ul>
+      {items.map((item) => (
+        <li key={item.title} className="border-t border-ink/5 py-4 first:border-t-0">
+          <p className="mb-1.5 text-base text-ink">
+            <b>{item.title}</b>
+          </p>
+          <p className="text-sm leading-[1.55] text-body">{item.note}</p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function ReportView({ report, children }: { report: LatestReport; children?: ReactNode }) {
   const next = report.courses[0];
-  // Persona and strengths are sample content (D92): never shown to real learners in production.
-  const showSamples = env.NODE_ENV !== "production";
-  const sectionLinks = showSamples
-    ? [...SECTION_LINKS.slice(0, 2), ["rp-str", "Strengths"] as const, SECTION_LINKS[2]]
-    : SECTION_LINKS;
+  const { persona } = report;
   const scoreByType = Object.fromEntries(report.interests.map((i) => [i.type, i.score]));
   return (
     <>
@@ -107,22 +121,17 @@ export function ReportView({ report, children }: { report: LatestReport; childre
               </span>
             )}
             <p className="mt-5 text-[13px] font-bold tracking-[1.3px] text-sun-400 uppercase print:text-sun-700">
-              {showSamples ? "Your career personality" : "Your career report"}
+              Your career personality
             </p>
-            <h1 className="mt-1.5 font-display text-[34px] leading-[1.05] font-normal tracking-[-1.5px] sm:text-5xl lg:text-[58px]">
-              {showSamples ? (
-                sampleReportPersona.title
-              ) : (
-                <>
-                  What you enjoy, and <span className="text-sun-400 print:text-brand-600">where it can lead</span>
-                </>
-              )}
+            <h1
+              className="mt-1.5 font-display text-[34px] leading-[1.05] font-normal tracking-[-1.5px] sm:text-5xl lg:text-[58px]"
+              data-testid="report-persona"
+            >
+              {persona.name}
             </h1>
-            {showSamples && (
-              <p className="mt-3 max-w-[520px] text-[17px] leading-[1.55] text-brand-100 print:text-body">
-                {sampleReportPersona.tagline}
-              </p>
-            )}
+            <p className="mt-3 max-w-[520px] text-[17px] leading-[1.55] text-brand-100 print:text-body">
+              {persona.tagline}
+            </p>
             {!report.flat && report.hollandLetters.length > 0 && (
               <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3">
                 <div className="flex gap-2" aria-label={`Interest code ${report.hollandLetters.join("")}`}>
@@ -169,7 +178,7 @@ export function ReportView({ report, children }: { report: LatestReport; childre
           aria-label="Report sections"
           className="sticky top-[76px] z-10 flex flex-wrap justify-center gap-1 self-center rounded-[20px] border border-line bg-white/90 p-1.5 shadow-lift backdrop-blur-md sm:rounded-full print:hidden"
         >
-          {sectionLinks.map(([id, label], i) => (
+          {SECTION_LINKS.map(([id, label], i) => (
             <a
               key={id}
               href={`#${id}`}
@@ -320,87 +329,48 @@ export function ReportView({ report, children }: { report: LatestReport; childre
           )}
         </Section>
 
-        {/* 03 Strengths and growth: SAMPLE content outside production (D92), see content/samples.ts */}
-        {showSamples && (
-          <Section
-            id="rp-str"
-            testId="report-strengths-sample"
-            number="03"
-            eyebrow="Strengths and growth"
-            title="What you’re great at, and what to build next"
-            lead="Sample content: the real scores come once the report can combine your interests and personality."
-          >
-            <div className="grid gap-4 lg:grid-cols-2 lg:gap-5">
-              <div className="rounded-3xl border border-brand-100 bg-brand-50 p-5 sm:p-7">
-                <p className="flex items-center gap-2.5 font-display text-[21px] font-medium text-ink">
-                  <span
-                    className="grid size-8.5 place-items-center rounded-full bg-brand-600 text-white"
-                    aria-hidden="true"
-                  >
-                    <Star className="size-4.5" />
-                  </span>
-                  Your strengths
-                </p>
-                <ul>
-                  {sampleReportStrengths.strengths.map((item) => (
-                    <li key={item.name} className="border-t border-ink/5 py-4 first:border-t-0">
-                      <p className="mb-2 flex items-baseline justify-between gap-2.5 text-base text-ink">
-                        <b>{item.name}</b>
-                        <span className="text-[13px] font-bold text-brand-700">{item.score} / 100</span>
-                      </p>
-                      <div className="mb-2.5 h-2 overflow-hidden rounded-full bg-brand-100">
-                        <div
-                          className="h-full rounded-full bg-brand-600 [print-color-adjust:exact]"
-                          style={{ width: `${item.score}%` }}
-                        />
-                      </div>
-                      <p className="text-sm leading-[1.55] text-body">{item.description}</p>
-                      <p className="mt-2 text-sm leading-[1.55] text-ink">
-                        <b>Use it:</b> {item.tip}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="rounded-3xl border border-sun-200 bg-sun-100 p-5 sm:p-7">
-                <p className="flex items-center gap-2.5 font-display text-[21px] font-medium text-ink">
-                  <span
-                    className="grid size-8.5 place-items-center rounded-full bg-sun-500 text-white"
-                    aria-hidden="true"
-                  >
-                    <TrendingUp className="size-4.5" />
-                  </span>
-                  Areas to grow
-                </p>
-                <ul>
-                  {sampleReportStrengths.growth.map((item) => (
-                    <li key={item.name} className="border-t border-ink/5 py-4 first:border-t-0">
-                      <p className="mb-2 text-base text-ink">
-                        <b>{item.name}</b>
-                      </p>
-                      <p className="text-sm leading-[1.55] text-body">{item.description}</p>
-                      <p className="mt-2 text-sm leading-[1.55] text-ink">
-                        <b>Try this:</b> {item.tip}
-                      </p>
-                      <CourseLink
-                        href={item.href}
-                        className="mt-3 inline-flex min-h-11 items-center rounded-full border border-sun-200 bg-white px-3.5 text-sm font-bold text-sun-700 hover:border-sun-500"
-                      >
-                        Course that helps: {item.course}
-                      </CourseLink>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+        {/* 03 Strengths and growth: from the persona (D88) */}
+        <Section
+          id="rp-str"
+          testId="report-strengths"
+          number="03"
+          eyebrow="Strengths and growth"
+          title="What you’re great at, and what to build next"
+          lead={personaLead(report.flat)}
+        >
+          <div className="grid gap-4 lg:grid-cols-2 lg:gap-5">
+            <div className="rounded-3xl border border-brand-100 bg-brand-50 p-5 sm:p-7">
+              <p className="flex items-center gap-2.5 font-display text-[21px] font-medium text-ink">
+                <span
+                  className="grid size-8.5 place-items-center rounded-full bg-brand-600 text-white"
+                  aria-hidden="true"
+                >
+                  <Star className="size-4.5" />
+                </span>
+                Your strengths
+              </p>
+              <PersonaList items={persona.strengths} />
             </div>
-          </Section>
-        )}
+            <div className="rounded-3xl border border-sun-200 bg-sun-100 p-5 sm:p-7">
+              <p className="flex items-center gap-2.5 font-display text-[21px] font-medium text-ink">
+                <span
+                  className="grid size-8.5 place-items-center rounded-full bg-sun-500 text-white"
+                  aria-hidden="true"
+                >
+                  <TrendingUp className="size-4.5" />
+                </span>
+                Areas to grow
+              </p>
+              <PersonaList items={persona.growth} />
+            </div>
+          </div>
+        </Section>
 
         {/* 04 Courses */}
         <Section
           id="rp-crs"
           testId="report-courses"
-          number={showSamples ? "04" : "03"}
+          number="04"
           eyebrow="Course suggestions"
           title={report.coursesAreFallback ? "Popular courses to start with" : "Courses that may suit you"}
         >
@@ -442,7 +412,7 @@ export function ReportView({ report, children }: { report: LatestReport; childre
           </ButtonLink>
         </div>
       </div>
-      <ReportPrint report={report} showSamples={showSamples} />
+      <ReportPrint report={report} />
     </>
   );
 }

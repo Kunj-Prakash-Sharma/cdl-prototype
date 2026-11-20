@@ -29,6 +29,18 @@ export function AiBubble({ children, delay = 0 }: { children: ReactNode; delay?:
   );
 }
 
+/** The learner's own answer (V5): brand bubble on the right, square corner at the bottom right. */
+export function UserBubble({ children, action }: { children: ReactNode; action?: ReactNode }) {
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <p className="max-w-[85%] rounded-[18px] rounded-br-md bg-brand-600 px-4.5 py-3 text-[15px] leading-relaxed text-white sm:max-w-[78%]">
+        {children}
+      </p>
+      {action}
+    </div>
+  );
+}
+
 export function Typing() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} aria-label={`${brand.guideName} is typing`}>

@@ -2,9 +2,9 @@ import type { ReactNode } from "react";
 import { Lock, Sparkles, Star, TrendingUp } from "lucide-react";
 import { brand } from "@/config/brand";
 import { helpline } from "@/config/helpline";
-import { sampleReportPersona, sampleReportStrengths } from "@/content/samples";
 import { cn } from "@/lib/format";
 import type { LatestReport } from "@/modules/chat/service";
+import { personaLead, personaSource } from "./persona-copy";
 import { Letter, Radar, TRAIT_BG, TYPE_BG } from "./report-parts";
 
 // The report on paper ("Save as PDF"), in the V5 PDF design (D91, V5-Report-PDF-1..5): A4 pages with a cover, one page
@@ -18,7 +18,8 @@ import { Letter, Radar, TRAIT_BG, TYPE_BG } from "./report-parts";
 //  - the plain-language scale ends under each trait ("Likes the familiar" / "Loves new ideas"), and the "What your IAS
 //    code means" paragraph (client-approved wording first);
 //  - the "Career paths" page and the 65% / 35% match note (page 6 of the design): career paths are not in Phase 1;
-//  - the persona title and the Strengths / Areas to grow pages: sample content, drawn outside production only (D92).
+// The persona (name, tagline, 3 strengths, 2 growth areas) is report data (D88), DRAFT wording until approved: the
+// cover carries the same "Draft wording" tag as the screen while `report.draft` is set.
 // The helpline line shows the placeholder number from src/config/helpline.ts until the client's number arrives.
 
 const dayFormat = new Intl.DateTimeFormat("en-IN", {
@@ -97,7 +98,25 @@ function GlanceCard({
   );
 }
 
-export function ReportPrint({ report, showSamples }: { report: LatestReport; showSamples: boolean }) {
+/** A persona strengths or growth list on paper: title on the left, its line on the right. */
+function PersonaList({ items }: { items: LatestReport["persona"]["strengths"] }) {
+  return (
+    <ul className="mt-2">
+      {items.map((item) => (
+        <li
+          key={item.title}
+          className="grid grid-cols-[210px_1fr] gap-7 border-t border-ink/10 py-[18px] first:border-t-0"
+        >
+          <p className="text-[15px] font-bold text-ink">{item.title}</p>
+          <p className="text-sm leading-[1.55] text-body">{item.note}</p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function ReportPrint({ report }: { report: LatestReport }) {
+  const { persona } = report;
   const date = dayFormat.format(new Date(report.completedAt));
   const topInterest = report.interests[0];
   const standout = report.traits.reduce((best, t) => (t.score > best.score ? t : best), report.traits[0]);
@@ -107,7 +126,7 @@ export function ReportPrint({ report, showSamples }: { report: LatestReport; sho
   const pages = [
     { id: "pers", label: "Personality", toc: "Personality" },
     { id: "int", label: "Interests", toc: "Interests" },
-    ...(showSamples ? [{ id: "str", label: "Strengths and growth", toc: "Strengths and growth" }] : []),
+    { id: "str", label: "Strengths and growth", toc: "Strengths and growth" },
     { id: "about", label: "About this report", toc: "About this report" },
   ];
   const num = (id: string) => String(pages.findIndex((p) => p.id === id) + 1).padStart(2, "0");
@@ -122,19 +141,18 @@ export function ReportPrint({ report, showSamples }: { report: LatestReport; sho
             <span className="size-[7px] rounded-full bg-sun-500" />
             Your career report
           </p>
+          {report.draft && (
+            <span className="ml-2 inline-block rounded-full bg-sun-100 px-2.5 py-0.5 text-xs font-semibold text-sun-700">
+              Draft wording
+            </span>
+          )}
           <p className="mt-5 text-[13px] font-extrabold tracking-[1.4px] text-sun-700 uppercase">
-            {showSamples ? "Your career personality" : "Your career report"}
+            Your career personality
           </p>
           <h1 className="mt-1.5 font-display text-[56px] leading-[1.05] font-normal tracking-[-1.6px] text-brand-900">
-            {showSamples ? (
-              sampleReportPersona.title
-            ) : (
-              <>
-                What you enjoy, and <span className="text-brand-600">where it can lead</span>
-              </>
-            )}
+            {persona.name}
           </h1>
-          {showSamples && <p className="mt-3 text-lg leading-normal text-body">{sampleReportPersona.tagline}</p>}
+          <p className="mt-3 text-lg leading-normal text-body">{persona.tagline}</p>
           {!report.flat && report.hollandLetters.length > 0 && (
             <div className="mt-6 flex items-center gap-[18px]">
               <div className="flex gap-2">
@@ -172,28 +190,27 @@ export function ReportPrint({ report, showSamples }: { report: LatestReport; sho
               score={standout.score}
             />
           )}
-          {showSamples && (
-            <>
-              <GlanceCard
-                badge={
-                  <span className="grid size-8 place-items-center rounded-[10px] bg-sun-500 text-white">
-                    <Star className="size-4" />
-                  </span>
-                }
-                label="Top strength"
-                value={sampleReportStrengths.strengths[0].name}
-                score={sampleReportStrengths.strengths[0].score}
-              />
-              <GlanceCard
-                badge={
-                  <span className="grid size-8 place-items-center rounded-[10px] bg-teal text-white">
-                    <TrendingUp className="size-4" />
-                  </span>
-                }
-                label="Area to grow"
-                value={sampleReportStrengths.growth[0].name}
-              />
-            </>
+          {persona.strengths[0] && (
+            <GlanceCard
+              badge={
+                <span className="grid size-8 place-items-center rounded-[10px] bg-sun-500 text-white">
+                  <Star className="size-4" />
+                </span>
+              }
+              label="Top strength"
+              value={persona.strengths[0].title}
+            />
+          )}
+          {persona.growth[0] && (
+            <GlanceCard
+              badge={
+                <span className="grid size-8 place-items-center rounded-[10px] bg-teal text-white">
+                  <TrendingUp className="size-4" />
+                </span>
+              }
+              label="Area to grow"
+              value={persona.growth[0].title}
+            />
           )}
         </div>
 
@@ -317,72 +334,32 @@ export function ReportPrint({ report, showSamples }: { report: LatestReport; sho
         )}
       </Page>
 
-      {/* Strengths and growth: SAMPLE content outside production (D92) */}
-      {showSamples && (
-        <Page label={label("str")} date={date}>
-          <PageTitle
-            eyebrow="03 · Strengths and growth"
-            title="What you’re great at, and what to build next"
-            lead="Sample content: the real scores come once the report can combine your interests and personality."
-          />
-          <div className="mt-6 rounded-[20px] border border-sun-200 bg-sun-100 px-[26px] pt-[22px] pb-2.5">
-            <p className="flex items-center gap-2.5 text-[15px] font-extrabold text-ink">
-              <span className="grid size-[30px] place-items-center rounded-[9px] bg-sun-500 text-white">
-                <Star className="size-4" />
-              </span>
-              Your strengths
-            </p>
-            <ul className="mt-2">
-              {sampleReportStrengths.strengths.map((item) => (
-                <li
-                  key={item.name}
-                  className="grid grid-cols-[210px_1fr] gap-7 border-t border-ink/10 py-[18px] first:border-t-0"
-                >
-                  <div>
-                    <p className="flex items-baseline justify-between text-[15px] text-ink">
-                      <b>{item.name}</b>
-                      <span className="font-display text-[22px] font-medium text-sun-700">{item.score}</span>
-                    </p>
-                    <div className="mt-2 h-[7px] overflow-hidden rounded-full bg-ink/10">
-                      <div className="h-full rounded-full bg-sun-500" style={{ width: `${item.score}%` }} />
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm leading-[1.55] text-body">{item.description}</p>
-                    <p className="mt-2 rounded-[10px] bg-white px-3 py-2 text-[13px] leading-[1.55] text-body">
-                      <b className="text-sun-700">Use it:</b> {item.tip}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="mt-4 rounded-[20px] border border-line bg-brand-50 px-[26px] pt-[22px] pb-2.5">
-            <p className="flex items-center gap-2.5 text-[15px] font-extrabold text-ink">
-              <span className="grid size-[30px] place-items-center rounded-[9px] bg-teal text-white">
-                <TrendingUp className="size-4" />
-              </span>
-              Areas to grow
-            </p>
-            <ul className="mt-2">
-              {sampleReportStrengths.growth.map((item) => (
-                <li
-                  key={item.name}
-                  className="grid grid-cols-[210px_1fr] gap-7 border-t border-ink/10 py-[18px] first:border-t-0"
-                >
-                  <p className="text-[15px] font-bold text-ink">{item.name}</p>
-                  <div>
-                    <p className="text-sm leading-[1.55] text-body">{item.description}</p>
-                    <p className="mt-2 rounded-[10px] bg-white px-3 py-2 text-[13px] leading-[1.55] text-body">
-                      <b className="text-teal">Try this:</b> {item.tip}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </Page>
-      )}
+      {/* Strengths and growth: from the persona (D88) */}
+      <Page label={label("str")} date={date}>
+        <PageTitle
+          eyebrow={label("str")}
+          title="What you’re great at, and what to build next"
+          lead={personaLead(report.flat)}
+        />
+        <div className="mt-6 rounded-[20px] border border-sun-200 bg-sun-100 px-[26px] pt-[22px] pb-2.5">
+          <p className="flex items-center gap-2.5 text-[15px] font-extrabold text-ink">
+            <span className="grid size-[30px] place-items-center rounded-[9px] bg-sun-500 text-white">
+              <Star className="size-4" />
+            </span>
+            Your strengths
+          </p>
+          <PersonaList items={persona.strengths} />
+        </div>
+        <div className="mt-4 rounded-[20px] border border-line bg-brand-50 px-[26px] pt-[22px] pb-2.5">
+          <p className="flex items-center gap-2.5 text-[15px] font-extrabold text-ink">
+            <span className="grid size-[30px] place-items-center rounded-[9px] bg-teal text-white">
+              <TrendingUp className="size-4" />
+            </span>
+            Areas to grow
+          </p>
+          <PersonaList items={persona.growth} />
+        </div>
+      </Page>
 
       {/* About this report */}
       <Page label={label("about")} date={date} last>
@@ -394,9 +371,7 @@ export function ReportPrint({ report, showSamples }: { report: LatestReport; sho
               "Six interest types used by career counsellors worldwide. Your three highest make up your interest code.",
             ],
             ["Personality", "Five core traits from a globally used personality framework, each scored 0 to 100."],
-            ...(showSamples
-              ? [["Strengths and growth", "Worked out by combining your interest scores with your personality scores."]]
-              : []),
+            ["Strengths and growth", personaSource(report.flat)],
             [
               `The chat with ${brand.guideName}`,
               "Used for context only, such as your stage of study. It is not scored.",

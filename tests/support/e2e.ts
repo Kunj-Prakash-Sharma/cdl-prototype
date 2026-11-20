@@ -47,9 +47,19 @@ export async function latestOtp(nationalNumber: string): Promise<string> {
   throw new Error(`no OTP found for ${identifier}`);
 }
 
-/** Start of every run: forget earlier runs' per-IP and per-number counters so they cannot block this run. */
-export async function resetAuthLimits(): Promise<void> {
+/**
+ * Start of every run: forget what earlier runs left behind so it cannot block this run. The per-IP and per-number
+ * counters go, and the fixed admin numbers' unfinished quizzes are closed (learners get a fresh number each test, but
+ * the admins are the same every run: a run stopped mid-quiz would otherwise greet every later run with "Welcome back"
+ * instead of the first question). Closed, not deleted: the same as a learner tapping "Start again".
+ */
+export async function resetBetweenRuns(): Promise<void> {
   await db().query("truncate auth_rate_limit, auth_otp_throttle");
+  await db().query(
+    `update chat_attempts set status = 'abandoned'
+     where status = 'in_progress' and user_id in (select id from auth_user where "phoneNumber" = any($1))`,
+    [E2E_ADMIN_PHONES.map((phone) => `+91${phone}`)],
+  );
   await pool?.end();
   pool = undefined;
 }

@@ -17,7 +17,9 @@ test.describe("report", () => {
 
     // The draft wording is flagged, every section is there, and the safety line and footer are on the page.
     await expect(page.getByTestId("report-draft")).toBeVisible();
-    for (const section of ["interests", "traits", "courses"]) {
+    // The persona (D88) heads the report, with its strengths and growth areas.
+    await expect(page.getByTestId("report-persona")).not.toBeEmpty();
+    for (const section of ["interests", "traits", "strengths", "courses"]) {
       await expect(page.getByTestId(`report-${section}`)).toBeVisible();
     }
     await expect(page.getByTestId("report-try-first")).toBeVisible();

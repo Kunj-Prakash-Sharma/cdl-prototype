@@ -1,5 +1,8 @@
-import Link from "next/link";
+import { Suspense } from "react";
 import { ArrowRight, Check, ChevronDown, ClipboardList, Compass, MessageCircle, Route } from "lucide-react";
+import { CoachCallbackPlaceholder } from "@/components/home/coach-callback";
+import { CoachCallbackSession } from "@/components/home/coach-callback-session";
+import { HomeChatReplies } from "@/components/home/home-chat-replies";
 import { StoryRail } from "@/components/home/story-rail";
 import { CourseCard } from "@/components/learn/course-card";
 import { ButtonLink } from "@/components/ui/button";
@@ -7,13 +10,16 @@ import { Eyebrow, LogoMark } from "@/components/ui/misc";
 import { brand } from "@/config/brand";
 import { sampleChatPreview, sampleCoach, sampleLaunchOffer, sampleOffer, sampleStories } from "@/content/samples";
 import { COURSES } from "@/modules/catalog/courses";
+import { getHomeQuestion } from "@/modules/chat/service";
 
 // V5 home (D91). Sections: hero + guide preview, courses, student stories, career coach, FAQ, closing CTA.
 // Gaps against the artboard (see docs/prototype/reuse-map.md row 7):
 //  - The artboard's chat runs inside this page. It starts on /discover instead (client feedback 4973), so the card
-//    here is a static preview and its quick replies are links.
+//    here is a preview: its question and quick replies come from the question set, and a tap keeps the answer in the
+//    browser so the quiz does not ask it again (D87).
 //  - Course prices, "with NEWYEAR26" prices and Buy now / cart wait for `commerce` and `catalog` (D92).
-//  - "Book a free call" needs an anonymous callback request; callbacks need a finished report today (D71).
+//  - "Book a free call" opens the callback form for a logged-in learner with no report needed (D90). The artboard's
+//    typed mobile number is not built: we call the number verified at login.
 
 const SHOP_COURSE_COUNT = 8;
 
@@ -58,6 +64,7 @@ const COACH_POINTS = [
 
 export default function HomePage() {
   const shopCourses = COURSES.slice(0, SHOP_COURSE_COUNT);
+  const homeQuestion = getHomeQuestion();
 
   return (
     <>
@@ -109,19 +116,10 @@ export default function HomePage() {
             </div>
             <div className="flex flex-col gap-3 bg-paper/50 px-5 py-5.5 text-left">
               <p className="max-w-[80%] self-start rounded-[18px] rounded-bl-sm bg-brand-50 px-4 py-3 text-base leading-[1.55] text-ink max-sm:max-w-[92%]">
-                Hi, I&apos;m {brand.guideName}, your career guide. {sampleChatPreview.greeting}
+                Hi, I&apos;m {brand.guideName}, your career guide. {sampleChatPreview.intro}
+                {homeQuestion && ` ${homeQuestion.prompt}`}
               </p>
-              <div className="mt-1 flex flex-wrap gap-2">
-                {sampleChatPreview.replies.map((r) => (
-                  <Link
-                    key={r}
-                    href="/discover"
-                    className="inline-flex min-h-11 items-center rounded-full border-[1.5px] border-line-strong bg-white px-4.5 text-sm font-semibold text-ink transition-colors hover:border-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
-                  >
-                    {r}
-                  </Link>
-                ))}
-              </div>
+              {homeQuestion && <HomeChatReplies options={homeQuestion.options} />}
             </div>
             <div className="flex items-center justify-between gap-3 border-t border-mist px-4 py-3">
               <p className="flex items-center gap-2 pl-2 text-sm text-muted">
@@ -233,14 +231,9 @@ export default function HomePage() {
                   </li>
                 ))}
               </ul>
-              {/* Gap: the artboard opens a phone form here. Callbacks need a finished report (D71), so the button
-                  starts the discovery, and the callback form on the report does the booking. */}
-              <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2.5">
-                <ButtonLink href="/discover" size="lg" className="max-md:w-full">
-                  Book a free call <ArrowRight className="size-4" aria-hidden />
-                </ButtonLink>
-                <span className="text-[13px] text-muted">Available after your career report</span>
-              </div>
+              <Suspense fallback={<CoachCallbackPlaceholder />}>
+                <CoachCallbackSession />
+              </Suspense>
             </div>
           </div>
         </div>
