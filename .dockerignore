@@ -5,7 +5,6 @@
 node_modules
 dist
 docs
-tests
 playwright-report
 test-results
 coverage
