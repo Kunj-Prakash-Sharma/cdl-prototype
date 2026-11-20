@@ -71,7 +71,7 @@ export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; 
   const phoneReady = /^[6-9]\d{9}$/.test(digits);
 
   const inputShell =
-    "overflow-hidden rounded-[14px] border-[1.5px] border-line bg-paper transition-colors focus-within:border-brand-600 focus-within:shadow-focus";
+    "overflow-hidden rounded-[14px] border-[1.5px] border-line transition-colors focus-within:border-brand-600 focus-within:shadow-focus";
   const mainButton = "mt-5 w-full disabled:border-brand-200 disabled:bg-brand-200 disabled:opacity-100";
   const heading = (title: string, lead: React.ReactNode) => (
     <div className="text-center">
@@ -99,7 +99,8 @@ export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; 
           <label htmlFor="phone" className="mb-1.5 block text-sm font-bold text-ink">
             Mobile number
           </label>
-          <div className={`flex items-center ${inputShell}`}>
+          {/* V5: the number field is white on the card; the code field below keeps the paper fill. */}
+          <div className={`flex items-center ${inputShell} bg-white`}>
             <span className="pr-1 pl-4 font-bold text-body">+91</span>
             <input
               id="phone"
@@ -110,7 +111,7 @@ export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; 
               placeholder="98765 43210"
               value={digits}
               onChange={(e) => setDigits(nationalDigits(e.target.value))}
-              className="autofill-paper min-h-12 min-w-0 flex-1 bg-transparent py-3 pr-4 pl-2 text-[15px] text-ink outline-none"
+              className="autofill-white min-h-12 min-w-0 flex-1 bg-transparent py-3 pr-4 pl-2 text-[15px] text-ink outline-none"
               aria-describedby={error ? "login-error" : undefined}
             />
           </div>
@@ -159,7 +160,7 @@ export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; 
               setCode(value);
               if (value.length === 6 && !pending) verify(value);
             }}
-            className={`autofill-paper min-h-14 w-full text-center text-[22px] font-bold tracking-[0.4em] text-ink outline-none focus:border-brand-600 focus:shadow-focus ${inputShell}`}
+            className={`autofill-paper min-h-14 w-full text-center text-[22px] font-bold tracking-[0.4em] text-ink outline-none focus:border-brand-600 focus:shadow-focus ${inputShell} bg-paper`}
             aria-describedby={error ? "login-error" : undefined}
           />
 

@@ -216,7 +216,8 @@ export function ReportView({ report, children }: { report: LatestReport; childre
                   <Letter letter={trait.trait} bg={TRAIT_BG[trait.trait]} />
                   <p className="text-base font-bold text-ink">{trait.name}</p>
                 </div>
-                <div>
+                <div className="py-2.5">
+                  {/* V5: the score sits in a round marker on the bar, kept inside the track at 0 and 100. */}
                   <div
                     className="relative h-2.5 rounded-full bg-brand-100"
                     role="img"
@@ -229,8 +230,19 @@ export function ReportView({ report, children }: { report: LatestReport; childre
                       )}
                       style={{ width: `${Math.max(2, trait.score)}%` }}
                     />
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "absolute top-1/2 grid size-[30px] -translate-y-1/2 place-items-center rounded-full p-[2.5px] shadow-soft [print-color-adjust:exact]",
+                        TRAIT_BG[trait.trait],
+                      )}
+                      style={{ left: `clamp(0px, calc(${trait.score}% - 15px), calc(100% - 30px))` }}
+                    >
+                      <span className="grid size-full place-items-center rounded-full bg-white text-[11px] font-bold text-ink">
+                        {trait.score}
+                      </span>
+                    </span>
                   </div>
-                  <p className="mt-2 text-right text-xs font-bold text-muted">{trait.score}</p>
                 </div>
                 <div>
                   <h3 className="text-[15px] font-bold text-ink">{trait.title}</h3>
