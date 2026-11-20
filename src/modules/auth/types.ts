@@ -1,4 +1,5 @@
 // Safe to import from client components: types and constants only, no server code.
+import type { ActionResult as BaseActionResult } from "@/lib/action-result";
 
 /** The UI owns all wording. Codes are the contract (docs/specs/auth.md, "UI contract"). */
 export const AUTH_ERROR_CODES = [
@@ -21,8 +22,7 @@ export const AUTH_ERROR_CODES = [
 ] as const;
 export type AuthErrorCode = (typeof AUTH_ERROR_CODES)[number];
 
-export type ActionResult<T extends object = object> =
-  ({ ok: true } & T) | { ok: false; code: AuthErrorCode; retryAfterSec?: number };
+export type ActionResult<T extends object = object> = BaseActionResult<T, AuthErrorCode>;
 
 export type Role = "learner" | "admin";
 

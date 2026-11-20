@@ -12,10 +12,14 @@ import {
   findLinkedGuestIds,
   findNamesByUserIds,
   findPhoneByUserId,
+  findUserIdByWatermarkId,
+  findWatermarkId,
   listUsers,
   setUserName,
+  setWatermarkIdIfEmpty,
   userCounts,
 } from "./repo";
+import { generateWatermarkId, WATERMARK_ID_PATTERN } from "./watermark";
 import type { ActionResult, AdminUsersView, SessionView, VisitorView } from "./types";
 
 export type {
@@ -175,4 +179,30 @@ export async function expiredGuests(now: Date, limit = 200): Promise<{ id: strin
 /** Deletes guests only; a real user's id given by mistake deletes nothing. Returns how many were removed. */
 export async function deleteGuests(ids: string[]): Promise<number> {
   return deleteGuestUsers(ids);
+}
+
+const WATERMARK_TRIES = 5;
+
+/**
+ * The learner's watermark id (`XXXX-XXXX`): created on the first call, the same one forever after. Pseudonymous: shown
+ * only inside the player and on the learner's own account page. Never log it or send it to analytics.
+ */
+export async function getWatermarkId(userId: string): Promise<string> {
+  const existing = await findWatermarkId(userId);
+  if (existing) return existing;
+  for (let i = 0; i < WATERMARK_TRIES; i++) {
+    const result = await setWatermarkIdIfEmpty(userId, generateWatermarkId());
+    if (result === "taken") continue; // rare collision with another learner's code: draw again
+    const saved = await findWatermarkId(userId); // "set", or a racing call saved one first
+    if (saved) return saved;
+    throw new Error("getWatermarkId: user not found");
+  }
+  throw new Error("getWatermarkId: could not find a free code");
+}
+
+/** For the team to trace a leaked video back to an account (script or admin search). Never shown to learners. */
+export async function findUserByWatermarkId(code: string): Promise<string | null> {
+  const clean = code.trim().toUpperCase();
+  if (!WATERMARK_ID_PATTERN.test(clean)) return null;
+  return findUserIdByWatermarkId(clean);
 }

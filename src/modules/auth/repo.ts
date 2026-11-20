@@ -276,3 +276,36 @@ export async function deleteGuestUsers(ids: string[]): Promise<number> {
     .returning({ id: authUser.id });
   return gone.length;
 }
+
+export async function findWatermarkId(userId: string): Promise<string | null> {
+  const [row] = await db.select({ code: authUser.watermarkId }).from(authUser).where(eq(authUser.id, userId));
+  return row?.code ?? null;
+}
+
+const isUniqueViolation = (err: unknown): boolean => {
+  const e = err as { code?: string; cause?: { code?: string } };
+  return e?.code === "23505" || e?.cause?.code === "23505";
+};
+
+/**
+ * Saves `code` only if the user has none yet. "set" = saved; "taken" = another user already has that code (try a new
+ * one); "unchanged" = the user already had a code (a racing call won) or does not exist.
+ */
+export async function setWatermarkIdIfEmpty(userId: string, code: string): Promise<"set" | "taken" | "unchanged"> {
+  try {
+    const updated = await db
+      .update(authUser)
+      .set({ watermarkId: code })
+      .where(and(eq(authUser.id, userId), isNull(authUser.watermarkId)))
+      .returning({ id: authUser.id });
+    return updated.length > 0 ? "set" : "unchanged";
+  } catch (err) {
+    if (isUniqueViolation(err)) return "taken";
+    throw err;
+  }
+}
+
+export async function findUserIdByWatermarkId(code: string): Promise<string | null> {
+  const [row] = await db.select({ id: authUser.id }).from(authUser).where(eq(authUser.watermarkId, code));
+  return row?.id ?? null;
+}
