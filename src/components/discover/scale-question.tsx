@@ -128,7 +128,7 @@ export function ScaleQuestion({
               <span className="text-right">{labels[labels.length - 1]}</span>
             </div>
             {error && (
-              <p role="alert" className="mt-6 text-sm font-medium text-sun-600">
+              <p role="alert" className="mt-6 text-sm font-medium text-danger">
                 {error}
               </p>
             )}

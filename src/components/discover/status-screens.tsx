@@ -36,7 +36,7 @@ export function FinishingScreen({
       <p className="mt-2 text-body">{brand.guideName} will have your result in a moment.</p>
       {error && (
         <>
-          <p role="alert" className="mt-4 text-sm font-medium text-sun-600">
+          <p role="alert" className="mt-4 text-sm font-medium text-danger">
             {error}
           </p>
           {onRetry && (
@@ -69,7 +69,7 @@ export function RetryScreen({
         Want to try that part again? There are no right or wrong answers.
       </p>
       {error && (
-        <p role="alert" className="mt-4 text-sm font-medium text-sun-600">
+        <p role="alert" className="mt-4 text-sm font-medium text-danger">
           {error}
         </p>
       )}
@@ -112,7 +112,7 @@ export function ResumeScreen({
         {brand.guideName} saved your place. You have answered {answered} of {total} questions.
       </p>
       {error && (
-        <p role="alert" className="mt-4 text-sm font-medium text-sun-600">
+        <p role="alert" className="mt-4 text-sm font-medium text-danger">
           {error}
         </p>
       )}
@@ -150,7 +150,7 @@ export function StopScreen({
         </p>
         <HelplineLink large className="mt-6" />
         {error && (
-          <p role="alert" className="mt-4 text-sm font-medium text-sun-600">
+          <p role="alert" className="mt-4 text-sm font-medium text-danger">
             {error}
           </p>
         )}
@@ -209,7 +209,7 @@ export function ResultPlaceholder({
         </pre>
       </details>
       {error && (
-        <p role="alert" className="mt-4 text-sm font-medium text-sun-600">
+        <p role="alert" className="mt-4 text-sm font-medium text-danger">
           {error}
         </p>
       )}

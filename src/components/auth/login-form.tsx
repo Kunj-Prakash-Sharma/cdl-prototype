@@ -212,7 +212,7 @@ export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; 
 
 function ErrorText({ children }: { children: React.ReactNode }) {
   return (
-    <p id="login-error" role="alert" className="mt-3 text-sm font-semibold text-sun-600">
+    <p id="login-error" role="alert" className="mt-3 text-sm font-semibold text-danger">
       {children}
     </p>
   );

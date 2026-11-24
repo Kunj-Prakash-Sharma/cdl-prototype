@@ -1,14 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { Captions, Check, CirclePlay, Lock, Maximize, Pause, Play, RotateCcw, SkipForward } from "lucide-react";
+import { Captions, Check, Lock, Maximize, Pause, Play, RotateCcw, RotateCw, SkipForward } from "lucide-react";
 import type { Course, Lesson } from "@/modules/catalog/courses";
+import { Button } from "@/components/ui/button";
 import { cn, formatClock, formatPrice } from "@/lib/format";
 
-/** Simulated seconds of video per real second at 1× — keeps demos snappy. */
+/** Simulated seconds of video per real second at 1× (sample videos, D67) — keeps demos snappy. */
 const SIM_RATE = 24;
 const SPEEDS = [1, 1.5, 2];
+/** Arrow keys on the seek bar skip this many seconds; the ±10 buttons skip 10. */
+const KEY_SKIP = 5;
+/** Outline pill on the navy player (the ui/button variants are for light backgrounds). */
+const OUTLINE_ON_DARK =
+  "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border-[1.5px] border-white/35 px-4 text-sm font-bold whitespace-nowrap text-white transition-colors hover:border-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sun-400";
 
 type Props = {
   course: Course;
@@ -22,6 +27,7 @@ type Props = {
   onPreview: () => void;
 };
 
+/** V5 course player (row 9): a navy stage with gold accents (logo colours, D94), lesson title, pill play button, seek bar. */
 export function VideoPlayer({
   course,
   lesson,
@@ -37,12 +43,13 @@ export function VideoPlayer({
   const [t, setT] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
-  const [cc, setCc] = useState(true);
+  const [cc, setCc] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
   const completed = useRef(false);
 
   const ended = t >= duration;
   const isPlaying = playing && !ended && !locked;
+  const pct = (t / duration) * 100;
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -58,14 +65,14 @@ export function VideoPlayer({
   }, [ended, onComplete]);
 
   const captions = [
-    `Welcome back! In this lesson we're covering ${lesson.title.toLowerCase()}.`,
-    "Let's start with a quick example from a real project.",
-    "Notice how the pattern repeats — that's the key idea to remember.",
-    "Pause here and try it yourself before we move on.",
-    "Great work. Let's recap what we covered and what's coming next.",
+    `Welcome. In this lesson we look at ${lesson.title.toLowerCase()}.`,
+    "Here is the core idea in plain words: one point, one reason, one example.",
+    "Let us walk through a worked example together, step by step.",
+    "To recap: pause the video, say it out loud once, then try it with your own example.",
   ];
   const caption = captions[Math.min(captions.length - 1, Math.floor((t / duration) * captions.length))];
 
+  const seekBy = (seconds: number) => setT((x) => Math.max(0, Math.min(duration, x + seconds)));
   const toggle = () => {
     if (locked) return;
     if (ended) {
@@ -77,202 +84,202 @@ export function VideoPlayer({
   return (
     <div
       ref={boxRef}
-      tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === " " || e.key === "k") {
+        // Space or K plays and pauses while focus is in the player (not on a button, which has its own Space).
+        if ((e.key === " " || e.key.toLowerCase() === "k") && !(e.target instanceof HTMLButtonElement)) {
           e.preventDefault();
           toggle();
         }
       }}
-      className="group relative isolate aspect-video w-full overflow-hidden rounded-3xl bg-ink text-white shadow-lift ring-1 ring-black/5 outline-none focus-visible:ring-4 focus-visible:ring-brand-300"
+      className="relative isolate aspect-video min-h-64 w-full overflow-hidden rounded-[22px] bg-brand-950 text-white shadow-glow sm:rounded-[28px]"
     >
-      {/* "Footage" */}
       <div
-        className="absolute inset-0"
-        style={{ backgroundImage: `linear-gradient(135deg, ${course.theme.from}, ${course.theme.to})` }}
+        aria-hidden
+        className="absolute right-[-8%] bottom-[-34%] -z-10 aspect-square w-[46%] rounded-full bg-brand-900"
       />
-      <div className="absolute inset-0 bg-ink/55" />
-      <div className="bg-grid-dark absolute inset-0 opacity-50" />
-      <div className={cn("absolute inset-0 transition duration-500", locked && "scale-105 blur-md")}>
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-          <div className="relative">
-            {isPlaying && <span className="absolute inset-0 animate-pulse-ring rounded-full bg-white/30" />}
-            <span className="relative grid size-16 place-items-center rounded-full bg-white/15 text-xl font-bold ring-2 ring-white/30 backdrop-blur sm:size-24 sm:text-3xl">
-              {course.instructor.initials}
-            </span>
-          </div>
-          <div className="flex h-6 items-end gap-1" aria-hidden>
-            {Array.from({ length: 14 }).map((_, i) => (
-              <span
-                key={i}
-                className={cn(
-                  "w-1 origin-bottom rounded-full bg-white/70",
-                  isPlaying ? "animate-wave" : "scale-y-[0.3]",
-                )}
-                style={{ height: 24, animationDelay: `${(i % 7) * 0.12}s` }}
-              />
-            ))}
-          </div>
-        </div>
-        <div
-          className={cn(
-            "absolute bottom-16 left-4 max-w-[70%] transition-opacity duration-300 sm:bottom-20 sm:left-6",
-            cc && isPlaying && "opacity-0",
-          )}
-        >
-          <p className="text-[11px] font-semibold tracking-wider text-white/60 uppercase sm:text-xs">{label}</p>
-          <p className="mt-1 text-base leading-tight font-bold sm:text-2xl">{lesson.title}</p>
-        </div>
-      </div>
+      <p className="absolute top-4 left-4 z-10 text-[11px] font-bold tracking-[0.14em] text-sun-400 uppercase sm:top-6.5 sm:left-7.5 sm:text-xs">
+        {label}
+      </p>
 
-      <div className="absolute top-4 left-4 flex gap-1.5">
-        <span className="rounded-full bg-black/30 px-2.5 py-1 text-[11px] font-semibold backdrop-blur">
-          Simulated video
-        </span>
-        {lesson.preview && !locked && (
-          <span className="rounded-full bg-emerald-500/90 px-2.5 py-1 text-[11px] font-semibold">Free preview</span>
-        )}
-      </div>
-
-      {/* Big play */}
-      {!locked && !isPlaying && !ended && (
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label="Play lesson"
-          className="absolute inset-0 grid place-items-center"
-        >
-          <span className="grid size-16 place-items-center rounded-full bg-white text-ink shadow-lift transition group-hover:scale-110 sm:size-20">
-            <Play className="ml-1 size-7 fill-current sm:size-8" />
-          </span>
-        </button>
-      )}
-
-      {/* Captions */}
-      {cc && isPlaying && (
-        <p className="absolute inset-x-0 bottom-14 mx-auto w-fit max-w-[85%] rounded-lg bg-black/65 px-3 py-1.5 text-center text-xs sm:bottom-16 sm:text-sm">
-          {caption}
-        </p>
-      )}
-
-      {/* Controls */}
       {!locked && (
-        <div className="absolute inset-x-0 bottom-0 flex items-center gap-3 bg-linear-to-t from-black/75 to-transparent px-4 pt-8 pb-3 sm:gap-4 sm:px-5">
-          <button type="button" onClick={toggle} aria-label={isPlaying ? "Pause" : "Play"} className="shrink-0">
-            {isPlaying ? <Pause className="size-5 fill-current" /> : <Play className="size-5 fill-current" />}
-          </button>
-          <span className="shrink-0 text-xs text-white/80 tabular-nums">
-            {formatClock(t)} / {formatClock(duration)}
-          </span>
-          <button
-            type="button"
-            aria-label="Seek"
-            className="relative h-5 flex-1 cursor-pointer"
-            onClick={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              setT(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * duration);
-            }}
-          >
-            <span className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-white/25" />
-            <span
-              className="absolute top-1/2 left-0 h-1 -translate-y-1/2 rounded-full bg-white"
-              style={{ width: `${(t / duration) * 100}%` }}
-            />
-            <span
-              className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow"
-              style={{ left: `${(t / duration) * 100}%` }}
-            />
-          </button>
-          <button
-            type="button"
-            onClick={() => setSpeed(SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length])}
-            className="w-9 shrink-0 rounded-md bg-white/15 py-0.5 text-xs font-bold"
-            aria-label="Playback speed"
-          >
-            {speed}×
-          </button>
-          <button
-            type="button"
-            onClick={() => setCc((c) => !c)}
-            aria-label="Toggle captions"
-            aria-pressed={cc}
-            className={cn("shrink-0", !cc && "opacity-50")}
-          >
-            <Captions className="size-5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => boxRef.current?.requestFullscreen?.()}
-            aria-label="Fullscreen"
-            className="hidden shrink-0 sm:block"
-          >
-            <Maximize className="size-5" />
-          </button>
-        </div>
-      )}
+        <>
+          {/* Title and the big play button */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 pt-8 pb-24 text-center sm:gap-5.5">
+            <p className="max-w-170 font-display text-[clamp(20px,3.2vw,44px)] leading-[1.12] font-medium tracking-[-1px]">
+              {lesson.title}
+            </p>
+            <button
+              type="button"
+              onClick={toggle}
+              className="inline-flex cursor-pointer items-center gap-3.5 rounded-full bg-white py-2 pr-6 pl-2 text-base font-bold text-ink shadow-lift transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-sun-400 sm:pr-7.5 sm:text-[clamp(17px,1.8vw,22px)]"
+            >
+              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-brand-600 text-white sm:size-12">
+                {isPlaying ? (
+                  <Pause className="size-4.5 fill-current" aria-hidden />
+                ) : ended ? (
+                  <RotateCcw className="size-4.5" aria-hidden />
+                ) : (
+                  <Play className="ml-0.5 size-4.5 fill-current" aria-hidden />
+                )}
+              </span>
+              {isPlaying ? "Pause" : ended ? "Watch again" : t > 0 ? "Resume" : "Play lesson"}
+            </button>
+          </div>
 
-      {/* Ended */}
-      <AnimatePresence>
-        {ended && !locked && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-ink/70 backdrop-blur-sm"
-          >
-            <span className="grid size-14 place-items-center rounded-full bg-emerald-500">
-              <Check className="size-7" strokeWidth={3} />
-            </span>
-            <p className="text-lg font-bold sm:text-xl">Lesson complete</p>
-            <div className="mt-1 flex gap-2">
+          {/* Controls */}
+          <div className="absolute inset-x-0 bottom-0 z-10 bg-linear-to-b from-transparent to-brand-950 to-55% px-3 pt-6 pb-2 sm:px-6.5 sm:pb-3.5">
+            {cc && isPlaying && (
+              <p className="pointer-events-none absolute inset-x-0 bottom-22 text-center">
+                <span className="inline-block max-w-[80%] rounded-lg bg-black/70 px-3 py-1.5 text-xs leading-snug sm:text-[15px]">
+                  {caption}
+                </span>
+              </p>
+            )}
+            <div
+              role="slider"
+              tabIndex={0}
+              aria-label="Seek"
+              aria-valuemin={0}
+              aria-valuemax={Math.round(duration)}
+              aria-valuenow={Math.round(t)}
+              aria-valuetext={`${formatClock(t)} of ${formatClock(duration)}`}
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setT(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * duration);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+                  e.preventDefault();
+                  seekBy(e.key === "ArrowLeft" ? -KEY_SKIP : KEY_SKIP);
+                } else if (e.key === "Home" || e.key === "End") {
+                  e.preventDefault();
+                  setT(e.key === "Home" ? 0 : duration);
+                }
+              }}
+              className="relative mb-1 h-6 cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-sun-400"
+            >
+              <span className="absolute inset-x-0 top-1/2 h-1.25 -translate-y-1/2 overflow-hidden rounded-full bg-white/20">
+                <span className="block h-full bg-sun-400" style={{ width: `${pct}%` }} />
+              </span>
+              <span
+                aria-hidden
+                className="absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white ring-3 ring-sun-400/40"
+                style={{ left: `${pct}%` }}
+              />
+            </div>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <ControlButton label={isPlaying ? "Pause" : "Play"} onClick={toggle}>
+                {isPlaying ? <Pause className="size-4.5 fill-current" /> : <Play className="size-4.5 fill-current" />}
+              </ControlButton>
+              <ControlButton label="Back 10 seconds" onClick={() => seekBy(-10)}>
+                <RotateCcw className="size-4.5" />
+              </ControlButton>
+              <ControlButton label="Forward 10 seconds" onClick={() => seekBy(10)}>
+                <RotateCw className="size-4.5" />
+              </ControlButton>
+              <span className="ml-1 text-xs whitespace-nowrap tabular-nums sm:ml-2 sm:text-sm">
+                {formatClock(t)} / {formatClock(duration)}
+              </span>
+              <span className="flex-1" />
               <button
                 type="button"
-                onClick={toggle}
-                className="inline-flex h-10 items-center gap-2 rounded-full bg-white/15 px-4 text-sm font-semibold hover:bg-white/25"
+                onClick={() => setSpeed(SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length])}
+                aria-label="Playback speed"
+                className="h-11 min-w-11 cursor-pointer rounded-full px-2.5 text-sm font-bold transition-colors hover:bg-white/15"
               >
-                <RotateCcw className="size-4" /> Replay
+                {speed}×
               </button>
-              {hasNext && (
-                <button
-                  type="button"
-                  onClick={onNext}
-                  className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-semibold text-ink hover:bg-brand-50"
-                >
-                  Next lesson <SkipForward className="size-4" />
-                </button>
-              )}
+              <ControlButton label="Captions" onClick={() => setCc((c) => !c)} pressed={cc}>
+                <Captions className="size-4.5" />
+              </ControlButton>
+              <ControlButton
+                label="Full screen"
+                onClick={() => boxRef.current?.requestFullscreen?.()}
+                className="hidden sm:grid"
+              >
+                <Maximize className="size-4.5" />
+              </ControlButton>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </>
+      )}
+
+      {/* Finished: replay or go on */}
+      {ended && !locked && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-brand-950/85 px-6 text-center">
+          <span className="grid size-14 place-items-center rounded-full bg-success">
+            <Check className="size-7" strokeWidth={3} aria-hidden />
+          </span>
+          <p className="font-display text-xl font-medium sm:text-2xl">Lesson complete</p>
+          <div className="mt-1 flex flex-wrap justify-center gap-2.5">
+            <button type="button" onClick={toggle} className={OUTLINE_ON_DARK}>
+              <RotateCcw className="size-4" aria-hidden /> Replay
+            </button>
+            {hasNext && (
+              <Button size="sm" variant="sun" onClick={onNext}>
+                Next lesson <SkipForward className="size-4" aria-hidden />
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Locked */}
       {locked && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-ink/55 px-6 text-center">
-          <span className="grid size-14 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/25 backdrop-blur">
-            <Lock className="size-6" />
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 px-6 pt-6 text-center sm:gap-3.5 sm:pt-0">
+          <span aria-hidden className="hidden size-17.5 place-items-center rounded-full bg-brand-800 sm:grid">
+            <Lock className="size-6 text-sun-400" />
           </span>
-          <p className="text-lg font-bold sm:text-2xl">This lesson is part of the full course</p>
-          <p className="hidden max-w-md text-sm text-white/70 sm:block">
-            Enrol to unlock every video, downloadable resource, the capstone project and your certificate.
+          <p className="max-w-140 font-display text-[clamp(20px,3vw,38px)] leading-[1.15] font-medium tracking-[-0.8px]">
+            {lesson.title}
           </p>
-          <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-            <button
-              type="button"
-              onClick={onUnlock}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-ink shadow-lift hover:bg-brand-50"
-            >
-              <Lock className="size-4" /> Unlock full course · {formatPrice(course.price)}
-            </button>
+          <p className="hidden max-w-120 text-base leading-normal text-white/85 sm:block">
+            This lesson unlocks with the full course. The free preview lessons are open to everyone.
+          </p>
+          <div className="mt-1 flex flex-wrap justify-center gap-2.5 sm:mt-2.5 sm:gap-3">
+            <Button size="sm" variant="sun" onClick={onUnlock} className="sm:min-h-12 sm:px-5.5 sm:text-base">
+              Unlock for {formatPrice(course.price)}
+            </Button>
             <button
               type="button"
               onClick={onPreview}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold text-white ring-1 ring-white/30 hover:bg-white/10"
+              className={cn(OUTLINE_ON_DARK, "sm:min-h-12 sm:px-5.5 sm:text-base")}
             >
-              <CirclePlay className="size-4" /> Watch a free preview
+              Watch free lesson
             </button>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+function ControlButton({
+  label,
+  onClick,
+  pressed,
+  className,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  pressed?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      aria-pressed={pressed}
+      className={cn(
+        "grid size-11 shrink-0 cursor-pointer place-items-center rounded-full transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-sun-400",
+        pressed && "bg-white/20",
+        className,
+      )}
+    >
+      {children}
+    </button>
   );
 }

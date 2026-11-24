@@ -17,8 +17,8 @@ function sourceFiles(dir: string): string[] {
 
 const stripComments = (source: string) => source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
 
-/** Current and past product and guide names (D92 renamed Meera to Mira; Sage and CDL are prototype names). */
-const NAMES = /\b(?:SELF|CDL|Mira|Meera|Sage)\b/;
+/** Current and past product and guide names (D93 renamed SELF to TEMPLE; D92 renamed Meera to Mira; Sage and CDL are prototype names). */
+const NAMES = /\b(?:TEMPLE|SELF|CDL|Mira|Meera|Sage)\b/;
 
 const files = DIRS.flatMap(sourceFiles);
 

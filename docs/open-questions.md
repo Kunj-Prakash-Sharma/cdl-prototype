@@ -23,7 +23,7 @@ From the Scope of Work. Dates are "to give" unless stated.
 | Input | Needed by | Status |
 |---|---|---|
 | First 3 to 4 courses (videos, PDFs, descriptions). Not blocking the build: we use sample videos until they arrive (D67) | Nov 5, 2026 | agreed |
-| Brand name, logo, colours, website address, name shown in login SMS | to give date | open |
+| Brand name, logo, colours, website address, name shown in login SMS | to give date | **name and logo given 2026-11-24** (D93: TEMPLE). **Colours: navy and gold from the logo (D94).** Still open: website address, SMS sender name |
 | Payment account in the client's business name (KYC; GST status) | to give date | open |
 | Privacy, terms and refund pages | to give date | open |
 | Approval of the 50-question bank wording, scoring cut-offs and report cards (style B, "Balanced" middle cards) | to give date | **approved 2026-11-03** (D69). Client's one change: even answer labels, applied |

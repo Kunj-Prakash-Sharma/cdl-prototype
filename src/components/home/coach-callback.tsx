@@ -101,7 +101,7 @@ function CoachCallbackForm({ wording, phone }: { wording: CallbackWording; phone
       </div>
       <ConsentCheck wording={wording} checked={request.consent} onChange={request.setConsent} testId="coach-consent" />
       {request.error && (
-        <p role="alert" className="mt-2 text-[13px] text-sun-600" data-testid="coach-error">
+        <p role="alert" className="mt-2 text-[13px] text-danger" data-testid="coach-error">
           {request.error}
         </p>
       )}

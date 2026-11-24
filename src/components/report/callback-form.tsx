@@ -64,7 +64,7 @@ export function CallbackForm({ wording }: { wording: CallbackWording }) {
               testId="callback-consent"
             />
             {request.error && (
-              <p role="alert" className="mt-3 text-sm font-medium text-sun-600" data-testid="callback-error">
+              <p role="alert" className="mt-3 text-sm font-medium text-danger" data-testid="callback-error">
                 {request.error}
               </p>
             )}

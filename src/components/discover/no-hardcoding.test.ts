@@ -49,7 +49,7 @@ const RULES: { name: string; pattern: RegExp; bad: string }[] = [
   },
   {
     name: "the guide or product name (use src/config/brand.ts)",
-    pattern: /\b(?:Sage|Meera|Mira|SELF)\b/,
+    pattern: /\b(?:Sage|Meera|Mira|SELF|TEMPLE)\b/,
     bad: 'const n = "Mira";',
   },
   {

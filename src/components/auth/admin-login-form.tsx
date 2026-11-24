@@ -78,7 +78,7 @@ export function AdminLoginForm({ next, siteKey }: { next: string; siteKey: strin
         />
 
         {error && (
-          <p id="admin-login-error" role="alert" className="mt-3 text-sm font-medium text-sun-600">
+          <p id="admin-login-error" role="alert" className="mt-3 text-sm font-medium text-danger">
             {error}
           </p>
         )}

@@ -135,7 +135,7 @@ test.describe("guards", () => {
 
   // The proxy only checks that a session cookie EXISTS. A forged one must still never reveal a protected page.
   const protectedPages = [
-    { path: "/my-self", secret: "Pick up right where you left off." },
+    { path: "/my-self", secret: "all in one place." },
     { path: "/admin/users", secret: "newest first" },
   ];
 

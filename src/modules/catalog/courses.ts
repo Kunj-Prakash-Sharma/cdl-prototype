@@ -31,7 +31,7 @@ export type Course = {
   reviews: number;
   learners: number;
   instructor: { name: string; role: string; initials: string; bio: string };
-  theme: { from: string; to: string };
+  theme: { from: string; to: string }; // cover gradient: CSS colour tokens (var(--color-*)), navy and gold from the logo (D94)
   icon: LucideIcon;
   outcomes: string[];
   skills: string[];
@@ -94,7 +94,7 @@ export const COURSES: Course[] = [
       initials: "AR",
       bio: "Ananya has spent nine years helping retail and fintech teams make sense of their data, and has mentored 200+ junior analysts.",
     },
-    theme: { from: "#5a45f2", to: "#22d3ee" },
+    theme: { from: "var(--color-brand-700)", to: "var(--color-brand-400)" },
     icon: ChartColumn,
     outcomes: [
       "Clean and structure messy, real-world datasets",
@@ -166,7 +166,7 @@ export const COURSES: Course[] = [
       initials: "KM",
       bio: "Kabir designs consumer apps used by millions and runs portfolio reviews for early-career designers every month.",
     },
-    theme: { from: "#ec4899", to: "#8b5cf6" },
+    theme: { from: "var(--color-brand-900)", to: "var(--color-sun-500)" },
     icon: PenTool,
     outcomes: [
       "Plan and run user interviews with confidence",
@@ -238,7 +238,7 @@ export const COURSES: Course[] = [
       initials: "RI",
       bio: "Rohan builds backend systems at a fast-growing SaaS company and has taught programming to over 30,000 beginners.",
     },
-    theme: { from: "#0ea5e9", to: "#10b981" },
+    theme: { from: "var(--color-brand-600)", to: "var(--color-brand-300)" },
     icon: Code,
     outcomes: [
       "Write clean Python programs from scratch",
@@ -310,7 +310,7 @@ export const COURSES: Course[] = [
       initials: "MK",
       bio: "Meera has led product teams across e-commerce and edtech, launching products used by over 10 million people.",
     },
-    theme: { from: "#f59e0b", to: "#ef4444" },
+    theme: { from: "var(--color-sun-600)", to: "var(--color-sun-500)" },
     icon: Rocket,
     outcomes: [
       "Run customer discovery interviews",
@@ -382,7 +382,7 @@ export const COURSES: Course[] = [
       initials: "SQ",
       bio: "Sana has scaled three consumer brands from launch to millions of customers using content-led and performance marketing.",
     },
-    theme: { from: "#f43f5e", to: "#fb923c" },
+    theme: { from: "var(--color-brand-700)", to: "var(--color-sun-500)" },
     icon: Megaphone,
     outcomes: [
       "Define positioning and messaging for any brand",
@@ -454,7 +454,7 @@ export const COURSES: Course[] = [
       initials: "VS",
       bio: "Vikram has analysed hundreds of companies for an investment firm and loves making finance approachable for non-finance folks.",
     },
-    theme: { from: "#059669", to: "#84cc16" },
+    theme: { from: "var(--color-brand-800)", to: "var(--color-brand-500)" },
     icon: Landmark,
     outcomes: [
       "Read and interpret P&L, balance sheet and cash flow",
@@ -526,7 +526,7 @@ export const COURSES: Course[] = [
       initials: "NF",
       bio: "Nisha coaches leaders and graduates on communication, and has trained teams across 40+ organisations.",
     },
-    theme: { from: "#6366f1", to: "#ec4899" },
+    theme: { from: "var(--color-brand-500)", to: "var(--color-sun-400)" },
     icon: MessageCircle,
     outcomes: [
       "Structure any message so it lands",
@@ -604,7 +604,7 @@ export const COURSES: Course[] = [
       initials: "AM",
       bio: "Arjun researches applied machine learning and has published work on model fairness. He makes complex ideas feel simple.",
     },
-    theme: { from: "#7c3aed", to: "#06b6d4" },
+    theme: { from: "var(--color-brand-950)", to: "var(--color-brand-600)" },
     icon: Brain,
     outcomes: [
       "Explain how machine learning models learn",
@@ -676,7 +676,7 @@ export const COURSES: Course[] = [
       initials: "PN",
       bio: "Priya advises manufacturers and startups on decarbonisation and ESG reporting, and teaches climate literacy workshops.",
     },
-    theme: { from: "#16a34a", to: "#0ea5e9" },
+    theme: { from: "var(--color-sun-700)", to: "var(--color-brand-700)" },
     icon: Leaf,
     outcomes: [
       "Explain the business case for sustainability",

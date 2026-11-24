@@ -41,7 +41,7 @@ export function GuestStart({
       <h1 className="font-display text-[28px] font-normal tracking-[-1px] text-ink sm:text-[34px]">{title}</h1>
       <p className="mt-3 text-body">{lead}</p>
       {error && (
-        <p role="alert" className="mt-4 text-sm font-medium text-sun-600">
+        <p role="alert" className="mt-4 text-sm font-medium text-danger">
           {error}
         </p>
       )}
