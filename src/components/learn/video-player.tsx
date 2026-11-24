@@ -1,7 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Captions, Check, Lock, Maximize, Pause, Play, RotateCcw, RotateCw, SkipForward } from "lucide-react";
+import {
+  Captions,
+  Check,
+  Lock,
+  Maximize,
+  Pause,
+  Play,
+  RotateCcw,
+  RotateCw,
+  SkipForward,
+  Volume1,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import type { Course, Lesson } from "@/modules/catalog/courses";
 import { Button } from "@/components/ui/button";
 import { cn, formatClock, formatPrice } from "@/lib/format";
@@ -11,6 +24,8 @@ const SIM_RATE = 24;
 const SPEEDS = [1, 1.5, 2];
 /** Arrow keys on the seek bar skip this many seconds; the ±10 buttons skip 10. */
 const KEY_SKIP = 5;
+/** Up/Down arrows change the volume by this much (YouTube uses 5%). */
+const VOLUME_STEP = 0.05;
 /** Outline pill on the navy player (the ui/button variants are for light backgrounds). */
 const OUTLINE_ON_DARK =
   "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border-[1.5px] border-white/35 px-4 text-sm font-bold whitespace-nowrap text-white transition-colors hover:border-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sun-400";
@@ -44,6 +59,8 @@ export function VideoPlayer({
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [cc, setCc] = useState(false);
+  const [volume, setVolumeState] = useState(1);
+  const [muted, setMuted] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
   const completed = useRef(false);
 
@@ -72,6 +89,20 @@ export function VideoPlayer({
   ];
   const caption = captions[Math.min(captions.length - 1, Math.floor((t / duration) * captions.length))];
 
+  // Volume (the sample videos are simulated, so this is UI state only until `video` exists).
+  const silent = muted || volume === 0;
+  const VolumeIcon = silent ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
+  const setVolume = (v: number) => {
+    const next = Math.round(Math.max(0, Math.min(1, v)) * 100) / 100;
+    setVolumeState(next);
+    setMuted(next === 0);
+  };
+  const toggleMute = () => {
+    if (!silent) return setMuted(true);
+    setMuted(false);
+    if (volume === 0) setVolumeState(0.5);
+  };
+
   const seekBy = (seconds: number) => setT((x) => Math.max(0, Math.min(duration, x + seconds)));
   const toggle = () => {
     if (locked) return;
@@ -85,10 +116,18 @@ export function VideoPlayer({
     <div
       ref={boxRef}
       onKeyDown={(e) => {
-        // Space or K plays and pauses while focus is in the player (not on a button, which has its own Space).
-        if ((e.key === " " || e.key.toLowerCase() === "k") && !(e.target instanceof HTMLButtonElement)) {
+        // YouTube keys while focus is in the player: Space/K play-pause, M mute, Up/Down volume. Buttons and the volume
+        // slider keep their own keys.
+        const onControl = e.target instanceof HTMLButtonElement || e.target instanceof HTMLInputElement;
+        const key = e.key.toLowerCase();
+        if ((key === " " || key === "k") && !onControl) {
           e.preventDefault();
           toggle();
+        } else if (key === "m") {
+          toggleMute();
+        } else if ((key === "arrowup" || key === "arrowdown") && !onControl) {
+          e.preventDefault();
+          setVolume((silent ? 0 : volume) + (key === "arrowup" ? VOLUME_STEP : -VOLUME_STEP));
         }
       }}
       className="relative isolate aspect-video min-h-64 w-full overflow-hidden rounded-[22px] bg-brand-950 text-white shadow-glow sm:rounded-[28px]"
@@ -103,28 +142,18 @@ export function VideoPlayer({
 
       {!locked && (
         <>
-          {/* Title and the big play button */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 pt-8 pb-24 text-center sm:gap-5.5">
-            <p className="max-w-170 font-display text-[clamp(20px,3.2vw,44px)] leading-[1.12] font-medium tracking-[-1px]">
+          {/* The whole stage plays and pauses on click, like YouTube; the control bar has the visible Play button. */}
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={toggle}
+            aria-label={isPlaying ? "Pause" : "Play lesson"}
+            className="absolute inset-0 flex cursor-pointer items-center justify-center px-6 pt-8 pb-24 text-center"
+          >
+            <span className="max-w-170 font-display text-[clamp(20px,3.2vw,44px)] leading-[1.12] font-medium tracking-[-1px]">
               {lesson.title}
-            </p>
-            <button
-              type="button"
-              onClick={toggle}
-              className="inline-flex cursor-pointer items-center gap-3.5 rounded-full bg-white py-2 pr-6 pl-2 text-base font-bold text-ink shadow-lift transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-sun-400 sm:pr-7.5 sm:text-[clamp(17px,1.8vw,22px)]"
-            >
-              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-brand-600 text-white sm:size-12">
-                {isPlaying ? (
-                  <Pause className="size-4.5 fill-current" aria-hidden />
-                ) : ended ? (
-                  <RotateCcw className="size-4.5" aria-hidden />
-                ) : (
-                  <Play className="ml-0.5 size-4.5 fill-current" aria-hidden />
-                )}
-              </span>
-              {isPlaying ? "Pause" : ended ? "Watch again" : t > 0 ? "Resume" : "Play lesson"}
-            </button>
-          </div>
+            </span>
+          </button>
 
           {/* Controls */}
           <div className="absolute inset-x-0 bottom-0 z-10 bg-linear-to-b from-transparent to-brand-950 to-55% px-3 pt-6 pb-2 sm:px-6.5 sm:pb-3.5">
@@ -177,6 +206,23 @@ export function VideoPlayer({
               <ControlButton label="Forward 10 seconds" onClick={() => seekBy(10)}>
                 <RotateCw className="size-4.5" />
               </ControlButton>
+              {/* Volume, YouTube style: the slider slides out on hover or keyboard focus (tablet and desktop only; phones use the device keys and have no room). */}
+              <div className="group/vol hidden items-center sm:flex">
+                <ControlButton label={silent ? "Unmute" : "Mute"} onClick={toggleMute}>
+                  <VolumeIcon className="size-4.5" />
+                </ControlButton>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={silent ? 0 : volume}
+                  onChange={(e) => setVolume(Number(e.target.value))}
+                  aria-label="Volume"
+                  aria-valuetext={`${Math.round((silent ? 0 : volume) * 100)}%`}
+                  className="h-11 w-0 cursor-pointer accent-sun-400 opacity-0 transition-all duration-200 group-focus-within/vol:mx-1 group-focus-within/vol:w-20 group-focus-within/vol:opacity-100 group-hover/vol:mx-1 group-hover/vol:w-20 group-hover/vol:opacity-100 motion-reduce:transition-none"
+                />
+              </div>
               <span className="ml-1 text-xs whitespace-nowrap tabular-nums sm:ml-2 sm:text-sm">
                 {formatClock(t)} / {formatClock(duration)}
               </span>
