@@ -9,14 +9,13 @@ export const metadata: Metadata = {
 
 export default function MyLearningPage() {
   return (
-    <>
-      {/* Session and database reads are request-time work: own Suspense boundary (Cache Components). */}
-      <Suspense fallback={null}>
-        <div className="px-4 pt-6 sm:px-6">
+    <MyLearning
+      report={
+        // Session and database reads are request-time work: own Suspense boundary (Cache Components).
+        <Suspense fallback={null}>
           <MyReportCard />
-        </div>
-      </Suspense>
-      <MyLearning />
-    </>
+        </Suspense>
+      }
+    />
   );
 }

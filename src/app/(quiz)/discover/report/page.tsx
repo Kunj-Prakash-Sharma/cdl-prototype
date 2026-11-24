@@ -58,7 +58,7 @@ async function Report() {
     );
   }
 
-  // The page fires the view event itself (the lookup has no side effects, so My SELF and callbacks do not inflate it).
+  // The page fires the view event itself (the lookup has no side effects, so My TEMPLE and callbacks do not inflate it).
   trackReportViewed(result.latest.attemptId, result.latest.report);
   const session = await getSession(); // a verified learner here (a guest never reaches this line)
   const wording = session ? await getConsentWording(session.userId) : null;

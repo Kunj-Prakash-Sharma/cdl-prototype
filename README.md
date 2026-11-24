@@ -1,6 +1,6 @@
-# SELF
+# TEMPLE
 
-Mobile-first career discovery + learning platform. Learners chat with Mira (free), get a report, and buy self-paced courses. One Next.js app (pages + API), a background worker, and a Postgres database, all in this repo. "SELF" is a working name.
+Mobile-first career discovery + learning platform. Learners chat with Mira (free), get a report, and buy self-paced courses. One Next.js app (pages + API), a background worker, and a Postgres database, all in this repo. The product is TEMPLE (D93; "SELF" was the working name).
 
 > The original clickable UI prototype is kept at git tag `prototype-v0` (and live at cdl-prototype.vercel.app).
 

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { Star } from "lucide-react";
+import Image from "next/image";
+import logo from "@/assets/temple-logo.png";
 import { brand } from "@/config/brand";
 import { cn } from "@/lib/format";
 
@@ -40,7 +41,7 @@ export function Eyebrow({ children, className }: { children: ReactNode; classNam
   return <p className={cn("text-[13px] font-bold tracking-[1.4px] text-brand-600 uppercase", className)}>{children}</p>;
 }
 
-/** The V5 four-point star in brand violet, tilted slightly. Decorative: the product name sits next to it. */
+/** The V5 four-point star in brand violet, tilted slightly: the guide's avatar mark in the chat. Decorative. */
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" className={cn("size-7 shrink-0 fill-brand-600", className)}>
@@ -52,20 +53,19 @@ export function LogoMark({ className }: { className?: string }) {
   );
 }
 
-/** Star mark plus the product name in Outfit with wide tracking (V5 header). `inverted` is for dark backgrounds. */
-export function Logo({ className, inverted = false }: { className?: string; inverted?: boolean }) {
+/**
+ * The client's logo (gold wordmark and tagline on a navy band), D93. It is a flat image, so it reads on light and dark
+ * backgrounds alike. Pass the height as `className` (`h-*`, default `h-8`); the width follows the image ratio.
+ */
+export function Logo({ className, preload = false }: { className?: string; preload?: boolean }) {
   return (
-    <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <LogoMark />
-      <span
-        className={cn(
-          "font-display text-2xl leading-none font-semibold tracking-[5px]",
-          inverted ? "text-white" : "text-ink",
-        )}
-      >
-        {brand.name}
-      </span>
-    </span>
+    <Image
+      src={logo}
+      alt={brand.name}
+      preload={preload}
+      sizes="240px"
+      className={cn("w-auto shrink-0 rounded-[3px]", className ?? "h-8")}
+    />
   );
 }
 
@@ -73,10 +73,12 @@ export function ProgressBar({
   value,
   className,
   tone = "brand",
+  "aria-label": ariaLabel,
 }: {
   value: number;
   className?: string;
   tone?: "brand" | "green" | "white";
+  "aria-label"?: string;
 }) {
   const fill = { brand: "bg-brand-600", green: "bg-success", white: "bg-white" }[tone];
   const track = { brand: "bg-brand-100", green: "bg-success-50", white: "bg-white/20" }[tone];
@@ -84,6 +86,7 @@ export function ProgressBar({
     <div
       className={cn("h-2 w-full overflow-hidden rounded-full", track, className)}
       role="progressbar"
+      aria-label={ariaLabel}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(value * 100)}
@@ -93,29 +96,6 @@ export function ProgressBar({
         style={{ width: `${Math.max(0, Math.min(1, value)) * 100}%` }}
       />
     </div>
-  );
-}
-
-export function Rating({ value, reviews, className }: { value: number; reviews?: number; className?: string }) {
-  return (
-    <span className={cn("inline-flex items-center gap-1 text-sm", className)}>
-      <Star className="size-4 fill-sun-400 text-sun-400" aria-hidden />
-      <span className="font-semibold text-ink">{value.toFixed(1)}</span>
-      {reviews !== undefined && <span className="text-muted">({reviews.toLocaleString("en-IN")})</span>}
-    </span>
-  );
-}
-
-export function Avatar({ initials, className }: { initials: string; className?: string }) {
-  return (
-    <span
-      className={cn(
-        "grid size-10 shrink-0 place-items-center rounded-full bg-linear-to-br from-brand-100 to-sun-100 text-sm font-bold text-brand-800 ring-2 ring-white",
-        className,
-      )}
-    >
-      {initials}
-    </span>
   );
 }
 

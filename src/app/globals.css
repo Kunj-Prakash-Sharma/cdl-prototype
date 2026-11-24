@@ -1,45 +1,46 @@
 @import "tailwindcss";
 
 @theme {
-  /* V5 design (D91). Token NAMES are unchanged from the prototype so every screen moves at once; values are V5. */
+  /* V5 design (D91) in the TEMPLE logo colours (D94): brand-* is the logo navy (#103c6d = brand-700), sun-* the logo gold (#d5aa65 = sun-500). Token NAMES are unchanged so every screen moves at once. */
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
 
   --color-paper: #fbf8f5;
-  --color-ink: #1c1b29;
-  --color-body: #45434d;
-  --color-muted: #5c5a63;
-  --color-line: #ece6ee;
-  --color-line-strong: #d9d2e4;
-  --color-mist: #f3eef3;
+  --color-ink: #111d2e;
+  --color-body: #3e4656;
+  --color-muted: #5a6170;
+  --color-line: #e7e9ee;
+  --color-line-strong: #d3d9e3;
+  --color-mist: #f0f2f6;
   --color-success: #167a4c;
   --color-success-50: #eaf7f0;
+  --color-danger: #b42318;
   --color-teal: #3e9c8f;
 
-  --color-brand-50: #f6f4ff;
-  --color-brand-100: #ece9ff;
-  --color-brand-200: #c9c2ff;
-  --color-brand-300: #b9aef5;
-  --color-brand-400: #7c6ff0;
-  --color-brand-500: #5b4bea;
-  --color-brand-600: #5146e6;
-  --color-brand-700: #4338ca;
-  --color-brand-800: #3b31c4;
-  --color-brand-900: #2b2566;
-  --color-brand-950: #1f1d2b;
+  --color-brand-50: #f2f6fb;
+  --color-brand-100: #e3ebf5;
+  --color-brand-200: #c4d3e7;
+  --color-brand-300: #9fb7d6;
+  --color-brand-400: #4f78a8;
+  --color-brand-500: #245485;
+  --color-brand-600: #164a80;
+  --color-brand-700: #103c6d;
+  --color-brand-800: #0c3159;
+  --color-brand-900: #0a2645;
+  --color-brand-950: #0a1a2e;
 
-  --color-sun-100: #fff1ea;
-  --color-sun-200: #fde0d3;
-  --color-sun-300: #ffd3c3;
-  --color-sun-400: #ffc2ac;
-  --color-sun-500: #e07b5a;
-  --color-sun-600: #c2543a;
-  --color-sun-700: #a3412a;
+  --color-sun-100: #fbf4e8;
+  --color-sun-200: #f5e7cc;
+  --color-sun-300: #ecd6ad;
+  --color-sun-400: #e2c38a;
+  --color-sun-500: #d5aa65;
+  --color-sun-600: #9a7330;
+  --color-sun-700: #7a5a22;
 
-  --shadow-soft: 0 1px 2px rgb(28 27 41 / 0.04), 0 8px 24px -16px rgb(28 27 41 / 0.1);
-  --shadow-lift: 0 18px 40px -24px rgb(81 70 230 / 0.35);
-  --shadow-glow: 0 40px 90px -50px rgb(81 70 230 / 0.45);
-  --shadow-focus: 0 0 0 4px rgb(81 70 230 / 0.12);
+  --shadow-soft: 0 1px 2px rgb(17 29 46 / 0.04), 0 8px 24px -16px rgb(17 29 46 / 0.1);
+  --shadow-lift: 0 18px 40px -24px rgb(16 60 109 / 0.35);
+  --shadow-glow: 0 40px 90px -50px rgb(16 60 109 / 0.45);
+  --shadow-focus: 0 0 0 4px rgb(16 60 109 / 0.12);
 
   --animate-float: float 7s ease-in-out infinite;
   --animate-float-slow: float 9s ease-in-out infinite;
@@ -127,8 +128,8 @@ body {
   }
   .bg-grid {
     background-image:
-      linear-gradient(to right, rgb(28 27 41 / 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(28 27 41 / 0.05) 1px, transparent 1px);
+      linear-gradient(to right, rgb(17 29 46 / 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(17 29 46 / 0.05) 1px, transparent 1px);
     background-size: 44px 44px;
   }
   .bg-grid-dark {
@@ -144,7 +145,7 @@ body {
   }
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: rgb(28 27 41 / 0.15) transparent;
+    scrollbar-color: rgb(17 29 46 / 0.15) transparent;
   }
 }
 

@@ -107,7 +107,7 @@ export function ChatCard({
             <ChoiceChips options={step.options} pending={pending} onChoose={onChoose} />
           ))}
         {error && (
-          <p role="alert" className="mt-3 text-sm font-medium text-sun-600">
+          <p role="alert" className="mt-3 text-sm font-medium text-danger">
             {error}
           </p>
         )}

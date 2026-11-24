@@ -13,7 +13,7 @@ import { cn } from "@/lib/format";
 import type { SessionView } from "@/modules/auth/types";
 
 // V5 header (D91): Career Discovery, Courses, My Learning, then Log in or the account menu.
-// The saved report is reached from Career Discovery and the My SELF card (E5-S4), so it has no nav link.
+// The saved report is reached from Career Discovery and the My TEMPLE card (E5-S4), so it has no nav link.
 // My Learning shows no course count until purchases come from the server (commerce): the old count read this
 // browser's demo storage, so on a shared device it showed someone else's purchases.
 const LINKS = [
@@ -120,7 +120,7 @@ export function Navbar({ session }: { session: SessionView | null }) {
             aria-label={`${brand.name} home`}
             className="mr-auto inline-flex min-h-11 shrink-0 items-center"
           >
-            <Logo />
+            <Logo preload className="h-8 sm:h-9" />
           </Link>
 
           <div className="hidden items-center gap-5.5 md:flex">

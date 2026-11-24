@@ -41,7 +41,7 @@ export function AdminShell({ session, children }: { session: SessionView; childr
     <div className="flex min-h-screen flex-1 flex-col bg-paper text-ink lg:flex-row">
       <aside className="hidden w-64 shrink-0 flex-col gap-7 border-r border-slate-200 bg-white p-4 lg:sticky lg:top-0 lg:flex lg:h-screen">
         <div className="flex items-center justify-between px-2">
-          <Logo />
+          <Logo className="h-7" />
           <span className="rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-bold text-brand-700">Admin</span>
         </div>
         <AdminNav />
@@ -55,7 +55,7 @@ export function AdminShell({ session, children }: { session: SessionView; childr
         <details className="group">
           <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between px-4 [&::-webkit-details-marker]:hidden">
             <span className="flex items-center gap-3">
-              <Logo />
+              <Logo className="h-7" />
               <span className="rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-bold text-brand-700">Admin</span>
             </span>
             <span className="grid size-11 place-items-center rounded-full text-ink group-open:bg-slate-900/5">

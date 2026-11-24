@@ -431,7 +431,7 @@ export type LatestReport = ReportView & { courses: CourseSuggestion[]; coursesAr
  * The report for the learner's newest completed attempt, built with the wording version that result was stamped with.
  * `latest` is null when the learner has no completed attempt yet (the page shows an empty state). The learner can only
  * ever reach their own result: it is looked up by their user id, never by an id from the URL. No side effects: the
- * page fires `trackReportViewed` itself, so other callers (My SELF, callbacks) do not inflate the view count.
+ * page fires `trackReportViewed` itself, so other callers (My TEMPLE, callbacks) do not inflate the view count.
  * `attemptId` is for server-side analytics only: do not pass it to client components.
  */
 export async function getLatestReport(

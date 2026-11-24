@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Lock, Sparkles, Star, TrendingUp } from "lucide-react";
 import { brand } from "@/config/brand";
 import { helpline } from "@/config/helpline";
+import { Logo } from "@/components/ui/misc";
 import { cn } from "@/lib/format";
 import type { LatestReport } from "@/modules/chat/service";
 import { personaLead, personaSource } from "./persona-copy";
@@ -48,7 +49,8 @@ function Page({
       className={cn("flex min-h-[262mm] flex-col [print-color-adjust:exact]", !last && "break-after-page")}
     >
       <div className="flex items-center justify-between border-b border-line pb-3.5">
-        <span className="font-display text-[19px] font-medium tracking-[0.6px] text-ink">{brand.name}</span>
+        {/* Eager, so every page's header logo is loaded before the learner prints. */}
+        <Logo className="h-7" preload />
         <span className="text-xs font-bold tracking-[0.4px] text-muted uppercase">{label}</span>
       </div>
       {children}
