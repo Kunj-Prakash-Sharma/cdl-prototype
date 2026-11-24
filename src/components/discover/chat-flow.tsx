@@ -1,13 +1,23 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
-import { finishAttempt, restartAttempt, retake, retryStage, submitAnswer, submitName } from "@/modules/chat/actions";
-import type { ResultView } from "@/modules/chat/result";
-import type { ChatErrorCode, NextStep, Progress, StageId } from "@/modules/chat/types";
-import { ChatCard } from "./chat-card";
+import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
+import {
+  applyHomeAnswer,
+  finishAttempt,
+  restartAttempt,
+  retake,
+  retryStage,
+  submitAnswer,
+  submitName,
+} from "@/modules/chat/actions";
+import { takeHomeAnswer } from "@/components/home/home-answer";
+import type { ResultView } from "@/modules/chat/types";
+import type { ChatErrorCode, HomeAnswered, NextStep, Progress, StageId } from "@/modules/chat/types";
+import { ChatCard, type AnsweredStep } from "./chat-card";
 import { chatMessage } from "./chat-messages";
 import { HelplineLink } from "./helpline-link";
+import { QuizRail } from "./quiz-rail";
 import { QuizStepper } from "./quiz-stepper";
 import { ScaleQuestion } from "./scale-question";
 import { StageHeader } from "./stage-header";
@@ -68,6 +78,11 @@ export function ChatFlow({
   const [progress, setProgress] = useState<Progress | null>(finished ? null : initial.progress);
   const [ack, setAck] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The Home answer the server just saved: shown above the next question with a Change link, until the next answer.
+  const [homeAnswered, setHomeAnswered] = useState<HomeAnswered | null>(null);
+  // While a Home answer is being sent, the card keeps "typing" instead of showing a question that is about to change.
+  // Optimistic: true only while that one action runs, back to false on its own when it ends (however it ends).
+  const [homeApplying, setHomeApplying] = useOptimistic(false);
   const [pending, startTransition] = useTransition();
   const busy = useRef(false);
 
@@ -125,10 +140,29 @@ export function ChatFlow({
     setView({ type: "step", step: next });
   };
 
+  useEffect(() => {
+    // Always taken (and forgotten), so an answer kept for a quiz that is already under way is never sent later.
+    const optionId = takeHomeAnswer();
+    if (!optionId || finished || resume || initial.kind === "done") return;
+    run(async () => {
+      setHomeApplying(true);
+      const res = await applyHomeAnswer({ attemptId, optionId });
+      // Not applied (the quiz already has answers) or refused: carry on with the step the page already shows.
+      if (!res.ok || !res.applied) return;
+      // Label, reply and the Change step all come from the attempt's own question set (what was stored).
+      setHomeAnswered(res.home);
+      setAck(res.home.acknowledgement || null);
+      await goTo(res.next, attemptId);
+    });
+    // Only on first load.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const answer = (questionId: string, value: number, kind: "basics" | "question") =>
     run(async () => {
       const res = await submitAnswer({ attemptId, questionId, value });
       if (!res.ok) return fail(res.code, retryAfter(res));
+      setHomeAnswered(null);
       // Mira's reply to a tap question shows above the next card; replies to scale answers would only make the card jump.
       setAck(kind === "basics" ? res.acknowledgement || null : null);
       await goTo(res.next, attemptId);
@@ -138,6 +172,7 @@ export function ChatFlow({
     run(async () => {
       const res = await submitName({ attemptId, name });
       if (res.ok) {
+        setHomeAnswered(null);
         setAck(null);
         return goTo(res.next, attemptId);
       }
@@ -176,7 +211,22 @@ export function ChatFlow({
       await goTo(res.next, res.attemptId);
     });
 
+  /**
+   * "Change" on the Home answer: show the step the server sent for asking it again (nothing is built here); the new
+   * tap goes through submitAnswer like any other.
+   */
+  const changeHomeAnswer = () => {
+    if (!homeAnswered || busy.current) return;
+    setHomeAnswered(null);
+    setAck(null);
+    setError(null);
+    setView({ type: "step", step: homeAnswered.change });
+  };
+
   const step = view.type === "step" ? view.step : null;
+  const answered: AnsweredStep | null = homeAnswered
+    ? { prompt: homeAnswered.prompt, label: homeAnswered.label, onChange: changeHomeAnswer }
+    : null;
   const finishing = view.type === "finishing" || view.type === "finished";
   const shown = progress && finishing ? asComplete(progress) : progress;
   const stageId = step ? stageOf(step) : null;
@@ -186,57 +236,65 @@ export function ChatFlow({
   return (
     <div>
       {shown && view.type !== "stopped" && <QuizStepper progress={shown} />}
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
-        {shown && stage && <StageHeader stage={stage} index={stageIndex} count={shown.stages.length} />}
+      <div className="mx-auto flex max-w-310 items-start gap-6 px-4.5 pt-6 pb-16 sm:px-6 sm:pt-8 sm:pb-24 lg:px-12">
+        {shown && step && <QuizRail progress={shown} />}
+        <div className="mx-auto w-full max-w-3xl min-w-0 flex-1">
+          {shown && stage && step?.kind === "question" && (
+            <StageHeader stage={stage} index={stageIndex} count={shown.stages.length} />
+          )}
 
-        {step && (step.kind === "name" || step.kind === "basics") && (
-          <ChatCard
-            key={step.id}
-            step={step}
-            ack={ack}
-            error={error}
-            pending={pending}
-            onName={sendName}
-            onChoose={(index) => answer(step.id, index, "basics")}
-          />
-        )}
-        {step && step.kind === "question" && stage && (
-          <ScaleQuestion
-            step={step}
-            stage={stage}
-            ack={ack}
-            error={error}
-            pending={pending}
-            onChoose={(value) => answer(step.id, value, "question")}
-          />
-        )}
-        {view.type === "finishing" && (
-          <FinishingScreen
-            error={view.error ?? error}
-            pending={pending}
-            onRetry={() => {
-              setView({ type: "finishing" });
-              run(() => finishNow(attemptId));
-            }}
-          />
-        )}
-        {view.type === "resume" && (
-          <ResumeScreen
-            answered={view.answered}
-            total={view.total}
-            pending={pending}
-            error={error}
-            onContinue={continueQuiz}
-            onRestart={startFresh}
-          />
-        )}
-        {view.type === "retry" && <RetryScreen pending={pending} error={error} onRetry={() => retry(view.stage)} />}
-        {view.type === "stopped" && <StopScreen pending={pending} error={error} onRestart={startOver} />}
-        {view.type === "finished" && (
-          <ResultPlaceholder result={view.result} pending={pending} error={error} onRetake={startOver} />
-        )}
+          {step && (step.kind === "name" || step.kind === "basics") && (
+            <ChatCard
+              key={step.id}
+              step={step}
+              meta={shown && stage ? `Part ${stageIndex + 1} of ${shown.stages.length} · ${stage.title}` : ""}
+              ack={ack}
+              answered={answered}
+              hold={homeApplying}
+              error={error}
+              pending={pending}
+              onName={sendName}
+              onChoose={(index) => answer(step.id, index, "basics")}
+            />
+          )}
+          {step && step.kind === "question" && stage && (
+            <ScaleQuestion
+              step={step}
+              stage={stage}
+              ack={ack}
+              error={error}
+              pending={pending}
+              onChoose={(value) => answer(step.id, value, "question")}
+            />
+          )}
+          {view.type === "finishing" && (
+            <FinishingScreen
+              error={view.error ?? error}
+              pending={pending}
+              onRetry={() => {
+                setView({ type: "finishing" });
+                run(() => finishNow(attemptId));
+              }}
+            />
+          )}
+          {view.type === "resume" && (
+            <ResumeScreen
+              answered={view.answered}
+              total={view.total}
+              pending={pending}
+              error={error}
+              onContinue={continueQuiz}
+              onRestart={startFresh}
+            />
+          )}
+          {view.type === "retry" && <RetryScreen pending={pending} error={error} onRetry={() => retry(view.stage)} />}
+          {view.type === "stopped" && <StopScreen pending={pending} error={error} onRestart={startOver} />}
+          {view.type === "finished" && (
+            <ResultPlaceholder result={view.result} pending={pending} error={error} onRetake={startOver} />
+          )}
 
-        {view.type !== "stopped" && <HelplineLink className="mt-6 justify-center" />}
+          {view.type !== "stopped" && <HelplineLink className="mt-6 justify-center" />}
+        </div>
       </div>
     </div>
   );

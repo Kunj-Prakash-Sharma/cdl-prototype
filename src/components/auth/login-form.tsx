@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowLeft, ShieldCheck, Smartphone } from "lucide-react";
 import { sendOtp, verifyOtp } from "@/modules/auth/actions";
+import { nationalDigits } from "@/modules/auth/phone";
 import { Button } from "@/components/ui/button";
 import { authMessage } from "./messages";
 import { useTurnstile } from "./use-turnstile";
@@ -20,7 +20,6 @@ const LOGIN_COPY: LoginCopy = {
 };
 
 export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; siteKey: string; copy?: LoginCopy }) {
-  const router = useRouter();
   const { container, getToken } = useTurnstile(siteKey);
   const [step, setStep] = useState<Step>("phone");
   const [digits, setDigits] = useState("");
@@ -62,16 +61,32 @@ export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; 
         codeInput.current?.focus();
         return setError(authMessage(result.code, result.retryAfterSec));
       }
-      // Full navigation so the navbar and layout re-read the new session cookie.
-      router.replace(result.next);
-      router.refresh();
+      // Full page load so the navbar and layout re-read the new session cookie. Not router.replace + refresh: the
+      // refresh can re-render /login first, whose own redirect then shows the next page under the /login URL.
+      // result.next is already a same-site path (safeNextPath on the server).
+      window.location.replace(result.next);
     });
   }
 
   const phoneReady = /^[6-9]\d{9}$/.test(digits);
 
+  const inputShell =
+    "overflow-hidden rounded-[14px] border-[1.5px] border-line transition-colors focus-within:border-brand-600 focus-within:shadow-focus";
+  const mainButton = "mt-5 w-full disabled:border-brand-200 disabled:bg-brand-200 disabled:opacity-100";
+  const heading = (title: string, lead: React.ReactNode) => (
+    <div className="text-center">
+      <span className="inline-grid size-15 place-items-center rounded-[18px] bg-brand-100 text-brand-600">
+        <Smartphone className="size-7" aria-hidden />
+      </span>
+      <h1 className="mt-5 mb-2 font-display text-[28px] leading-[1.15] font-normal tracking-[-1px] text-ink sm:text-[34px]">
+        {title}
+      </h1>
+      <p className="mb-6 text-[15px] leading-[1.55] text-muted">{lead}</p>
+    </div>
+  );
+
   return (
-    <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-lift ring-1 ring-slate-200/80 sm:p-8">
+    <div className="w-full max-w-[460px] rounded-[28px] border border-line bg-white p-7 shadow-glow sm:p-11">
       {step === "phone" ? (
         <form
           onSubmit={(e) => {
@@ -79,17 +94,14 @@ export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; 
             if (phoneReady && !pending) send();
           }}
         >
-          <span className="grid size-12 place-items-center rounded-2xl bg-brand-50 text-brand-700">
-            <Smartphone className="size-6" aria-hidden />
-          </span>
-          <h1 className="mt-5 text-2xl font-extrabold tracking-tight text-ink">{copy.title}</h1>
-          <p className="mt-2 text-slate-600">{copy.lead}</p>
+          {heading(copy.title, copy.lead)}
 
-          <label htmlFor="phone" className="mt-6 block text-sm font-semibold text-ink">
+          <label htmlFor="phone" className="mb-1.5 block text-sm font-bold text-ink">
             Mobile number
           </label>
-          <div className="mt-2 flex h-12 items-center rounded-2xl bg-white ring-1 ring-slate-300 focus-within:ring-2 focus-within:ring-brand-500">
-            <span className="pr-2 pl-4 font-semibold text-slate-500">+91</span>
+          {/* V5: the number field is white on the card; the code field below keeps the paper fill. */}
+          <div className={`flex items-center ${inputShell} bg-white`}>
+            <span className="pr-1 pl-4 font-bold text-body">+91</span>
             <input
               id="phone"
               name="phone"
@@ -97,10 +109,9 @@ export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; 
               inputMode="numeric"
               autoComplete="tel-national"
               placeholder="98765 43210"
-              maxLength={10}
               value={digits}
-              onChange={(e) => setDigits(e.target.value.replace(/\D/g, "").slice(0, 10))}
-              className="h-full min-w-0 flex-1 rounded-r-2xl bg-transparent pr-4 text-lg tracking-wide text-ink outline-none"
+              onChange={(e) => setDigits(nationalDigits(e.target.value))}
+              className="autofill-white min-h-12 min-w-0 flex-1 bg-transparent py-3 pr-4 pl-2 text-[15px] text-ink outline-none"
               aria-describedby={error ? "login-error" : undefined}
             />
           </div>
@@ -114,7 +125,7 @@ export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; 
             )
           )}
 
-          <Button type="submit" size="lg" className="mt-6 w-full" disabled={!phoneReady || pending}>
+          <Button type="submit" className={mainButton} disabled={!phoneReady || pending}>
             {pending ? "Sending…" : "Send code"}
           </Button>
         </form>
@@ -125,20 +136,12 @@ export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; 
             if (code.length === 6 && !pending) verify(code);
           }}
         >
-          <button
-            type="button"
-            onClick={() => {
-              setStep("phone");
-              setError(null);
-            }}
-            className="-ml-2 inline-flex h-11 items-center gap-1.5 rounded-full px-2 text-sm font-semibold text-slate-600 hover:text-ink"
-          >
-            <ArrowLeft className="size-4" aria-hidden /> Change number
-          </button>
-          <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-ink">Enter the code</h1>
-          <p className="mt-2 text-slate-600">
-            We sent a 6-digit code to <span className="font-semibold text-ink">+91 {digits}</span>.
-          </p>
+          {heading(
+            "Enter the code",
+            <>
+              We sent a 6-digit code to <span className="font-bold text-ink">+91 {digits}</span>.
+            </>,
+          )}
 
           <label htmlFor="code" className="sr-only">
             6-digit code
@@ -150,25 +153,35 @@ export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; 
             type="text"
             inputMode="numeric"
             autoComplete="one-time-code"
-            placeholder="······"
-            maxLength={6}
+            placeholder="000000"
             value={code}
             onChange={(e) => {
               const value = e.target.value.replace(/\D/g, "").slice(0, 6);
               setCode(value);
               if (value.length === 6 && !pending) verify(value);
             }}
-            className="mt-6 h-14 w-full rounded-2xl bg-white text-center text-2xl font-bold tracking-[0.5em] text-ink ring-1 ring-slate-300 outline-none focus:ring-2 focus:ring-brand-500"
+            className={`autofill-paper min-h-14 w-full text-center text-[22px] font-bold tracking-[0.4em] text-ink outline-none focus:border-brand-600 focus:shadow-focus ${inputShell} bg-paper`}
             aria-describedby={error ? "login-error" : undefined}
           />
 
           {error && <ErrorText>{error}</ErrorText>}
 
-          <Button type="submit" size="lg" className="mt-6 w-full" disabled={code.length !== 6 || pending}>
-            {pending ? "Checking…" : "Verify and continue"}
+          <Button type="submit" className={mainButton} disabled={code.length !== 6 || pending}>
+            {pending ? "Checking…" : "Verify and log in"}
           </Button>
 
-          <p className="mt-4 text-center text-sm text-slate-500">
+          <button
+            type="button"
+            onClick={() => {
+              setStep("phone");
+              setError(null);
+            }}
+            className="mt-1.5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-800"
+          >
+            <ArrowLeft className="size-4" aria-hidden /> Use a different number
+          </button>
+
+          <p className="mt-1 text-center text-sm text-muted">
             Did not get it?{" "}
             {resendIn > 0 ? (
               <span>Resend in {resendIn}s</span>
@@ -177,7 +190,7 @@ export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; 
                 type="button"
                 onClick={send}
                 disabled={pending}
-                className="font-semibold text-brand-700 underline-offset-2 hover:underline disabled:opacity-50"
+                className="inline-flex min-h-11 items-center font-semibold text-brand-600 hover:text-brand-800 disabled:opacity-50"
               >
                 Send a new code
               </button>
@@ -189,7 +202,7 @@ export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; 
       {/* Invisible bot check mounts here */}
       <div ref={container} />
 
-      <p className="mt-6 flex items-center gap-2 text-xs text-slate-500">
+      <p className="mt-5 flex items-center justify-center gap-2 text-[13px] text-muted">
         <ShieldCheck className="size-4 shrink-0 text-brand-600" aria-hidden />
         {copy.footnote}
       </p>
@@ -199,7 +212,7 @@ export function LoginForm({ next, siteKey, copy = LOGIN_COPY }: { next: string; 
 
 function ErrorText({ children }: { children: React.ReactNode }) {
   return (
-    <p id="login-error" role="alert" className="mt-3 text-sm font-medium text-red-600">
+    <p id="login-error" role="alert" className="mt-3 text-sm font-semibold text-sun-600">
       {children}
     </p>
   );

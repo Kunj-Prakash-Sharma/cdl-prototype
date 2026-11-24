@@ -21,7 +21,7 @@ test("opening the menu locks the page behind it, and closing it unlocks", async 
   await openMenu(page);
   expect(await pageScrollLocked(page)).toBe(true);
   await page.getByRole("button", { name: "Close menu" }).click();
-  await expect(page.getByRole("link", { name: "Level 1 Learning" })).toBeHidden();
+  await expect(page.locator("#mobile-menu").getByRole("link", { name: "Courses", exact: true })).toBeHidden();
   expect(await pageScrollLocked(page)).toBe(false);
 });
 
@@ -44,7 +44,7 @@ test("a tap on the dimmed page closes the menu", async ({ page }) => {
 
 test("choosing a link closes the menu and unlocks the page", async ({ page }) => {
   await openMenu(page);
-  await page.getByRole("link", { name: "Level 1 Learning" }).click();
+  await page.locator("#mobile-menu").getByRole("link", { name: "Courses", exact: true }).click();
   await expect(page).toHaveURL(/\/learn$/);
   await expect(page.getByRole("button", { name: "Open menu" })).toBeVisible();
   expect(await pageScrollLocked(page)).toBe(false);

@@ -6,6 +6,8 @@ import {
   computeNextStep,
   firstUnanswered,
   homeAnswer,
+  homeAnsweredView,
+  homeQuestionView,
   isAway,
   isExpired,
   isReachable,
@@ -320,5 +322,35 @@ describe("set 1.1.0: status first, name second, and the Home answer (D87)", () =
     expect(homeAnswer(next, 2)).toBeNull();
     expect(homeAnswer(next, undefined)).toBeNull();
     expect(homeAnswer(QUESTION_SET_1_0_0, "school")).toBeNull();
+  });
+
+  it("homeQuestionView lists the home question's options by id and label (no question id), and is null without one", () => {
+    const view = homeQuestionView(next)!;
+    const question = next.basics.find((b) => b.id === "b-status")!;
+    expect(view).toEqual({
+      prompt: question.prompt,
+      options: question.options.map((o) => ({ id: o.id, label: o.label })),
+    });
+    expect(homeQuestionView(QUESTION_SET_1_0_0)).toBeNull();
+  });
+
+  it("homeAnsweredView shows the stored option from the given set, with the step that asks it again", () => {
+    const question = next.basics.find((b) => b.id === "b-status")!;
+    const stored = homeAnswer(next, question.options[1]!.id)!;
+    const progress = progressOf(next, { [stored.questionId]: stored.value }, false);
+    const view = homeAnsweredView(next, stored.value, progress)!;
+    expect(view.prompt).toBe(question.prompt);
+    expect(view.label).toBe(question.options[1]!.label);
+    expect(view.acknowledgement).toBe(question.options[1]!.acknowledgement);
+    // The Change step asks that question again, options by position (what submitAnswer takes).
+    expect(view.change).toEqual({
+      kind: "basics",
+      id: question.id,
+      prompt: question.prompt,
+      options: question.options.map((o, index) => ({ index, label: o.label })),
+      progress,
+    });
+    expect(homeAnsweredView(next, 99, progress)).toBeNull();
+    expect(homeAnsweredView(QUESTION_SET_1_0_0, 0, progress)).toBeNull();
   });
 });

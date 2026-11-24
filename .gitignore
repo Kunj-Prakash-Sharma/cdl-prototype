@@ -56,3 +56,6 @@ CLAUDE.local.md
 
 # test server build folder (npm run dev:test, Playwright)
 /.next-test/
+
+# local screenshots (ui-port checks)
+/.shots/

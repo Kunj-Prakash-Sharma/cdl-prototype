@@ -4,8 +4,8 @@ import { motion } from "motion/react";
 import { Check } from "lucide-react";
 import { brand } from "@/config/brand";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { SageAvatar } from "@/components/ui/misc";
-import type { ResultView } from "@/modules/chat/result";
+import { GuideAvatar } from "./chat-bubbles";
+import type { ResultView } from "@/modules/chat/types";
 import { HelplineLink } from "./helpline-link";
 
 /** Shown while the answers are scored (the prototype's pulsing avatar). */
@@ -22,19 +22,21 @@ export function FinishingScreen({
     <div className="flex flex-col items-center py-16 text-center" data-testid="finishing" aria-live="polite">
       <div className="relative grid size-40 place-items-center">
         <span className="absolute inset-6 animate-pulse-ring rounded-full bg-brand-400/40" />
-        <span className="absolute inset-6 animate-pulse-ring rounded-full bg-fuchsia-400/30 [animation-delay:0.7s]" />
+        <span className="absolute inset-6 animate-pulse-ring rounded-full bg-sun-400/30 [animation-delay:0.7s]" />
         <motion.span
           animate={{ rotate: 360 }}
           transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
           className="absolute inset-2 rounded-full border-2 border-dashed border-brand-200"
         />
-        <SageAvatar size="lg" className="relative scale-125" />
+        <GuideAvatar className="relative size-16" />
       </div>
-      <h1 className="mt-8 text-3xl font-extrabold tracking-tight text-ink">Putting your answers together…</h1>
-      <p className="mt-2 text-slate-600">{brand.guideName} will have your result in a moment.</p>
+      <h1 className="mt-8 font-display text-[28px] font-normal tracking-[-1px] text-ink sm:text-[34px]">
+        Putting your answers together…
+      </h1>
+      <p className="mt-2 text-body">{brand.guideName} will have your result in a moment.</p>
       {error && (
         <>
-          <p role="alert" className="mt-4 text-sm font-medium text-red-600">
+          <p role="alert" className="mt-4 text-sm font-medium text-sun-600">
             {error}
           </p>
           {onRetry && (
@@ -59,16 +61,15 @@ export function RetryScreen({
   onRetry: () => void;
 }) {
   return (
-    <div
-      className="rounded-3xl bg-white p-8 text-center shadow-soft ring-1 ring-slate-200/80 sm:p-12"
-      data-testid="retry"
-    >
-      <h1 className="text-2xl font-bold text-ink">Your answers were all the same</h1>
-      <p className="mx-auto mt-2 max-w-md text-slate-600">
+    <div className="rounded-[28px] border border-line bg-white p-8 text-center shadow-glow sm:p-12" data-testid="retry">
+      <h1 className="font-display text-2xl font-normal tracking-[-0.5px] text-ink sm:text-[28px]">
+        Your answers were all the same
+      </h1>
+      <p className="mx-auto mt-2 max-w-md text-body">
         Want to try that part again? There are no right or wrong answers.
       </p>
       {error && (
-        <p role="alert" className="mt-4 text-sm font-medium text-red-600">
+        <p role="alert" className="mt-4 text-sm font-medium text-sun-600">
           {error}
         </p>
       )}
@@ -102,16 +103,16 @@ export function ResumeScreen({
 }) {
   return (
     <div
-      className="rounded-3xl bg-white p-8 text-center shadow-soft ring-1 ring-slate-200/80 sm:p-12"
+      className="rounded-[28px] border border-line bg-white p-8 text-center shadow-glow sm:p-12"
       data-testid="resume"
     >
-      <SageAvatar size="lg" className="mx-auto" />
-      <h1 className="mt-5 text-2xl font-bold text-ink">Welcome back</h1>
-      <p className="mx-auto mt-2 max-w-md text-slate-600">
+      <GuideAvatar className="mx-auto" />
+      <h1 className="mt-5 font-display text-2xl font-normal tracking-[-0.5px] text-ink sm:text-[28px]">Welcome back</h1>
+      <p className="mx-auto mt-2 max-w-md text-body">
         {brand.guideName} saved your place. You have answered {answered} of {total} questions.
       </p>
       {error && (
-        <p role="alert" className="mt-4 text-sm font-medium text-red-600">
+        <p role="alert" className="mt-4 text-sm font-medium text-sun-600">
           {error}
         </p>
       )}
@@ -139,15 +140,17 @@ export function StopScreen({
 }) {
   return (
     <div className="space-y-6 text-center" data-testid="stop-screen">
-      <div className="rounded-3xl bg-white p-8 shadow-soft ring-1 ring-slate-200/80 sm:p-12">
-        <h1 className="text-2xl font-bold text-ink">Let&apos;s pause here</h1>
-        <p className="mx-auto mt-2 max-w-md text-slate-600">
+      <div className="rounded-[28px] border border-line bg-white p-8 shadow-glow sm:p-12">
+        <h1 className="font-display text-2xl font-normal tracking-[-0.5px] text-ink sm:text-[28px]">
+          Let&apos;s pause here
+        </h1>
+        <p className="mx-auto mt-2 max-w-md text-body">
           If you are going through a hard time, please talk to someone you trust or to a helpline. You do not have to
           handle it alone.
         </p>
         <HelplineLink large className="mt-6" />
         {error && (
-          <p role="alert" className="mt-4 text-sm font-medium text-red-600">
+          <p role="alert" className="mt-4 text-sm font-medium text-sun-600">
             {error}
           </p>
         )}
@@ -184,27 +187,29 @@ export function ResultPlaceholder({
 }) {
   return (
     <div
-      className="rounded-3xl bg-white p-8 text-center shadow-soft ring-1 ring-slate-200/80 sm:p-12"
+      className="rounded-[28px] border border-line bg-white p-8 text-center shadow-glow sm:p-12"
       data-testid="result"
     >
-      <div className="mx-auto grid size-16 place-items-center rounded-full bg-emerald-50">
-        <Check className="size-8 text-emerald-500" strokeWidth={2.5} aria-hidden />
+      <div className="mx-auto grid size-16 place-items-center rounded-full bg-success-50">
+        <Check className="size-8 text-success" strokeWidth={2.5} aria-hidden />
       </div>
-      <h1 className="mt-5 text-2xl font-bold text-ink">Your answers are saved</h1>
-      <p className="mx-auto mt-2 max-w-md text-slate-600">Your report is ready to read.</p>
+      <h1 className="mt-5 font-display text-2xl font-normal tracking-[-0.5px] text-ink sm:text-[28px]">
+        Your answers are saved
+      </h1>
+      <p className="mx-auto mt-2 max-w-md text-body">Your report is ready to read.</p>
       <div className="mt-6 flex justify-center">
         <ButtonLink href="/discover/report" data-testid="see-report">
           See my report
         </ButtonLink>
       </div>
-      <details className="mx-auto mt-6 max-w-md text-left text-sm text-slate-500">
+      <details className="mx-auto mt-6 max-w-md text-left text-sm text-muted">
         <summary className="cursor-pointer font-semibold">Stored result (temporary, for testing)</summary>
-        <pre className="mt-2 overflow-x-auto rounded-xl bg-slate-50 p-3 text-xs" data-testid="result-json">
+        <pre className="mt-2 overflow-x-auto rounded-xl bg-mist p-3 text-xs" data-testid="result-json">
           {JSON.stringify(scoresOf(result), null, 2)}
         </pre>
       </details>
       {error && (
-        <p role="alert" className="mt-4 text-sm font-medium text-red-600">
+        <p role="alert" className="mt-4 text-sm font-medium text-sun-600">
           {error}
         </p>
       )}

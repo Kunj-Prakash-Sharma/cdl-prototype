@@ -7,8 +7,8 @@ export function HelplineLink({ className, large = false }: { className?: string;
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-500",
-        large ? "justify-center rounded-2xl bg-white p-5 text-base shadow-soft ring-1 ring-slate-200/80" : "text-xs",
+        "flex flex-wrap items-center gap-x-3 gap-y-1 text-muted",
+        large ? "justify-center rounded-2xl border border-line bg-white p-5 text-base" : "text-xs",
         className,
       )}
       data-testid="helpline"

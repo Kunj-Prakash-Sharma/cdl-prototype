@@ -978,6 +978,15 @@ describe("the Home mini-chat answer (D87)", () => {
     if (!res.ok) throw new Error(res.code);
     expect(res.applied).toBe(true);
     expect(res.next.kind).toBe("name");
+    // What the quiz shows comes from the attempt's own set: the stored option and a step that asks it again.
+    if (!res.applied) throw new Error("not applied");
+    const option = status().options[optionIndex("college")]!;
+    expect(res.home).toMatchObject({
+      prompt: status().prompt,
+      label: option.label,
+      acknowledgement: option.acknowledgement,
+    });
+    expect(res.home.change).toMatchObject({ kind: "basics", id: status().id, progress: res.next.progress });
     const rows = await answerRows(attemptId);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ questionId: status().id, value: optionIndex("college"), variantId: null });

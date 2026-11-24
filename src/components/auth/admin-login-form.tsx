@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { adminSignIn } from "@/modules/auth/actions";
@@ -11,7 +10,6 @@ import { useTurnstile } from "./use-turnstile";
 
 /** Email + password login for the client team (D77). Phone-OTP admins use the link at the bottom. */
 export function AdminLoginForm({ next, siteKey }: { next: string; siteKey: string }) {
-  const router = useRouter();
   const { container, getToken } = useTurnstile(siteKey);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,9 +26,9 @@ export function AdminLoginForm({ next, siteKey }: { next: string; siteKey: strin
         setPassword("");
         return setError(adminAuthMessage(result.code, result.retryAfterSec));
       }
-      // Full navigation so the admin shell re-reads the new session cookie.
-      router.replace(result.next);
-      router.refresh();
+      // Full page load so the admin shell re-reads the new session cookie (router.replace + refresh can race and
+      // leave the URL on /admin/login). result.next is already a same-site path (safeNextPath on the server).
+      window.location.replace(result.next);
     });
   }
 
@@ -38,7 +36,7 @@ export function AdminLoginForm({ next, siteKey }: { next: string; siteKey: strin
   const phoneHref = `/login?next=${encodeURIComponent(next)}`;
 
   return (
-    <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-lift ring-1 ring-slate-200/80 sm:p-8">
+    <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-lift ring-1 ring-line sm:p-8">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -49,7 +47,7 @@ export function AdminLoginForm({ next, siteKey }: { next: string; siteKey: strin
           <ShieldCheck className="size-6" aria-hidden />
         </span>
         <h1 className="mt-5 text-2xl font-extrabold tracking-tight text-ink">Admin login</h1>
-        <p className="mt-2 text-slate-600">For the team that manages the site.</p>
+        <p className="mt-2 text-muted">For the team that manages the site.</p>
 
         <label htmlFor="admin-email" className="mt-6 block text-sm font-semibold text-ink">
           Email
@@ -61,7 +59,7 @@ export function AdminLoginForm({ next, siteKey }: { next: string; siteKey: strin
           autoComplete="username"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mt-2 h-12 w-full rounded-2xl bg-white px-4 text-ink ring-1 ring-slate-300 outline-none focus:ring-2 focus:ring-brand-500"
+          className="mt-2 h-12 w-full rounded-2xl bg-white px-4 text-ink ring-1 ring-line-strong outline-none focus:ring-2 focus:ring-brand-500"
           aria-describedby={error ? "admin-login-error" : undefined}
         />
 
@@ -75,12 +73,12 @@ export function AdminLoginForm({ next, siteKey }: { next: string; siteKey: strin
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mt-2 h-12 w-full rounded-2xl bg-white px-4 text-ink ring-1 ring-slate-300 outline-none focus:ring-2 focus:ring-brand-500"
+          className="mt-2 h-12 w-full rounded-2xl bg-white px-4 text-ink ring-1 ring-line-strong outline-none focus:ring-2 focus:ring-brand-500"
           aria-describedby={error ? "admin-login-error" : undefined}
         />
 
         {error && (
-          <p id="admin-login-error" role="alert" className="mt-3 text-sm font-medium text-red-600">
+          <p id="admin-login-error" role="alert" className="mt-3 text-sm font-medium text-sun-600">
             {error}
           </p>
         )}
@@ -93,7 +91,7 @@ export function AdminLoginForm({ next, siteKey }: { next: string; siteKey: strin
       {/* Invisible bot check mounts here */}
       <div ref={container} />
 
-      <p className="mt-6 text-center text-sm text-slate-500">
+      <p className="mt-6 text-center text-sm text-muted">
         Log in with a phone number instead?{" "}
         <Link href={phoneHref} className="font-semibold text-brand-700 underline-offset-2 hover:underline">
           Use a code
