@@ -13,9 +13,9 @@ RUN cp .env.example .env \
  && npm run build \
  && npm run build:worker \
  && mkdir -p drizzle
-# Worker/migrate runtime deps, pinned to the exact versions in package-lock.json.
+# Worker/migrate runtime deps (next/better-auth/lucide are imported transitively by the worker bundle), pinned to the exact versions in package-lock.json.
 RUN mkdir /worker-deps && node -e ' \
-  const deps = ["pg", "pg-boss", "zod", "drizzle-orm"]; \
+  const deps = ["pg", "pg-boss", "zod", "drizzle-orm", "next", "react", "react-dom", "better-auth", "lucide-react"]; \
   const pkg = { name: "worker", private: true, dependencies: Object.fromEntries( \
     deps.map((d) => [d, require("./node_modules/" + d + "/package.json").version])) }; \
   require("fs").writeFileSync("/worker-deps/package.json", JSON.stringify(pkg));' \
