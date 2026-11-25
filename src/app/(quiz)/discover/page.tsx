@@ -61,7 +61,7 @@ async function Discover() {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <h1 className="text-2xl font-bold text-ink">We could not open the chat</h1>
-        <p className="mt-2 text-slate-600">Please refresh the page in a moment.</p>
+        <p className="mt-2 text-muted">Please refresh the page in a moment.</p>
         <HelplineLink className="mt-8 justify-center" />
       </div>
     );

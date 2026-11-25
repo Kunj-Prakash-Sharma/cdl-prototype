@@ -10,6 +10,8 @@ import {
   computeNextStep,
   firstUnanswered,
   homeAnswer,
+  homeAnsweredView,
+  homeQuestionView,
   isAway,
   isExpired,
   progressOf,
@@ -29,7 +31,7 @@ import { scoreAttempt, scoreOcean, scoreRiasec, type StageProblem } from "./scor
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { validateName } from "./name-check";
-import type { ChatResult, Learner, NextStep } from "./types";
+import type { ChatResult, HomeAnswered, HomeQuestion, Learner, NextStep } from "./types";
 import { variantFor } from "./variants";
 
 export type { ResultView } from "./result";
@@ -37,6 +39,8 @@ export type { ReportView } from "./report";
 export type {
   ChatErrorCode,
   ChatResult,
+  HomeAnswered,
+  HomeQuestion,
   Learner,
   NextStep,
   Progress,
@@ -225,6 +229,14 @@ export async function submitAnswer(
 }
 
 /**
+ * The question the Home mini-chat shows (D87), from the set new attempts use. Read-only, no database: Home draws its
+ * options from here (D68) and keeps the tapped option id in the browser until the quiz opens. Null if the set has none.
+ */
+export function getHomeQuestion(): HomeQuestion | null {
+  return homeQuestionView(CURRENT_QUESTION_SET);
+}
+
+/**
  * The answer the Home mini-chat already took (D87), as an option id such as "school". Saved as the answer to the set's
  * home question, but only while the attempt has NO answers yet: a quiz that is under way is never changed, so a repeat
  * call (refresh, two tabs) is harmless (`applied: false`). The id must be one of that question's own options, so a
@@ -234,7 +246,7 @@ export async function applyHomeAnswer(
   learner: Learner,
   attemptId: string,
   optionId: unknown,
-): Promise<ChatResult<{ next: NextStep; applied: boolean }>> {
+): Promise<ChatResult<{ next: NextStep; applied: false } | { next: NextStep; applied: true; home: HomeAnswered }>> {
   const loaded = await loadOwned(learner, attemptId);
   if (loaded === null || loaded === "unknown_set") return failed(loaded);
   const { attempt, set } = loaded;
@@ -257,7 +269,11 @@ export async function applyHomeAnswer(
     secondsTaken: secondsBetween(attempt.startedAt, now),
   });
   const updated = { [home.questionId]: home.value };
-  return { ok: true, applied: true, next: computeNextStep(set, updated, context) };
+  const next = computeNextStep(set, updated, context);
+  // Shown from this attempt's own set, so the label and the Change step match what was stored.
+  const view = homeAnsweredView(set, home.value, next.progress);
+  if (!view) return { ok: false, code: "unknown" };
+  return { ok: true, applied: true, next, home: view };
 }
 
 /**
@@ -415,7 +431,7 @@ export type LatestReport = ReportView & { courses: CourseSuggestion[]; coursesAr
  * The report for the learner's newest completed attempt, built with the wording version that result was stamped with.
  * `latest` is null when the learner has no completed attempt yet (the page shows an empty state). The learner can only
  * ever reach their own result: it is looked up by their user id, never by an id from the URL. No side effects: the
- * page fires `trackReportViewed` itself, so other callers (My SELF, callbacks) do not inflate the view count.
+ * page fires `trackReportViewed` itself, so other callers (My TEMPLE, callbacks) do not inflate the view count.
  * `attemptId` is for server-side analytics only: do not pass it to client components.
  */
 export async function getLatestReport(

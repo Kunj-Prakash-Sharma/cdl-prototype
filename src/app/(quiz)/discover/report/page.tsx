@@ -35,7 +35,7 @@ async function Report() {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <h1 className="text-2xl font-bold text-ink">We could not open your report</h1>
-        <p className="mt-2 text-slate-600">Please refresh the page in a moment.</p>
+        <p className="mt-2 text-muted">Please refresh the page in a moment.</p>
         <HelplineLink className="mt-8 justify-center" />
       </div>
     );
@@ -49,7 +49,7 @@ async function Report() {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center" data-testid="report-empty">
         <h1 className="text-2xl font-bold text-ink">Your report is not ready yet</h1>
-        <p className="mt-2 text-slate-600">Answer the quick questions and your report will appear here.</p>
+        <p className="mt-2 text-muted">Answer the quick questions and your report will appear here.</p>
         <ButtonLink href="/discover" className="mt-6">
           Start the questions
         </ButtonLink>
@@ -58,13 +58,11 @@ async function Report() {
     );
   }
 
-  // The page fires the view event itself (the lookup has no side effects, so My SELF and callbacks do not inflate it).
+  // The page fires the view event itself (the lookup has no side effects, so My TEMPLE and callbacks do not inflate it).
   trackReportViewed(result.latest.attemptId, result.latest.report);
   const session = await getSession(); // a verified learner here (a guest never reaches this line)
   const wording = session ? await getConsentWording(session.userId) : null;
   return (
-    <ReportView report={result.latest.report}>
-      {wording && session && <CallbackForm wording={wording} phoneMasked={session.phoneMasked} />}
-    </ReportView>
+    <ReportView report={result.latest.report}>{wording && session && <CallbackForm wording={wording} />}</ReportView>
   );
 }

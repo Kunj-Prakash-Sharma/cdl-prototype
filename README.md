@@ -1,6 +1,6 @@
-# SELF
+# TEMPLE
 
-Mobile-first career discovery + learning platform. Learners chat with Mira (free), get a report, and buy self-paced courses. One Next.js app (pages + API), a background worker, and a Postgres database, all in this repo. "SELF" is a working name.
+Mobile-first career discovery + learning platform. Learners chat with Mira (free), get a report, and buy self-paced courses. One Next.js app (pages + API), a background worker, and a Postgres database, all in this repo. The product is TEMPLE (D93; "SELF" was the working name).
 
 > The original clickable UI prototype is kept at git tag `prototype-v0` (and live at cdl-prototype.vercel.app).
 
@@ -27,7 +27,7 @@ In dev every outside service (SMS, payments, video, AI, email, analytics) uses a
 | `npm run dev` / `build` / `start` | Next.js app |
 | `npm run lint` / `typecheck` / `format` / `format:check` | Code quality |
 | `npm run test` | Unit tests (Vitest) |
-| `npm run test:e2e` | Browser smoke tests (Playwright, 375px phone + desktop). Needs `npx playwright install chromium` once |
+| `npm run test:e2e` | Browser tests (Playwright, 375px phone + desktop) on their own dev server (port 3100) and the `self_test` database. Needs Postgres up and `npx playwright install chromium` once |
 | `npm run db:generate` / `db:migrate` / `db:seed` / `db:studio` | Drizzle migrations and data |
 | `npm run worker` | Background worker (pg-boss) |
 | `npm run build:worker` | Bundles the worker and migrate scripts to `dist/` for the container |

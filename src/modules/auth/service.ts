@@ -33,6 +33,7 @@ export type {
 } from "./types";
 export type { RoleFilter, UserFilters } from "./admin-users";
 export { parseUserFilters } from "./admin-users";
+export { safeNextPath } from "./next-path";
 
 const MAX_NAME_LENGTH = 30;
 

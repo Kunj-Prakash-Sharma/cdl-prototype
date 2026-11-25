@@ -1,14 +1,16 @@
 import type { ReactNode } from "react";
-import { Star } from "lucide-react";
+import Image from "next/image";
+import logo from "@/assets/temple-logo.png";
+import { brand } from "@/config/brand";
 import { cn } from "@/lib/format";
 
 type Tone = "brand" | "sun" | "green" | "slate" | "dark" | "white";
 
 const tones: Record<Tone, string> = {
-  brand: "bg-brand-50 text-brand-700 ring-brand-200/70",
+  brand: "bg-brand-100 text-brand-700 ring-transparent",
   sun: "bg-sun-100 text-sun-700 ring-sun-200",
-  green: "bg-emerald-50 text-emerald-700 ring-emerald-200/70",
-  slate: "bg-slate-100 text-slate-600 ring-slate-200",
+  green: "bg-success-50 text-success ring-success/20",
+  slate: "bg-mist text-muted ring-line",
   dark: "bg-ink/80 text-white ring-white/10 backdrop-blur",
   white: "bg-white/90 text-ink ring-white/60 backdrop-blur",
 };
@@ -36,20 +38,34 @@ export function Badge({
 }
 
 export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
-  return <p className={cn("text-xs font-bold tracking-[0.18em] text-brand-600 uppercase", className)}>{children}</p>;
+  return <p className={cn("text-[13px] font-bold tracking-[1.4px] text-brand-600 uppercase", className)}>{children}</p>;
 }
 
-export function Logo({ className, inverted = false }: { className?: string; inverted?: boolean }) {
+/** The V5 four-point star in brand violet, tilted slightly: the guide's avatar mark in the chat. Decorative. */
+export function LogoMark({ className }: { className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-2", className)}>
-      <span className="relative grid size-8 place-items-center overflow-hidden rounded-xl bg-linear-to-br from-brand-500 via-brand-700 to-brand-950 shadow-glow">
-        <span className="absolute -top-2 -right-2 size-5 rounded-full bg-sun-400/90 blur-[2px]" />
-        <span className="relative font-serif text-[19px] leading-none text-white italic">s</span>
-      </span>
-      <span className={cn("text-[19px] font-extrabold tracking-tight", inverted ? "text-white" : "text-ink")}>
-        SELF
-      </span>
-    </span>
+    <svg aria-hidden="true" viewBox="0 0 24 24" className={cn("size-7 shrink-0 fill-brand-600", className)}>
+      <path
+        d="M12 1.5C12.9 7.6 16.4 11.1 22.5 12 16.4 12.9 12.9 16.4 12 22.5 11.1 16.4 7.6 12.9 1.5 12 7.6 11.1 11.1 7.6 12 1.5Z"
+        transform="rotate(-12 12 12)"
+      />
+    </svg>
+  );
+}
+
+/**
+ * The client's logo (gold wordmark and tagline on a navy band), D93. It is a flat image, so it reads on light and dark
+ * backgrounds alike. Pass the height as `className` (`h-*`, default `h-8`); the width follows the image ratio.
+ */
+export function Logo({ className, preload = false }: { className?: string; preload?: boolean }) {
+  return (
+    <Image
+      src={logo}
+      alt={brand.name}
+      preload={preload}
+      sizes="240px"
+      className={cn("w-auto shrink-0 rounded-[3px]", className ?? "h-8")}
+    />
   );
 }
 
@@ -57,17 +73,20 @@ export function ProgressBar({
   value,
   className,
   tone = "brand",
+  "aria-label": ariaLabel,
 }: {
   value: number;
   className?: string;
   tone?: "brand" | "green" | "white";
+  "aria-label"?: string;
 }) {
-  const fill = { brand: "bg-brand-600", green: "bg-emerald-500", white: "bg-white" }[tone];
-  const track = { brand: "bg-brand-100", green: "bg-emerald-100", white: "bg-white/20" }[tone];
+  const fill = { brand: "bg-brand-600", green: "bg-success", white: "bg-white" }[tone];
+  const track = { brand: "bg-brand-100", green: "bg-success-50", white: "bg-white/20" }[tone];
   return (
     <div
-      className={cn("h-1.5 w-full overflow-hidden rounded-full", track, className)}
+      className={cn("h-2 w-full overflow-hidden rounded-full", track, className)}
       role="progressbar"
+      aria-label={ariaLabel}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(value * 100)}
@@ -80,34 +99,12 @@ export function ProgressBar({
   );
 }
 
-export function Rating({ value, reviews, className }: { value: number; reviews?: number; className?: string }) {
-  return (
-    <span className={cn("inline-flex items-center gap-1 text-sm", className)}>
-      <Star className="size-4 fill-sun-400 text-sun-400" aria-hidden />
-      <span className="font-semibold text-ink">{value.toFixed(1)}</span>
-      {reviews !== undefined && <span className="text-slate-500">({reviews.toLocaleString("en-IN")})</span>}
-    </span>
-  );
-}
-
-export function Avatar({ initials, className }: { initials: string; className?: string }) {
-  return (
-    <span
-      className={cn(
-        "grid size-10 shrink-0 place-items-center rounded-full bg-linear-to-br from-brand-100 to-sun-100 text-sm font-bold text-brand-800 ring-2 ring-white",
-        className,
-      )}
-    >
-      {initials}
-    </span>
-  );
-}
-
-export function SageAvatar({ size = "md", className }: { size?: "sm" | "md" | "lg"; className?: string }) {
+/** The guide's round avatar (abstract, no face or initials, so it does not depend on the guide's name). */
+export function GuideAvatar({ size = "md", className }: { size?: "sm" | "md" | "lg"; className?: string }) {
   const dims = { sm: "size-8", md: "size-10", lg: "size-16" }[size];
   return (
     <span className={cn("relative inline-grid shrink-0 place-items-center", dims, className)}>
-      <span className="absolute inset-0 rounded-full bg-linear-to-br from-brand-400 via-fuchsia-500 to-sun-400" />
+      <span className="absolute inset-0 rounded-full bg-linear-to-br from-brand-400 via-brand-300 to-sun-400" />
       <span className="absolute inset-[3px] rounded-full bg-linear-to-br from-brand-700 to-brand-950" />
       <span className="absolute inset-[30%] rounded-full bg-linear-to-br from-white via-brand-200 to-sun-300 blur-[1px]" />
     </span>

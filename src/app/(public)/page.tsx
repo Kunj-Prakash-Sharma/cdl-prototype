@@ -1,518 +1,342 @@
-import {
-  ArrowRight,
-  BrainCircuit,
-  ChartColumn,
-  ChevronDown,
-  CirclePlay,
-  Clock,
-  GraduationCap,
-  Lock,
-  MessageCircle,
-  Quote,
-  ShieldCheck,
-  Sparkles,
-  Target,
-  Users,
-} from "lucide-react";
-import { HeroVisual } from "@/components/home/hero-visual";
-import { RadarChart } from "@/components/charts/radar-chart";
+import { Suspense } from "react";
+import { ArrowRight, Check, ChevronDown, ClipboardList, Compass, MessageCircle, Route } from "lucide-react";
+import { CoachCallbackPlaceholder } from "@/components/home/coach-callback";
+import { CoachCallbackSession } from "@/components/home/coach-callback-session";
+import { HomeChatReplies } from "@/components/home/home-chat-replies";
+import { StoryRail } from "@/components/home/story-rail";
 import { CourseCard } from "@/components/learn/course-card";
 import { ButtonLink } from "@/components/ui/button";
-import { Badge, Eyebrow, ProgressBar, SageAvatar } from "@/components/ui/misc";
-import { Reveal } from "@/components/ui/reveal";
+import { Eyebrow, LogoMark } from "@/components/ui/misc";
+import { brand } from "@/config/brand";
+import { sampleChatPreview, sampleCoach, sampleLaunchOffer, sampleOffer, sampleStories } from "@/content/samples";
+import { COURSES } from "@/modules/catalog/courses";
+import { getHomeQuestion } from "@/modules/chat/service";
 
-const STATS = [
-  { value: "12 min", label: "to your personalised career report" },
-  { value: "14+", label: "career paths mapped to your profile" },
-  { value: "3-in-1", label: "psychometric, aptitude & values assessment" },
-  { value: "₹0", label: "to discover — pay only for learning" },
-];
+// V5 home (D91). Sections: hero + guide preview, courses, student stories, career coach, FAQ, closing CTA.
+// Gaps against the artboard (see docs/prototype/reuse-map.md row 7):
+//  - The artboard's chat runs inside this page. It starts on /discover instead (client feedback 4973), so the card
+//    here is a preview: its question and quick replies come from the question set, and a tap keeps the answer in the
+//    browser so the quiz does not ask it again (D87).
+//  - Course prices, "with NEWYEAR26" prices and Buy now / cart wait for `commerce` and `catalog` (D92).
+//  - "Book a free call" opens the callback form for a logged-in learner with no report needed (D90). The artboard's
+//    typed mobile number is not built: we call the number verified at login.
 
-const STEPS = [
-  {
-    icon: MessageCircle,
-    title: "Chat with Sage",
-    body: "A friendly, conversational onboarding that learns your education, interests, strengths and goals.",
-    tag: "CDL · AI Career Discovery",
-  },
-  {
-    icon: BrainCircuit,
-    title: "Take smart assessments",
-    body: "Short psychometric, aptitude and work-values quizzes — interactive, untimed and genuinely fun.",
-    tag: "~8 minutes",
-  },
-  {
-    icon: ChartColumn,
-    title: "Get your career report",
-    body: "Your profile, strengths, development areas and top career matches — with the reasons why.",
-    tag: "Instant & free",
-  },
-  {
-    icon: GraduationCap,
-    title: "Learn with Level 1",
-    body: "Self-paced courses picked for your path. Preview free, unlock the full course when you're ready.",
-    tag: "Self-paced",
-  },
-];
-
-const TESTIMONIALS = [
-  {
-    quote:
-      "I was stuck between engineering and design. The report showed me why UX sits right in the middle — I enrolled in the course the same day.",
-    name: "Ishita P.",
-    role: "Final-year B.Tech student",
-  },
-  {
-    quote:
-      "It felt like talking to a mentor, not filling out a form. The strengths section put words to things I'd never been able to explain in interviews.",
-    name: "Rahul M.",
-    role: "Career switcher, ops → analytics",
-  },
-  {
-    quote:
-      "The learning path was spot on. Previewing lessons before paying made the decision easy, and the resources are genuinely useful.",
-    name: "Fatima S.",
-    role: "Commerce graduate",
-  },
-];
+const SHOP_COURSE_COUNT = 8;
 
 const FAQ = [
   {
-    q: "Is the AI career discovery really free?",
-    a: "Yes. The conversation, all three assessments and your full career report are free. You only pay if you choose to enrol in Level 1 courses.",
+    q: `What is ${brand.guideName}?`,
+    a: `${brand.guideName} is our career guide. You answer a short set of questions, and ${brand.guideName} turns your answers into a career report. The questions are fixed and reviewed by people, so nothing is made up on the way.`,
   },
   {
-    q: "How are my career matches calculated?",
-    a: "We combine your interest profile (based on the Holland RIASEC model), aptitude results, work values and what you share with Sage, then compare them against detailed career profiles.",
+    q: "Is career discovery really free?",
+    a: "Yes. The conversation and your report are free during launch. You only pay if you choose to buy a course.",
   },
   {
-    q: "What do I get with Level 1 learning?",
-    a: "Full access to self-paced video lessons, downloadable templates and datasets, hands-on projects and a certificate of completion. Every course has free preview lessons.",
+    q: "How long does it take?",
+    a: "About 12 minutes. You can stop and come back later, and your answers are saved.",
   },
   {
-    q: "What about live cohorts and mentoring?",
-    a: "Level 2 (live cohort learning) and Level 3 (one-to-one mentoring) are coming in a future phase. Level 1 gives you a strong foundation in the meantime.",
+    q: "Can I try a course before I buy?",
+    a: "Yes. The first lesson of every course is free to watch, so you can see if the teaching style suits you.",
+  },
+  {
+    q: "Is my information private?",
+    a: "We keep only what we need: your answers and your phone number. We do not sell your data and we do not use advertising trackers.",
   },
 ];
 
+const FACTS = [
+  "Career discovery is free during launch",
+  "First lesson of every course is free",
+  ...(sampleOffer ? [`${sampleOffer.highlight} with ${sampleOffer.code}`] : []),
+];
+
+const COACH_POINTS = [
+  {
+    icon: ClipboardList,
+    title: "Make sense of your report",
+    body: "Go through your strengths and interests together.",
+  },
+  { icon: Compass, title: "Pick the right course", body: "Get an honest view on which course fits you best." },
+  { icon: Route, title: "Plan your next step", body: "Leave with a simple plan for the months ahead." },
+];
+
 export default function HomePage() {
+  const shopCourses = COURSES.slice(0, SHOP_COURSE_COUNT);
+  const homeQuestion = getHomeQuestion();
+
   return (
     <>
-      {/* ---------------- Hero ---------------- */}
-      <section className="relative -mt-16 overflow-hidden pt-16">
-        <div className="bg-grid absolute inset-0 [mask-image:radial-gradient(ellipse_at_top,black_30%,transparent_75%)]" />
-        <div className="absolute -top-40 left-1/2 h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-linear-to-r from-brand-200/60 via-fuchsia-200/40 to-sun-200/50 blur-3xl" />
-
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 pt-12 pb-20 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:gap-8 lg:px-8 lg:pt-20 lg:pb-28">
-          <div className="max-w-2xl">
-            <Badge tone="white" className="shadow-soft">
-              <Sparkles className="size-3.5 text-brand-600" aria-hidden />
-              New · CDL AI Career Discovery
-            </Badge>
-            <h1 className="mt-6 text-[44px] leading-[1.02] font-extrabold tracking-[-0.035em] text-ink sm:text-6xl lg:text-[72px]">
-              Discover who you&apos;re{" "}
-              <span className="text-gradient font-serif font-normal tracking-normal italic">meant to become.</span>
-            </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-600">
-              SELF is the complete career development and learning platform. Start with a 12-minute AI-guided
-              conversation, get a career report that actually explains you — then learn the skills to get there.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <ButtonLink href="/discover" size="lg">
-                Start free career discovery <ArrowRight className="size-4" aria-hidden />
-              </ButtonLink>
-              <ButtonLink href="/learn" size="lg" variant="secondary">
-                <CirclePlay className="size-4" aria-hidden /> Explore courses
-              </ButtonLink>
-            </div>
-            <div className="mt-10 flex items-center gap-4">
-              <div className="flex -space-x-2.5">
-                {["IP", "RM", "FS", "AK", "NJ"].map((i, idx) => (
-                  <span
-                    key={i}
-                    className="grid size-9 place-items-center rounded-full text-[11px] font-bold text-white ring-2 ring-paper"
-                    style={{ background: ["#5a45f2", "#ec4899", "#0ea5e9", "#f59e0b", "#10b981"][idx] }}
-                  >
-                    {i}
-                  </span>
-                ))}
-              </div>
-              <p className="text-sm text-slate-500">
-                <span className="font-semibold text-ink">120,000+ learners</span> have mapped their path with SELF
-              </p>
-            </div>
-          </div>
-          <HeroVisual />
-        </div>
-      </section>
-
-      {/* ---------------- Stats ---------------- */}
-      <section className="border-y border-slate-200/70 bg-white">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-px bg-slate-200/70 px-0 lg:grid-cols-4">
-          {STATS.map((s) => (
-            <div key={s.label} className="bg-white px-6 py-8 sm:px-8">
-              <p className="text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">{s.value}</p>
-              <p className="mt-1.5 text-sm text-slate-500">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ---------------- How it works ---------------- */}
-      <section id="how-it-works" className="scroll-mt-20 py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <Reveal className="mx-auto max-w-2xl text-center">
-            <Eyebrow>How SELF works</Eyebrow>
-            <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">
-              From <span className="font-serif font-normal italic">“what should I do?”</span> to a clear plan
-            </h2>
-            <p className="mt-4 text-lg text-slate-600">
-              One seamless journey — no forms, no guesswork. Each step builds on the last.
-            </p>
-          </Reveal>
-
-          <div className="relative mt-16 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-            <div className="absolute top-[38px] right-[12%] left-[12%] hidden h-px bg-linear-to-r from-brand-200 via-brand-400 to-sun-300 lg:block" />
-            {STEPS.map((step, i) => (
-              <Reveal key={step.title} delay={i * 0.08}>
-                <div className="relative h-full rounded-3xl bg-white p-6 shadow-soft ring-1 ring-slate-200/80">
-                  <div className="flex items-center justify-between">
-                    <span className="relative grid size-[52px] place-items-center rounded-2xl bg-linear-to-br from-brand-500 to-brand-800 text-white shadow-glow">
-                      <step.icon className="size-6" aria-hidden />
-                    </span>
-                    <span className="font-serif text-4xl text-slate-200 italic">0{i + 1}</span>
-                  </div>
-                  <h3 className="mt-6 text-lg font-bold text-ink">{step.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-500">{step.body}</p>
-                  <p className="mt-5 text-xs font-semibold text-brand-700">{step.tag}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ---------------- CDL spotlight ---------------- */}
-      <section className="relative overflow-hidden bg-ink py-24 text-white">
-        <div className="bg-grid-dark absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_70%)]" />
-        <div className="absolute top-10 -left-40 size-[480px] rounded-full bg-brand-600/30 blur-3xl" />
-        <div className="absolute -right-40 bottom-0 size-[420px] rounded-full bg-sun-500/15 blur-3xl" />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
-          <Reveal>
-            <p className="text-xs font-bold tracking-[0.18em] text-brand-300 uppercase">CDL · AI Career Discovery</p>
-            <h2 className="mt-3 text-4xl font-extrabold tracking-tight sm:text-5xl">
-              A career guide that <span className="font-serif font-normal text-sun-300 italic">listens first.</span>
-            </h2>
-            <p className="mt-5 max-w-lg text-lg leading-relaxed text-white/70">
-              Sage gets to know you through conversation, then guides you through assessments designed by career
-              psychologists — all on one calm, focused page.
-            </p>
-            <ul className="mt-8 grid gap-4 sm:grid-cols-2">
-              {[
-                { icon: MessageCircle, t: "Conversational onboarding", d: "Education, interests, strengths & goals" },
-                { icon: Target, t: "3 assessments in one flow", d: "Psychometric, aptitude and work values" },
-                { icon: ChartColumn, t: "Explainable results", d: "Every match comes with the “why”" },
-                { icon: ShieldCheck, t: "Private by design", d: "Your answers are yours alone" },
-              ].map((f) => (
-                <li key={f.t} className="flex gap-3">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/10 ring-1 ring-white/10">
-                    <f.icon className="size-5 text-brand-200" aria-hidden />
-                  </span>
-                  <div>
-                    <p className="font-semibold">{f.t}</p>
-                    <p className="text-sm text-white/55">{f.d}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-            <ButtonLink href="/discover" variant="light" size="lg" className="mt-10">
-              Meet Sage <ArrowRight className="size-4" aria-hidden />
+      {/* ---------------- Hero + guide preview ---------------- */}
+      <div id="top" className="hero-glow">
+        <section className="mx-auto flex max-w-[1120px] flex-col items-center gap-3 px-4.5 pt-8 pb-4 text-center sm:px-6">
+          <p className="inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 rounded-full border-[1.5px] border-brand-200 bg-white py-1.5 pr-4.5 pl-1.5 text-[15px] font-medium text-ink">
+            <span className="rounded-full bg-brand-600 px-3.5 py-2 text-[13px] font-bold tracking-[0.4px] text-white uppercase">
+              {sampleLaunchOffer.label}
+            </span>
+            <span>
+              Career discovery <span className="text-muted line-through">{sampleLaunchOffer.before}</span>{" "}
+              <span className="font-bold text-brand-600">{sampleLaunchOffer.free}</span> {sampleLaunchOffer.after}
+            </span>
+          </p>
+          <h1 className="font-display text-[clamp(28px,4vw,56px)] leading-[1.08] font-normal tracking-[-1.5px] text-ink">
+            <span className="whitespace-nowrap">Chat with {brand.guideName}.</span>{" "}
+            <span className="whitespace-nowrap">Get your report.</span>
+            <br />
+            <span className="text-brand-600">Start the right course.</span>
+          </h1>
+          <div className="mt-1 flex flex-wrap justify-center gap-2.5">
+            <ButtonLink href="/discover" size="lg">
+              Start with {brand.guideName} <ArrowRight className="size-4" aria-hidden />
             </ButtonLink>
-          </Reveal>
+            <ButtonLink href="#shop" size="lg" variant="secondary" className="whitespace-normal">
+              I know what I want — browse courses
+            </ButtonLink>
+          </div>
+        </section>
 
-          <Reveal delay={0.1}>
-            <div className="rounded-[28px] bg-white/[0.06] p-2 ring-1 ring-white/10 backdrop-blur">
-              <div className="rounded-3xl bg-white p-5 text-ink sm:p-6">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                  <div className="flex items-center gap-3">
-                    <SageAvatar />
-                    <div>
-                      <p className="font-bold">Sage</p>
-                      <p className="text-xs text-slate-500">Step 1 of 4 · About you</p>
-                    </div>
-                  </div>
-                  <span className="text-xs font-semibold text-brand-700">35%</span>
-                </div>
-                <div className="space-y-3 py-5 text-sm">
-                  <p className="max-w-[85%] rounded-2xl rounded-tl-md bg-slate-100 px-4 py-3 text-slate-700">
-                    Lovely to meet you, Aarav! Where are you in your journey right now?
-                  </p>
-                  <p className="ml-auto max-w-[70%] rounded-2xl rounded-tr-md bg-brand-600 px-4 py-3 text-white">
-                    Undergraduate student
-                  </p>
-                  <p className="max-w-[85%] rounded-2xl rounded-tl-md bg-slate-100 px-4 py-3 text-slate-700">
-                    Great stage to explore. What&apos;s your field of study or background?
-                  </p>
-                  <div className="flex items-center gap-1.5 px-1 pt-1">
-                    {[0, 1, 2].map((i) => (
-                      <span
-                        key={i}
-                        className="size-2 animate-bounce rounded-full bg-slate-300"
-                        style={{ animationDelay: `${i * 0.15}s` }}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-                  {["Science", "Commerce", "Engineering & Technology", "Design & Media"].map((o, i) => (
-                    <span
-                      key={o}
-                      className={
-                        i === 2
-                          ? "rounded-full bg-brand-50 px-3.5 py-2 text-xs font-semibold text-brand-700 ring-1 ring-brand-300"
-                          : "rounded-full bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 ring-1 ring-slate-200"
-                      }
-                    >
-                      {o}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ---------------- Report preview ---------------- */}
-      <section className="py-24">
-        <div className="mx-auto grid max-w-7xl items-center gap-14 px-4 sm:px-6 lg:grid-cols-[1fr_1.05fr] lg:px-8">
-          <Reveal className="order-2 lg:order-1">
-            <div className="rounded-[28px] bg-white p-6 shadow-lift ring-1 ring-slate-200/70 sm:p-8">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <Eyebrow>Career profile</Eyebrow>
-                  <p className="mt-1 font-serif text-3xl text-ink italic">The Creative Analyst</p>
-                </div>
-                <div className="flex gap-1.5">
-                  {["I", "A", "S"].map((d) => (
-                    <span
-                      key={d}
-                      className="grid size-8 place-items-center rounded-lg bg-brand-50 text-sm font-bold text-brand-700"
-                    >
-                      {d}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="mt-4 grid items-center gap-6 sm:grid-cols-[1fr_1fr]">
-                <RadarChart scores={{ R: 34, I: 88, A: 76, S: 62, E: 48, C: 55 }} size={260} interactive={false} />
-                <div className="space-y-4">
-                  {[
-                    { t: "UX / Product Designer", v: 94 },
-                    { t: "Data Analyst", v: 91 },
-                    { t: "Product Manager", v: 86 },
-                  ].map((m) => (
-                    <div key={m.t}>
-                      <div className="mb-1.5 flex justify-between text-sm">
-                        <span className="font-semibold text-ink">{m.t}</span>
-                        <span className="text-slate-500">{m.v}%</span>
-                      </div>
-                      <ProgressBar value={m.v / 100} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </Reveal>
-          <Reveal className="order-1 lg:order-2" delay={0.1}>
-            <Eyebrow>Personalised results</Eyebrow>
-            <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">
-              A report that explains <span className="font-serif font-normal italic">you</span> — not just a label.
-            </h2>
-            <p className="mt-5 text-lg leading-relaxed text-slate-600">
-              See your interest profile, aptitude scores and what drives you. Understand your strengths and the areas
-              worth developing, then explore careers matched to you with clear reasons why.
-            </p>
-            <ul className="mt-6 space-y-3 text-slate-700">
-              {[
-                "Career archetype & Holland code",
-                "Strengths and development areas",
-                "Top career matches with salary & outlook",
-                "A Level 1 learning path built for you",
-              ].map((x) => (
-                <li key={x} className="flex items-center gap-3">
-                  <span className="grid size-6 place-items-center rounded-full bg-emerald-100 text-emerald-700">
-                    <Sparkles className="size-3.5" aria-hidden />
-                  </span>
-                  {x}
-                </li>
-              ))}
-            </ul>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ---------------- Levels ---------------- */}
-      <section id="levels" className="scroll-mt-20 bg-white py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <Reveal className="mx-auto max-w-2xl text-center">
-            <Eyebrow>Learning levels</Eyebrow>
-            <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">Grow at your own pace</h2>
-            <p className="mt-4 text-lg text-slate-600">
-              Your report leads straight into learning. Start self-paced today — live cohorts and mentoring are on the
-              way.
-            </p>
-          </Reveal>
-          <div className="mt-14 grid gap-5 lg:grid-cols-3">
-            <Reveal>
-              <div className="relative h-full overflow-hidden rounded-3xl bg-linear-to-br from-brand-600 to-brand-900 p-8 text-white shadow-glow">
-                <div className="absolute -top-16 -right-16 size-48 rounded-full bg-white/10 blur-2xl" />
-                <Badge tone="white">Available now</Badge>
-                <p className="mt-6 text-sm font-semibold text-brand-200">Level 1</p>
-                <h3 className="mt-1 text-2xl font-bold">Self-paced learning</h3>
-                <p className="mt-3 text-sm leading-relaxed text-white/75">
-                  Expert-led video courses, downloadable resources and hands-on projects matched to your career path.
+        <section
+          id="chat"
+          aria-label={`${brand.guideName} preview`}
+          className="mx-auto max-w-[860px] px-4.5 pt-2 pb-14 sm:px-6"
+        >
+          <div className="overflow-hidden rounded-[26px] border border-line bg-white shadow-glow">
+            <div className="flex items-center gap-3 border-b border-mist px-5 py-4">
+              <span aria-hidden className="grid size-[42px] place-items-center rounded-full bg-brand-100">
+                <LogoMark className="size-6" />
+              </span>
+              <div className="text-left">
+                <p className="text-base font-bold text-ink">{brand.guideName}</p>
+                <p className="mt-0.5 flex items-center gap-1.5 text-[13px] text-muted">
+                  <span aria-hidden className="size-[7px] rounded-full bg-success" />
+                  Career guide · online
                 </p>
-                <ul className="mt-6 space-y-2.5 text-sm text-white/85">
-                  {[
-                    "Free preview lessons on every course",
-                    "Templates, datasets & worksheets",
-                    "Certificate of completion",
-                  ].map((x) => (
-                    <li key={x} className="flex items-center gap-2">
-                      <CirclePlay className="size-4 text-sun-300" aria-hidden /> {x}
-                    </li>
-                  ))}
-                </ul>
-                <ButtonLink href="/learn" variant="light" className="mt-8">
-                  Browse Level 1 courses <ArrowRight className="size-4" aria-hidden />
-                </ButtonLink>
               </div>
-            </Reveal>
-            {[
-              {
-                level: "Level 2",
-                title: "Live cohort learning",
-                icon: Users,
-                body: "Learn alongside peers in instructor-led live cohorts with projects and feedback.",
-              },
-              {
-                level: "Level 3",
-                title: "One-to-one mentoring",
-                icon: Target,
-                body: "Personal guidance from industry mentors to accelerate your next career move.",
-              },
-            ].map((l, i) => (
-              <Reveal key={l.level} delay={(i + 1) * 0.08}>
-                <div className="relative h-full rounded-3xl border border-dashed border-slate-300 bg-paper p-8">
-                  <Badge tone="slate">
-                    <Lock className="size-3" aria-hidden /> Coming in Phase 2
-                  </Badge>
-                  <p className="mt-6 text-sm font-semibold text-slate-400">{l.level}</p>
-                  <h3 className="mt-1 text-2xl font-bold text-slate-700">{l.title}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-slate-500">{l.body}</p>
-                  <l.icon className="mt-8 size-10 text-slate-300" strokeWidth={1.5} aria-hidden />
-                </div>
-              </Reveal>
+            </div>
+            <div className="flex flex-col gap-3 bg-paper/50 px-5 py-5.5 text-left">
+              <p className="max-w-[80%] self-start rounded-[18px] rounded-bl-sm bg-brand-50 px-4 py-3 text-base leading-[1.55] text-ink max-sm:max-w-[92%]">
+                Hi, I&apos;m {brand.guideName}, your career guide. {sampleChatPreview.intro}
+                {homeQuestion && ` ${homeQuestion.prompt}`}
+              </p>
+              {homeQuestion && <HomeChatReplies options={homeQuestion.options} />}
+            </div>
+            <div className="flex items-center justify-between gap-3 border-t border-mist px-4 py-3">
+              <p className="flex items-center gap-2 pl-2 text-sm text-muted">
+                <MessageCircle className="size-4 shrink-0" aria-hidden /> Tap an answer to begin
+              </p>
+              <ButtonLink href="/discover" size="sm">
+                Start <ArrowRight className="size-4" aria-hidden />
+              </ButtonLink>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* ---------------- Courses ---------------- */}
+      <section id="shop" aria-labelledby="shop-h" className="scroll-mt-20 border-y border-line bg-white">
+        <div className="mx-auto max-w-7xl px-4.5 py-16 sm:px-6">
+          <div className="mb-7">
+            <h2
+              id="shop-h"
+              className="font-display text-[clamp(30px,3.8vw,46px)] leading-[1.1] font-normal tracking-[-1px] text-ink"
+            >
+              Skills to Take You Further
+            </h2>
+            <p className="mt-2.5 max-w-[640px] text-base leading-relaxed text-body">
+              Your knowledge gets you started. Your skills help you stand out.
+            </p>
+          </div>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(270px,1fr))] gap-4.5">
+            {shopCourses.map((c) => (
+              <CourseCard key={c.slug} slug={c.slug} className="h-full" />
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ---------------- Featured courses ---------------- */}
-      <section className="py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
-            <Reveal>
-              <Eyebrow>Popular in Level 1</Eyebrow>
-              <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-ink">Start learning today</h2>
-              <p className="mt-3 flex items-center gap-2 text-slate-600">
-                <Clock className="size-4" aria-hidden /> Self-paced · preview any course for free
-              </p>
-            </Reveal>
+          <div className="mt-8 flex justify-center">
             <ButtonLink href="/learn" variant="secondary">
               View all courses <ArrowRight className="size-4" aria-hidden />
             </ButtonLink>
           </div>
-          <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {["data-analytics-foundations", "ux-design-essentials", "python-for-beginners"].map((slug, i) => (
-              <Reveal key={slug} delay={i * 0.08}>
-                <CourseCard slug={slug} className="h-full" />
-              </Reveal>
-            ))}
-          </div>
         </div>
       </section>
 
-      {/* ---------------- Testimonials ---------------- */}
-      <section className="bg-white py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <Reveal className="max-w-2xl">
-            <Eyebrow>Learner stories</Eyebrow>
-            <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-ink">Clarity, then momentum</h2>
-          </Reveal>
-          <div className="mt-12 grid gap-5 md:grid-cols-3">
-            {TESTIMONIALS.map((t, i) => (
-              <Reveal key={t.name} delay={i * 0.08}>
-                <figure className="flex h-full flex-col rounded-3xl bg-paper p-7 ring-1 ring-slate-200/70">
-                  <Quote className="size-8 text-brand-300" aria-hidden />
-                  <blockquote className="mt-4 flex-1 text-[15px] leading-relaxed text-slate-700">
-                    “{t.quote}”
-                  </blockquote>
-                  <figcaption className="mt-6 border-t border-slate-200 pt-4">
-                    <p className="font-semibold text-ink">{t.name}</p>
-                    <p className="text-sm text-slate-500">{t.role}</p>
-                  </figcaption>
-                </figure>
-              </Reveal>
-            ))}
+      {/* ---------------- Student stories ---------------- */}
+      <section className="pt-18 pb-14">
+        <div className="mx-auto max-w-[1200px] px-[clamp(18px,4vw,48px)]">
+          <StoryRail stories={sampleStories}>
+            <div>
+              <Eyebrow className="mb-3.5">From confused to clear</Eyebrow>
+              <h2 className="font-display text-[clamp(30px,3.8vw,46px)] leading-[1.1] font-normal tracking-[-1px] text-ink">
+                Students like you.
+              </h2>
+            </div>
+          </StoryRail>
+        </div>
+      </section>
+
+      {/* ---------------- Career coach ---------------- */}
+      <section aria-labelledby="h-coach" className="pb-18">
+        <div className="mx-auto max-w-[1200px] px-[clamp(18px,4vw,48px)]">
+          <div className="grid overflow-hidden rounded-[28px] border border-line bg-white shadow-glow md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.35fr)]">
+            <div className="relative isolate flex flex-col items-start overflow-hidden bg-linear-to-br from-brand-900 to-brand-600 p-[clamp(26px,3.4vw,40px)] text-white">
+              <span
+                aria-hidden
+                className="absolute -top-17 -right-15 -z-10 size-55 rounded-full bg-[radial-gradient(circle,var(--color-sun-500)_0%,transparent_70%)] opacity-55"
+              />
+              <span
+                aria-hidden
+                className="absolute -bottom-22 -left-17 -z-10 size-60 rounded-full bg-[radial-gradient(circle,var(--color-brand-300)_0%,transparent_70%)] opacity-55"
+              />
+              <div aria-hidden className="relative grid size-23 place-items-center rounded-full bg-white shadow-lift">
+                <b className="font-display text-[32px] font-medium tracking-wide text-brand-600">
+                  {sampleCoach.initials}
+                </b>
+              </div>
+              <p className="mt-5.5 text-xs font-bold tracking-[1.3px] text-sun-400 uppercase">Your career coach</p>
+              <h3
+                id="h-coach"
+                className="mt-1.5 font-display text-[clamp(26px,2.6vw,32px)] leading-[1.1] font-normal tracking-[-0.6px]"
+              >
+                {sampleCoach.name}
+              </h3>
+              <p className="mt-1 text-sm font-semibold text-brand-100">
+                {sampleCoach.role} at {brand.name}
+              </p>
+              <ul className="mt-5 flex flex-wrap gap-2">
+                {sampleCoach.chips.map((c) => (
+                  <li
+                    key={c}
+                    className="rounded-full border border-white/20 bg-white/15 px-2.5 py-1.5 text-xs font-bold"
+                  >
+                    {c}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="flex flex-col justify-center p-[clamp(24px,3.4vw,40px)]">
+              <p className="font-display text-[clamp(22px,2.3vw,28px)] leading-[1.2] font-normal tracking-[-0.5px] text-ink">
+                Not sure what&apos;s next?{" "}
+                <span className="text-brand-600">Talk it through with {sampleCoach.name.split(" ")[0]}.</span>
+              </p>
+              <ul className="mt-5 flex flex-col gap-3.5">
+                {COACH_POINTS.map((p) => (
+                  <li key={p.title} className="flex items-start gap-3.5">
+                    <span aria-hidden className="grid size-10 flex-none place-items-center rounded-xl bg-brand-100">
+                      <p.icon className="size-5 text-brand-600" />
+                    </span>
+                    <div>
+                      <b className="block text-[15px] font-bold text-ink">{p.title}</b>
+                      <span className="block text-sm leading-normal text-body">{p.body}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <Suspense fallback={<CoachCallbackPlaceholder />}>
+                <CoachCallbackSession />
+              </Suspense>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ---------------- FAQ ---------------- */}
-      <section id="faq" className="scroll-mt-20 py-24">
-        <div className="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
-          <div>
-            <Eyebrow>FAQ</Eyebrow>
-            <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-ink">Questions, answered</h2>
-            <p className="mt-4 text-slate-600">Everything you need to know before you begin.</p>
-          </div>
-          <div className="divide-y divide-slate-200 rounded-3xl bg-white px-6 shadow-soft ring-1 ring-slate-200/70">
-            {FAQ.map((f) => (
-              <details key={f.q} className="group py-5 [&_summary::-webkit-details-marker]:hidden">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink">
-                  {f.q}
-                  <ChevronDown
-                    className="size-5 shrink-0 text-slate-400 transition-transform group-open:rotate-180"
+      <section id="faq" className="scroll-mt-20 border-y border-line bg-white py-18">
+        <div className="mx-auto flex max-w-[1200px] flex-wrap gap-[clamp(32px,5vw,72px)] px-[clamp(18px,4vw,48px)]">
+          <div className="flex min-w-0 flex-[1_1_300px] flex-col gap-6 self-start max-[860px]:gap-5.5 min-[861px]:sticky min-[861px]:top-24">
+            <div>
+              <Eyebrow className="mb-3.5">FAQ</Eyebrow>
+              <h2 className="font-display text-[clamp(30px,3.8vw,46px)] leading-[1.1] font-normal tracking-[-1px] text-ink">
+                Questions, answered.
+              </h2>
+              <p className="mt-4 max-w-[380px] text-[clamp(16px,1.5vw,18px)] leading-relaxed text-body">
+                What students and parents ask us most before they start.
+              </p>
+            </div>
+            <ul className="flex flex-col gap-3">
+              {FACTS.map((f) => (
+                <li key={f} className="flex items-center gap-3 text-[15px] font-semibold text-ink">
+                  <i
                     aria-hidden
-                  />
+                    className="grid size-7 flex-none place-items-center rounded-full bg-brand-100 not-italic"
+                  >
+                    <Check className="size-4 text-brand-600" strokeWidth={2.5} />
+                  </i>
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <div className="relative isolate flex flex-col gap-4.5 overflow-hidden rounded-3xl bg-brand-950 p-6 text-white">
+              <span
+                aria-hidden
+                className="absolute -top-20 -right-20 -z-10 size-60 rounded-full bg-[radial-gradient(circle,var(--color-brand-400)_0%,transparent_70%)] opacity-45"
+              />
+              <div className="flex items-center gap-3.5">
+                <span
+                  aria-hidden
+                  className="relative grid size-[46px] flex-none place-items-center rounded-full bg-white ring-4 ring-brand-300/35"
+                >
+                  <LogoMark className="size-6" />
+                  <i className="absolute right-0 bottom-px size-[11px] rounded-full border-2 border-brand-950 bg-success" />
+                </span>
+                <span>
+                  <b className="block text-[17px]">Still curious?</b>
+                  <span className="text-sm text-white/75">
+                    {brand.guideName}, our career guide, answers in seconds.
+                  </span>
+                </span>
+              </div>
+              <ButtonLink href="/discover" variant="light" className="self-start">
+                Ask {brand.guideName} — free <ArrowRight className="size-4" aria-hidden />
+              </ButtonLink>
+            </div>
+          </div>
+
+          <div className="flex min-w-0 flex-[2_1_520px] flex-col gap-3">
+            {FAQ.map((f, i) => (
+              <details
+                key={f.q}
+                name="home-faq"
+                className="group rounded-[20px] border border-line bg-white transition-[border-color,box-shadow] duration-300 open:border-brand-200 open:shadow-lift hover:border-brand-200 [&_summary::-webkit-details-marker]:hidden"
+              >
+                <summary className="flex min-h-11 cursor-pointer list-none items-center gap-4 px-5.5 py-5 text-left text-[17px] font-bold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600">
+                  <span
+                    aria-hidden
+                    className="grid size-[34px] flex-none place-items-center rounded-[10px] bg-mist text-[13px] font-bold text-muted transition-colors group-open:bg-brand-100 group-open:text-brand-800"
+                  >
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="flex-1">{f.q}</span>
+                  <span
+                    aria-hidden
+                    className="grid size-9 flex-none place-items-center rounded-full bg-mist text-ink transition-[transform,background-color,color] duration-300 group-open:rotate-180 group-open:bg-brand-500 group-open:text-white motion-reduce:transition-none"
+                  >
+                    <ChevronDown className="size-5" />
+                  </span>
                 </summary>
-                <p className="mt-3 pr-8 text-[15px] leading-relaxed text-slate-600">{f.a}</p>
+                <p className="px-5.5 pb-5.5 text-base leading-relaxed text-body min-[641px]:pl-18">{f.a}</p>
               </details>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ---------------- Final CTA ---------------- */}
-      <section className="px-4 pb-24 sm:px-6 lg:px-8">
-        <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[36px] bg-ink px-6 py-16 text-center text-white sm:px-12 sm:py-20">
-          <div className="absolute inset-0 bg-linear-to-br from-brand-700/60 via-transparent to-sun-500/25" />
-          <div className="bg-grid-dark absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" />
-          <div className="relative mx-auto max-w-2xl">
-            <SageAvatar size="lg" className="mx-auto" />
-            <h2 className="mt-6 text-4xl font-extrabold tracking-tight sm:text-5xl">
-              Your career story starts with a{" "}
-              <span className="font-serif font-normal text-sun-300 italic">12-minute</span> conversation.
-            </h2>
-            <p className="mt-4 text-lg text-white/70">
-              Free, private and surprisingly fun. No sign-up needed for this prototype.
-            </p>
-            <ButtonLink href="/discover" variant="light" size="lg" className="mt-8">
-              Start career discovery <ArrowRight className="size-4" aria-hidden />
+      {/* ---------------- Closing CTA ---------------- */}
+      <section className="bg-brand-950 py-18 text-white">
+        <div className="mx-auto max-w-[820px] px-[clamp(18px,4vw,48px)] text-center">
+          <p className="mb-5.5 inline-block rounded-full bg-brand-500 px-3 py-1.5 text-[13px] font-bold tracking-[0.06em]">
+            FREE DURING LAUNCH · <span className="line-through decoration-2">{sampleLaunchOffer.before}</span> LATER
+          </p>
+          <h2 className="font-display text-[clamp(32px,4.2vw,52px)] leading-[1.1] font-normal tracking-[-1px]">
+            Twelve minutes from now, you&apos;ll know yourself a little better.
+          </h2>
+          <div className="mt-8">
+            <ButtonLink href="/discover" className="min-h-[58px] bg-brand-500 px-8 text-[17px] hover:bg-brand-600">
+              Start free discovery
             </ButtonLink>
           </div>
+          <p className="mt-4.5 text-sm text-white/75">
+            No sign-up to start · Private{sampleOffer && ` · ${sampleOffer.highlight} with ${sampleOffer.code}`}
+          </p>
         </div>
       </section>
     </>

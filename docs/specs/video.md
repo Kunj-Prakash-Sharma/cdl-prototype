@@ -2,7 +2,7 @@
 
 - **Status:** draft
 - **Owner:** Vijay
-- **Related decisions:** D91 (MP4, no transcoding), D92 (this spec's choices), D66 (free previews), D83 (buying needs login), D40 (no DRM, watermark), D17 (orders ≠ entitlements), D44 (pg-boss), D18 (no PII in logs or events)
+- **Related decisions:** D95 (MP4, no transcoding), D96 (this spec's choices), D66 (free previews), D83 (buying needs login), D40 (no DRM, watermark), D17 (orders ≠ entitlements), D44 (pg-boss), D18 (no PII in logs or events)
 
 ## Goal
 An admin uploads one MP4 per lecture through our app. A learner who owns the course (or anyone, for a preview lesson) watches it through a signed, expiring URL, with a moving watermark, and resumes where they stopped.
@@ -23,8 +23,8 @@ Built in two phases. **Phase A needs no AWS account**: everything runs on the `f
 
 ## Out of scope
 - Checkout, orders, payments, bundles, coupons (separate commerce spec). Entitlements here are only the table and `hasAccess` / grant / revoke.
-- Transcoding, adaptive streaming, quality picker (D91).
-- Multipart or resumable upload. A failed upload restarts. Revisit if the real files fail often (D92).
+- Transcoding, adaptive streaming, quality picker (D95).
+- Multipart or resumable upload. A failed upload restarts. Revisit if the real files fail often (D96).
 - Poster image upload (falls back to the course image), subtitles, PDFs, quizzes, modules or sections (lessons are flat per course).
 - Deleting a lesson (unpublish instead). A sweep for abandoned `uploading` rows and their S3 objects (follow-up).
 - Download button, offline, DRM. The player deters download but cannot stop it (D40).
@@ -33,7 +33,7 @@ Built in two phases. **Phase A needs no AWS account**: everything runs on the `f
 ## Files and interfaces
 
 ### Integration: `src/integrations/video/`
-Change `types.ts` and `fake.ts` (already trimmed in D91):
+Change `types.ts` and `fake.ts` (already trimmed in D95):
 ```ts
 createUpload(input: { videoId: string; contentType: "video/mp4"; sizeBytes: number }): Promise<{ providerRef: string; uploadUrl: string }>;
 markReady(providerRef: string): Promise<MarkReadyResult>;          // { ok: true, sizeBytes, fastStart } | { ok: false, reason }
@@ -130,7 +130,7 @@ Add to `service.ts`: `getWatermarkId(userId: string): Promise<string>`. Creates 
 1. `startVideoUpload`: lesson must exist; validate size; insert `videos` row (`uploading`, `declared_size_bytes`, `provider`); call `video.createUpload`; save `provider_ref`; return `{ videoId, uploadUrl }`.
 2. Browser `PUT`s the file to `uploadUrl`.
 3. `completeVideoUpload`: load the row (must be `uploading`); `video.markReady(providerRef)`. Not found, empty, or `sizeBytes !== declared_size_bytes` → set `failed`, return a code. OK → in **one transaction, locking the lesson row**: set the video `ready` with `size_bytes`, `fast_start`, `duration_sec`, `ready_at`; if the lesson had a current video, set that video's `replaced_at = now()`; set `lessons.current_video_id` to the new video. After commit, enqueue `video.purge` for the old video with `delaySec: 86400` and `singletonKey: "purge:<oldVideoId>"`. A failed upload never changes the current video.
-4. `fast_start === false` is saved and shown as a warning; it never blocks (D92).
+4. `fast_start === false` is saved and shown as a warning; it never blocks (D96).
 
 **Replace.** Same flow on a lesson that already has a video. The lesson keeps its `id`, progress and entitlements. The new video becomes current at completion; the old one is purged 24 hours later so people mid-watch finish.
 
@@ -197,7 +197,7 @@ Add to `service.ts`: `getWatermarkId(userId: string): Promise<string>`. Creates 
 - **Packages:** `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`, `@aws-sdk/cloudfront-signer`. Add to `package.json` only in this phase and list them in `integrations.md` 2.3. The `video.purge` job calls the adapter, so the worker needs them too: add them to the `Dockerfile` worker dependency list (the gotcha in `integrations.md`).
 - **Env (validated in `src/lib/env-schema.ts`, secrets never `NEXT_PUBLIC_*`, dummy values in `.env.example`):** `VIDEO_PROVIDER=s3`, `AWS_REGION=ap-south-1`, `VIDEO_BUCKET`, `VIDEO_CDN_BASE_URL` (default CloudFront domain until the client picks one), `CLOUDFRONT_KEY_PAIR_ID`, `CLOUDFRONT_PRIVATE_KEY`. Required in production when `VIDEO_PROVIDER=s3`. Register `s3` in `pickAdapter` for `video`.
 - **`s3.ts`:** keys `videos/<videoId>.mp4`; `createUpload` = presigned PUT, 1 hour, signing `Content-Type` and `Content-Length`; `markReady` = `HeadObject` for size, then a ranged `GetObject` of the first 64 KB (up to 1 MB if `isFastStart` returns `null`) to compute `fastStart`; `getPlayback` = CloudFront signed URL on `VIDEO_CDN_BASE_URL/<providerRef>` with `dateLessThan = now + expiresInSec`; `remove` = `DeleteObject` (no error if missing).
-- **Infra checklist (one AWS account, dev and prod buckets and keys, Mumbai):** private bucket with versioning; CORS allowing `PUT` from the app origins, exposing `ETag`; CloudFront distribution with origin access control to the bucket, trusted key group for signed URLs, caching and `Range` requests allowed for `.mp4`; IAM role for the app and worker limited to `PutObject`, `GetObject`, `DeleteObject`, `HeadObject` on the bucket; budget alerts at 50 / 80 / 100%; Secrets Manager for the private key. No Glacier rule (D91).
+- **Infra checklist (one AWS account, dev and prod buckets and keys, Mumbai):** private bucket with versioning; CORS allowing `PUT` from the app origins, exposing `ETag`; CloudFront distribution with origin access control to the bucket, trusted key group for signed URLs, caching and `Range` requests allowed for `.mp4`; IAM role for the app and worker limited to `PutObject`, `GetObject`, `DeleteObject`, `HeadObject` on the bucket; budget alerts at 50 / 80 / 100%; Secrets Manager for the private key. No Glacier rule (D95).
 - **Verification:** upload one real client MP4 through the admin page into the dev bucket; confirm it plays through the CloudFront signed URL on a phone over mobile data; confirm an expired URL gets a 403 and the player refreshes; confirm a non-fast-start file shows the warning; confirm replace purges the old object after the delay (use `delaySec` override in a test).
 
 ## Open items

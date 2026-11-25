@@ -2,6 +2,7 @@
 // Needs network access: the invisible Cloudflare Turnstile widget (dummy keys) loads from Cloudflare.
 import { expect, test, type Page } from "@playwright/test";
 import { e2eAdminPhone, latestOtp, newLearnerPhone } from "../support/e2e";
+import { enterCode } from "../support/chat-e2e";
 
 /** Types the number, asks for a code (retrying while the bot-check widget is still loading) and returns the code. */
 async function requestCode(page: Page, phone: string): Promise<string> {
@@ -26,14 +27,7 @@ async function requestCode(page: Page, phone: string): Promise<string> {
 async function signIn(page: Page, phone: string, next?: string) {
   await page.goto(next ? `/login?next=${encodeURIComponent(next)}` : "/login");
   const code = await requestCode(page, phone);
-  // Six digits submit on their own, but not before React has hydrated: under load the first fill can do nothing, so
-  // type the code again until the login page has moved on.
-  const codeInput = page.getByLabel("6-digit code");
-  await expect(async () => {
-    await codeInput.fill("");
-    await codeInput.fill(code);
-    await expect(page).not.toHaveURL(/\/login/, { timeout: 2500 });
-  }).toPass({ timeout: 20_000 });
+  await enterCode(page, code);
 }
 
 /** Desktop has an account menu; the phone layout has the hamburger menu. */
@@ -41,13 +35,18 @@ async function logOut(page: Page) {
   const accountMenu = page.getByRole("button", { name: "Account menu" });
   const openMenu = page.getByRole("button", { name: "Open menu" });
   const logOutItem = page.getByRole("menuitem", { name: "Log out" }).or(page.getByRole("button", { name: "Log out" }));
-  // A click that lands before React hydrates does nothing, so retry opening the menu until Log out shows.
+  // A click that lands before React hydrates does nothing, so retry opening the menu until Log out shows. The button
+  // toggles, so click only while it says the menu is closed: a second click would shut a menu that was slow to open.
   await expect(async () => {
     if (!(await logOutItem.isVisible())) {
-      await ((await accountMenu.isVisible()) ? accountMenu : openMenu).click();
+      const menu = (await accountMenu.isVisible()) ? accountMenu : openMenu;
+      // The phone button is renamed "Close menu" while open, so not finding "Open menu" means it is open.
+      const expanded = await menu.getAttribute("aria-expanded", { timeout: 1000 }).catch(() => "true");
+      // Short click timeout: a click that cannot land must fail fast so the loop can try again.
+      if (expanded !== "true") await menu.click({ timeout: 2000 }).catch(() => {});
     }
-    await expect(logOutItem).toBeVisible({ timeout: 1500 });
-  }).toPass({ timeout: 15_000 });
+    await expect(logOutItem).toBeVisible({ timeout: 3000 });
+  }).toPass({ timeout: 20_000 });
   await logOutItem.click();
   await expect(page).toHaveURL(/\/$/);
 }
@@ -66,13 +65,7 @@ test.describe("login", () => {
     await page.goto("/my-self");
     await expect(page).toHaveURL(/\/login\?next=%2Fmy-self$/);
     const code = await requestCode(page, newLearnerPhone());
-    // Six digits submit on their own, but not before React has hydrated: type the code again until the page moves on.
-    const codeInput = page.getByLabel("6-digit code");
-    await expect(async () => {
-      await codeInput.fill("");
-      await codeInput.fill(code);
-      await expect(page).not.toHaveURL(/\/login/, { timeout: 2500 });
-    }).toPass({ timeout: 20_000 });
+    await enterCode(page, code);
     await expect(page).toHaveURL(/\/my-self$/);
   });
 
@@ -100,7 +93,7 @@ test.describe("login", () => {
     await page.goto("/login");
     await requestCode(page, phone);
     await expect(page.getByText(/Resend in \d+s/)).toBeVisible();
-    await page.getByRole("button", { name: "Change number" }).click();
+    await page.getByRole("button", { name: "Use a different number" }).click();
     await expect(page.getByLabel("Mobile number")).toHaveValue(phone);
   });
 
@@ -142,7 +135,7 @@ test.describe("guards", () => {
 
   // The proxy only checks that a session cookie EXISTS. A forged one must still never reveal a protected page.
   const protectedPages = [
-    { path: "/my-self", secret: "Pick up right where you left off." },
+    { path: "/my-self", secret: "all in one place." },
     { path: "/admin/users", secret: "newest first" },
   ];
 

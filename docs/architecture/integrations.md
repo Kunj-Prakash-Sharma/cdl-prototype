@@ -29,7 +29,7 @@ src/integrations/<name>/
 |---|---|---|---|
 | `sms` | `sendOtp(phone, code)` | fake, then the client's pick (MSG91 likely) | Gupshup, WhatsApp OTP |
 | `payments` | server: `createOrder`, `parseWebhook` → `PaymentEvent`, `getStatus`, `refund`; client: `openCheckout` | Razorpay | Cashfree |
-| `video` | `createUpload`, `getPlayback` (signed MP4 URL), `markReady` (D91) | S3 + CloudFront, client-supplied 720p MP4, no transcoding | Mux, VdoCipher, DRM platform |
+| `video` | `createUpload`, `getPlayback` (signed MP4 URL), `markReady` (D95) | S3 + CloudFront, client-supplied 720p MP4, no transcoding | Mux, VdoCipher, DRM platform |
 | `storage` | `uploadUrl`, `downloadUrl` (signed), `remove` | S3 | R2 |
 | `email` | `send(template, to, data)`; templates are ours | SES | Mailgun, Resend |
 | `analytics` | `track(event, props)`, typed event list, no PII | Mixpanel | PostHog |
@@ -64,11 +64,11 @@ Status values: `not started` · `in progress` · `ready` · `installed`. "Unrese
 | Payments | Hosted checkout, signed webhooks, refunds | Razorpay (Cashfree as alternative) | `payments` | Client's business account | not started. Needs business details, GST status, legal pages | Per-transaction fee. Get written rates |
 | Email | Receipt and callback alert | Amazon SES | `email` | AWS account. Needs the final domain | not started. Domain verification and sandbox exit | Per 1,000 emails. Verify current AWS rates |
 | Analytics | Funnel events, no PII | Mixpanel, India data residency | `analytics` | Us. Request India access in week 1 | not started. **Pricing and plans unresearched** | Free tier and paid plans. Unresearched |
-| Video | Upload, signed playback of client-supplied MP4 (D91, no encoding) | AWS S3 + CloudFront | `video`, `storage` | AWS account (one account, dev and prod buckets) | not started. Built against the fake adapter first | Usage based (see AWS below) |
+| Video | Upload, signed playback of client-supplied MP4 (D95, no encoding) | AWS S3 + CloudFront | `video`, `storage` | AWS account (one account, dev and prod buckets) | not started. Built against the fake adapter first | Usage based (see AWS below) |
 | Job queue | Background jobs (video status, emails) | pg-boss on our Postgres | `queue` | No external account | installed | None beyond the database |
-| Bot check | Stop scripted OTP abuse | Cloudflare Turnstile via the Better Auth captcha plugin | not wrapped | Cloudflare account | not started | Free tier. Verify current terms |
+| Bot check | Stop scripted OTP abuse | Cloudflare Turnstile via the Better Auth captcha plugin | not wrapped | Cloudflare account | wired (OTP send, guest start, admin login); dev uses Cloudflare's always-pass test keys, production needs real keys | Free tier. Verify current terms |
 | Error tracking | Crash and error alerts | Sentry (**assumed**; the doc only says "free-tier error tracking") | via the `logger` facade | Us | not started. Wired in week 1 | Free tier |
-| Code and CI | Repo, PRs, CI workflow | GitHub, GitHub Actions (our choice; the doc only says "CI builds the image") | none | Kunj's repo (currently public) | workflow written, not run yet | Free for public repos |
+| Code and CI | Repo, PRs, CI workflow | GitHub, GitHub Actions (our choice; the doc only says "CI builds the image") | none | Kunj's repo (currently public) | runs on PRs into `dev` and pushes to `dev` (first run Nov 19, 2026). Actions pinned to commit SHAs (Semgrep rule). The e2e job has a Postgres service; the Vercel preview hook on the repo is a prototype leftover (fails, not ours: we deploy to AWS) | Free for public repos |
 
 ## 2.2 AWS resources
 All in the Mumbai region `ap-south-1` (D53). Account owner (client's or ours with a later handover) is still open.
@@ -78,15 +78,15 @@ All in the Mumbai region `ap-south-1` (D53). Account owner (client's or ours wit
 | ECS Express Mode (Fargate) | Web app and worker, same image | One or two small always-on tasks, autoscaling to a low ceiling. Load balancer is a fixed monthly cost |
 | Container registry (ECR, **assumed**) | Image storage for deploys | Not named in the docs |
 | RDS PostgreSQL 16 | App data and the pg-boss queue | Single zone at first, point-in-time recovery. Revisit when revenue starts |
-| S3 | Lecture MP4s, posters, report files | Private, versioning on, separate dev and prod buckets. CORS for browser multipart upload. No Glacier rule: the uploaded MP4 is the delivery file (D91 replaces D59) |
-| ~~MediaConvert~~ | ~~Video encoding~~ | **Not used (D91).** No encoding step in the MVP |
+| S3 | Lecture MP4s, posters, report files | Private, versioning on, separate dev and prod buckets. CORS for browser multipart upload. No Glacier rule: the uploaded MP4 is the delivery file (D95 replaces D59) |
+| ~~MediaConvert~~ | ~~Video encoding~~ | **Not used (D95).** No encoding step in the MVP |
 | CloudFront | Cached public pages, signed expiring MP4 URLs | Origin access control to the private bucket, key pair for signing. Base URL is an env var until the final domain. Video delivery is the cost that grows with usage |
 | SES | Two transactional emails | Domain verification (DKIM/SPF) and sandbox exit needed |
 | Secrets Manager (**assumed** name) | Per-environment keys | The doc says "managed secrets store". Separate keys for dev and production |
 | CloudWatch Logs (**assumed**) and Budgets | Logs kept 14 to 30 days, no personal data. Budget alerts at 50%, 80%, 100% | The doc names the retention and alert levels, not the products |
 | IAM (**assumed**) | Roles for the app, worker and CI | Not mentioned in the docs |
 
-Cost reference (US East examples from the architecture doc, India rates differ): CloudFront about $0.085 per GB, S3 about $0.023 per GB. MediaConvert cost no longer applies (D91). Planning size: about 25 GB of 720p MP4 (4 courses x 10 lectures x 40 min). See [../requirements/architecture.md](../requirements/architecture.md#cost-drivers-and-capacity).
+Cost reference (US East examples from the architecture doc, India rates differ): CloudFront about $0.085 per GB, S3 about $0.023 per GB. MediaConvert cost no longer applies (D95). Planning size: about 25 GB of 720p MP4 (4 courses x 10 lectures x 40 min). See [../requirements/architecture.md](../requirements/architecture.md#cost-drivers-and-capacity).
 
 > **Caution (CDN swap):** Cloudflare's terms do not allow video hosted outside Cloudflare (for example in S3) to be served through its Free, Pro or Business CDN, so putting Cloudflare in front of S3 risks a terms violation. If we ever switch to Cloudflare, move the video storage to R2 as well; Cloudflare's CDN may then serve it, and R2 has no egress fee. Re-check the current terms before deciding.
 
@@ -95,10 +95,11 @@ Cost reference (US East examples from the architecture doc, India rates differ):
 ### Runtime (shipped)
 | Package | Why we have it |
 |---|---|
-| `next` 16.4.1, `react` 19.3.0, `react-dom` 19.3.0 | The app: server-rendered pages, server actions and route handlers. Next 16 has breaking changes (read its docs) |
+| `next` 16.4.6, `react` 19.3.0, `react-dom` 19.3.0 | The app: server-rendered pages, server actions and route handlers. Next 16 has breaking changes (read its docs) |
 | `drizzle-orm`, `pg` | Typed database access to Postgres |
 | `pg-boss` | Job queue on Postgres (worker) |
 | `zod` | Validates env config and request input |
+| `better-auth` | Phone-OTP login, sessions, roles, admin email + password, captcha plugin (Turnstile). Only `modules/auth` imports it |
 | `motion`, `lucide-react` | Animations and icons used by the prototype UI |
 
 ### Dev only
@@ -114,7 +115,7 @@ Cost reference (US East examples from the architecture doc, India rates differ):
 | `tsx`, `esbuild` | Run the worker and scripts in dev; bundle them for the image |
 
 ### Planned (not installed yet)
-Added with the feature that needs them: `better-auth` (login and roles), AWS SDK clients (S3 multipart upload, CloudFront signing, SES), `razorpay`, `mixpanel`, the Sentry SDK, a video player (plain `<video>` is enough for MP4; `video.js` only if we need its controls), an Excel export library (to choose), and the Turnstile browser script.
+Added with the feature that needs them: AWS SDK clients (S3 multipart upload, CloudFront signing, SES), `razorpay`, `mixpanel`, the Sentry SDK, a video player (plain `<video>` is enough for MP4; `video.js` only if we need its controls), an Excel export library (to choose). The Turnstile browser script is loaded from Cloudflare at runtime (`components/auth/use-turnstile.ts`), not installed.
 
 ### Gotcha: worker dependencies
 The Docker image installs the worker's runtime packages separately (`pg`, `pg-boss`, `zod`, `drizzle-orm`, pinned to the lockfile versions). If worker or migrate code starts importing another package, add it to the list in the `Dockerfile`.

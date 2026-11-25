@@ -1,35 +1,46 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-instrument), ui-serif, Georgia, serif;
+  /* V5 design (D91) in the TEMPLE logo colours (D94): brand-* is the logo navy (#103c6d = brand-700), sun-* the logo gold (#d5aa65 = sun-500). Token NAMES are unchanged so every screen moves at once. */
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
 
-  --color-paper: #f8f8fb;
-  --color-ink: #0f1020;
+  --color-paper: #fbf8f5;
+  --color-ink: #111d2e;
+  --color-body: #3e4656;
+  --color-muted: #5a6170;
+  --color-line: #e7e9ee;
+  --color-line-strong: #d3d9e3;
+  --color-mist: #f0f2f6;
+  --color-success: #167a4c;
+  --color-success-50: #eaf7f0;
+  --color-danger: #b42318;
+  --color-teal: #3e9c8f;
 
-  --color-brand-50: #f2f1ff;
-  --color-brand-100: #e6e3ff;
-  --color-brand-200: #cfcaff;
-  --color-brand-300: #aea5ff;
-  --color-brand-400: #8b7dff;
-  --color-brand-500: #6d5cff;
-  --color-brand-600: #5a45f2;
-  --color-brand-700: #4a35d6;
-  --color-brand-800: #3c2dab;
-  --color-brand-900: #322a86;
-  --color-brand-950: #1d1850;
+  --color-brand-50: #f2f6fb;
+  --color-brand-100: #e3ebf5;
+  --color-brand-200: #c4d3e7;
+  --color-brand-300: #9fb7d6;
+  --color-brand-400: #4f78a8;
+  --color-brand-500: #245485;
+  --color-brand-600: #164a80;
+  --color-brand-700: #103c6d;
+  --color-brand-800: #0c3159;
+  --color-brand-900: #0a2645;
+  --color-brand-950: #0a1a2e;
 
-  --color-sun-100: #fff1df;
-  --color-sun-200: #ffdcb3;
-  --color-sun-300: #ffc485;
-  --color-sun-400: #ffa654;
-  --color-sun-500: #ff8a2e;
-  --color-sun-600: #ec6d12;
-  --color-sun-700: #c4530b;
+  --color-sun-100: #fbf4e8;
+  --color-sun-200: #f5e7cc;
+  --color-sun-300: #ecd6ad;
+  --color-sun-400: #e2c38a;
+  --color-sun-500: #d5aa65;
+  --color-sun-600: #9a7330;
+  --color-sun-700: #7a5a22;
 
-  --shadow-soft: 0 1px 2px rgb(15 16 32 / 0.04), 0 8px 24px -12px rgb(15 16 32 / 0.12);
-  --shadow-lift: 0 2px 4px rgb(15 16 32 / 0.04), 0 24px 48px -20px rgb(45 35 140 / 0.28);
-  --shadow-glow: 0 10px 40px -10px rgb(90 69 242 / 0.55);
+  --shadow-soft: 0 1px 2px rgb(17 29 46 / 0.04), 0 8px 24px -16px rgb(17 29 46 / 0.1);
+  --shadow-lift: 0 18px 40px -24px rgb(16 60 109 / 0.35);
+  --shadow-glow: 0 40px 90px -50px rgb(16 60 109 / 0.45);
+  --shadow-focus: 0 0 0 4px rgb(16 60 109 / 0.12);
 
   --animate-float: float 7s ease-in-out infinite;
   --animate-float-slow: float 9s ease-in-out infinite;
@@ -103,10 +114,22 @@ body {
 }
 
 @layer components {
+  /* V5 hero background: soft violet glow top right, peach glow left, on paper. */
+  .hero-glow {
+    background:
+      radial-gradient(700px 420px at 85% 0%, var(--color-brand-100) 0%, transparent 72%),
+      radial-gradient(620px 380px at 10% 40%, var(--color-sun-200) 0%, transparent 72%), var(--color-paper);
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
   .bg-grid {
     background-image:
-      linear-gradient(to right, rgb(15 16 32 / 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(15 16 32 / 0.05) 1px, transparent 1px);
+      linear-gradient(to right, rgb(17 29 46 / 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(17 29 46 / 0.05) 1px, transparent 1px);
     background-size: 44px 44px;
   }
   .bg-grid-dark {
@@ -115,12 +138,6 @@ body {
       linear-gradient(to bottom, rgb(255 255 255 / 0.06) 1px, transparent 1px);
     background-size: 44px 44px;
   }
-  .text-gradient {
-    background-image: linear-gradient(100deg, var(--color-brand-600), #a855f7 55%, var(--color-sun-500));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
   .shimmer {
     background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.55), transparent);
     background-size: 200% 100%;
@@ -128,7 +145,7 @@ body {
   }
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: rgb(15 16 32 / 0.15) transparent;
+    scrollbar-color: rgb(17 29 46 / 0.15) transparent;
   }
 }
 
@@ -146,8 +163,16 @@ body {
 /* Printing the report ("Save as PDF"): only the report, on white paper. The navbar and footer are hidden here; buttons
    inside the report use Tailwind's print:hidden. */
 @media print {
+  /* Page numbers for the report PDF, from the browser so they stay right however long a section runs (Chrome and Edge;
+     Safari ignores page margin boxes and prints no number). */
   @page {
     margin: 14mm;
+    @bottom-right {
+      content: "Page " counter(page) " of " counter(pages);
+      font-family: var(--font-sans), system-ui, sans-serif;
+      font-size: 9pt;
+      color: var(--color-muted);
+    }
   }
   body {
     background: white !important;
@@ -156,4 +181,14 @@ body {
   footer {
     display: none !important;
   }
+}
+
+/* Chrome autofill paints a blue box inside inputs; keep the paper fill instead. */
+.autofill-paper:-webkit-autofill {
+  box-shadow: inset 0 0 0 100px var(--color-paper);
+  -webkit-text-fill-color: var(--color-ink);
+}
+.autofill-white:-webkit-autofill {
+  box-shadow: inset 0 0 0 100px var(--color-white);
+  -webkit-text-fill-color: var(--color-ink);
 }

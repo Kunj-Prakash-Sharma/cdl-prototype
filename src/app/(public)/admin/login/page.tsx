@@ -3,8 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AdminLoginForm } from "@/components/auth/admin-login-form";
 import { env } from "@/lib/env";
-import { safeNextPath } from "@/modules/auth/next-path";
-import { getSession } from "@/modules/auth/service";
+import { getSession, safeNextPath } from "@/modules/auth/service";
 
 export const metadata: Metadata = {
   title: "Admin login",
@@ -27,9 +26,7 @@ async function Gate({ searchParams }: { searchParams: Promise<{ next?: string | 
 export default function AdminLoginPage({ searchParams }: PageProps<"/admin/login">) {
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-7xl items-start justify-center px-4 py-10 sm:items-center sm:px-6 sm:py-16">
-      <Suspense
-        fallback={<div className="h-96 w-full max-w-md rounded-3xl bg-white shadow-soft ring-1 ring-slate-200/80" />}
-      >
+      <Suspense fallback={<div className="h-96 w-full max-w-md rounded-3xl bg-white shadow-soft ring-1 ring-line" />}>
         <Gate searchParams={searchParams} />
       </Suspense>
     </div>

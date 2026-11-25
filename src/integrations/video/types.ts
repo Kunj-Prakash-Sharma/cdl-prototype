@@ -1,4 +1,4 @@
-/** Where a video is in its life. No `encoding` state: we play the client's MP4 as uploaded (D91). */
+/** Where a video is in its life. No `encoding` state: we play the client's MP4 as uploaded (D95). */
 export type VideoState = "uploading" | "ready" | "failed";
 
 export type MarkReadyResult =
