@@ -1,116 +1,121 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowRight, BookOpen, Play, Sparkles } from "lucide-react";
+import type { ReactNode } from "react";
 import { ButtonLink } from "@/components/ui/button";
-import { Badge, Eyebrow, ProgressBar } from "@/components/ui/misc";
-import { allLessons, getCourse, type Course } from "@/modules/catalog/courses";
-import { isDiscoveryComplete } from "@/modules/chat/legacy/scoring";
+import { ProgressBar } from "@/components/ui/misc";
+import { allLessons, COURSES, getCourse, type Course } from "@/modules/catalog/courses";
 import { useAppState, useHydrated } from "@/lib/store";
-import { CourseThumb } from "./course-thumb";
+import { CourseCard } from "./course-card";
 
-export function MyLearning() {
+/** How many not-owned courses the "More courses" section shows. */
+const MORE_LIMIT = 4;
+
+/**
+ * V5 My Learning (row 10) on the sample catalog (D92). Purchases and progress still come from this browser's demo
+ * store until `commerce` (entitlements) and lesson progress exist. `report` is the server-rendered report card.
+ */
+export function MyLearning({ report }: { report?: ReactNode }) {
   const state = useAppState();
   const hydrated = useHydrated();
   const courses = state.purchases.map(getCourse).filter((c): c is Course => !!c);
-  const totalDone = courses.reduce((n, c) => n + (state.progress[c.slug]?.length ?? 0), 0);
-  const totalLessons = courses.reduce((n, c) => n + allLessons(c).length, 0);
+  const more = COURSES.filter((c) => !state.purchases.includes(c.slug)).slice(0, MORE_LIMIT);
+
+  // "Continue learning": the first course that is started but not finished.
+  const progressOf = (c: Course) => {
+    const lessons = allLessons(c);
+    const done = state.progress[c.slug] ?? [];
+    return { lessons, done, next: lessons.findIndex((l) => !done.includes(l.id)) };
+  };
+  const ongoing = courses.map((c) => ({ course: c, ...progressOf(c) })).find((p) => p.done.length > 0 && p.next !== -1);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-16">
-      <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
-        <div>
-          <Eyebrow>My learning</Eyebrow>
-          <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-ink">
-            {state.profile.name ? `Welcome back, ${state.profile.name}` : "Your courses"}
-          </h1>
-          <p className="mt-2 text-slate-600">Pick up right where you left off.</p>
-        </div>
-        {hydrated && courses.length > 0 && (
-          <div className="flex gap-3">
-            <Stat label="Courses" value={courses.length} />
-            <Stat label="Lessons done" value={`${totalDone}/${totalLessons}`} />
-          </div>
-        )}
-      </div>
-
-      {!hydrated ? (
-        <div className="mt-10 h-48 animate-pulse rounded-3xl bg-slate-100" />
-      ) : courses.length === 0 ? (
-        <div className="mt-10 rounded-[32px] border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
-          <span className="mx-auto grid size-16 place-items-center rounded-2xl bg-brand-50 text-brand-600">
-            <BookOpen className="size-7" aria-hidden />
+    <div>
+      <section className="hero-glow border-b border-line">
+        <div className="mx-auto max-w-7xl px-4.5 pt-14 pb-11 sm:px-6">
+          <span className="inline-flex items-center gap-2 rounded-full bg-brand-100 px-3.5 py-2 text-sm font-semibold text-brand-700">
+            <i className="size-1.75 rounded-full bg-brand-600" aria-hidden /> My Learning
           </span>
-          <h2 className="mt-5 text-2xl font-bold text-ink">No courses yet</h2>
-          <p className="mx-auto mt-2 max-w-md text-slate-600">
-            {state.completedAt && isDiscoveryComplete(state)
-              ? "Your career report has a learning path ready for you."
-              : "Discover your path first, and we'll recommend the right Level 1 courses."}
-          </p>
-          <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-            <ButtonLink href="/discover">
-              <Sparkles className="size-4" aria-hidden />
-              {state.completedAt ? "View my learning path" : "Start career discovery"}
-            </ButtonLink>
-            <ButtonLink href="/learn" variant="secondary">
-              Browse courses
-            </ButtonLink>
-          </div>
-        </div>
-      ) : (
-        <div className="mt-10 space-y-4">
-          {courses.map((c) => {
-            const lessons = allLessons(c);
-            const done = state.progress[c.slug] ?? [];
-            const next = lessons.find((l) => !done.includes(l.id));
-            const pct = done.length / lessons.length;
-            return (
-              <Link
-                key={c.slug}
-                href={`/learn/${c.slug}`}
-                className="group flex flex-col gap-5 rounded-3xl bg-white p-4 shadow-soft ring-1 ring-slate-200/80 transition hover:-translate-y-0.5 hover:shadow-lift sm:flex-row sm:items-center sm:p-5"
-              >
-                <CourseThumb
-                  slug={c.slug}
-                  className="aspect-video w-full shrink-0 rounded-2xl sm:aspect-auto sm:h-28 sm:w-48"
-                  iconClassName="size-12"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge tone="slate">{c.category}</Badge>
-                    {pct === 1 && <Badge tone="green">Completed</Badge>}
-                  </div>
-                  <h2 className="mt-2 text-lg font-bold text-ink group-hover:text-brand-700">{c.title}</h2>
-                  <p className="mt-0.5 truncate text-sm text-slate-500">
-                    {next ? `Up next: ${next.title}` : "All lessons complete — grab your certificate"}
-                  </p>
-                  <div className="mt-3 flex items-center gap-3">
-                    <ProgressBar value={pct} tone="green" className="max-w-sm" />
-                    <span className="text-xs font-semibold text-slate-500">{Math.round(pct * 100)}%</span>
-                  </div>
-                </div>
-                <span className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-brand-600 px-5 text-sm font-semibold text-white shadow-glow">
-                  {done.length ? (
-                    <Play className="size-4 fill-current" aria-hidden />
-                  ) : (
-                    <ArrowRight className="size-4" aria-hidden />
-                  )}
-                  {done.length ? "Continue" : "Start"}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
+          <h1 className="mt-4.5 font-display text-[clamp(34px,4.6vw,56px)] leading-[1.1] font-normal tracking-[-1px] text-ink">
+            Your courses, <span className="text-brand-600">all in one place.</span>
+          </h1>
 
-function Stat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-2xl bg-white px-5 py-3 ring-1 ring-slate-200/80">
-      <p className="text-xl font-extrabold text-ink">{value}</p>
-      <p className="text-xs text-slate-500">{label}</p>
+          {hydrated && ongoing && (
+            <div className="mt-6.5 flex max-w-215 flex-wrap items-center gap-x-7 gap-y-4 rounded-[20px] border border-line bg-white px-5.5 py-4.5">
+              <div className="min-w-55 flex-1">
+                <p className="text-xs font-bold tracking-[1.4px] text-brand-600 uppercase">Continue learning</p>
+                <p className="mt-1 mb-0.5 font-display text-2xl text-ink">{ongoing.course.title}</p>
+                <p className="text-sm text-muted">
+                  Lesson {ongoing.next + 1} of {ongoing.lessons.length} · pick up where you left off
+                </p>
+              </div>
+              <div className="min-w-50 flex-1">
+                <div className="mb-1.5 flex justify-between text-[13px] font-semibold text-muted">
+                  <span>
+                    {ongoing.done.length} of {ongoing.lessons.length} lessons
+                  </span>
+                  <span>{Math.round((ongoing.done.length / ongoing.lessons.length) * 100)}%</span>
+                </div>
+                <ProgressBar
+                  value={ongoing.done.length / ongoing.lessons.length}
+                  aria-label={`${ongoing.course.title} progress`}
+                />
+              </div>
+              <ButtonLink href={`/learn/${ongoing.course.slug}`}>Resume</ButtonLink>
+            </div>
+          )}
+
+          {report && <div className="mt-4">{report}</div>}
+        </div>
+      </section>
+
+      <section className="border-b border-line bg-white">
+        <div className="mx-auto max-w-7xl px-4.5 pt-12 pb-14 sm:px-6">
+          <h2 className="mb-5.5 font-display text-[clamp(26px,3vw,36px)] leading-[1.1] font-normal tracking-[-1px] text-ink">
+            Enrolled courses
+          </h2>
+          {!hydrated ? (
+            <div className="h-48 animate-pulse rounded-[20px] bg-mist" aria-busy="true" />
+          ) : courses.length === 0 ? (
+            <div className="max-w-155 rounded-[20px] border border-line bg-paper p-8">
+              <p className="mb-1.5 font-display text-[26px] text-ink">Nothing here yet</p>
+              <p className="mb-4.5 text-base leading-relaxed text-body">
+                Courses you buy appear here with every lesson unlocked. Each course lets you preview its first lessons
+                for free.
+              </p>
+              <ButtonLink href="/learn">Browse courses</ButtonLink>
+            </div>
+          ) : (
+            <div className="grid gap-4.5 sm:grid-cols-[repeat(auto-fill,minmax(270px,1fr))]">
+              {courses.map((c) => (
+                <CourseCard key={c.slug} slug={c.slug} />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {hydrated && more.length > 0 && (
+        <section className="border-b border-line bg-paper">
+          <div className="mx-auto max-w-7xl px-4.5 pt-14 pb-16 sm:px-6">
+            <div className="mb-5.5 flex flex-wrap items-end justify-between gap-x-6 gap-y-4.5">
+              <div>
+                <p className="text-[13px] font-bold tracking-[1.4px] text-brand-600 uppercase">Keep going</p>
+                <h2 className="mt-2 font-display text-[clamp(26px,3vw,36px)] leading-[1.1] font-normal tracking-[-1px] text-ink">
+                  More courses to explore
+                </h2>
+              </div>
+              <ButtonLink href="/learn" variant="secondary" size="sm">
+                See all courses
+              </ButtonLink>
+            </div>
+            <div className="grid gap-4.5 sm:grid-cols-[repeat(auto-fill,minmax(270px,1fr))]">
+              {more.map((c) => (
+                <CourseCard key={c.slug} slug={c.slug} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

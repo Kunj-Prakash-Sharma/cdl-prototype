@@ -50,7 +50,7 @@ export function CourseCard({ slug, reason, className }: { slug: string; reason?:
           <Play className="size-5.5 fill-brand-600 text-brand-600" />
         </span>
         <div className="flex items-center justify-between gap-2 text-xs font-bold">
-          {!owned ? <span className="rounded-md bg-white/90 px-2 py-1 text-ink">Free preview</span> : <span />}
+          <span className="rounded-md bg-white/90 px-2 py-1 text-ink">{owned ? "Enrolled" : "Free preview"}</span>
           <span className="rounded-md bg-ink/80 px-2 py-1 text-white">
             {total} lessons · {course.hours} hrs
           </span>
@@ -65,14 +65,19 @@ export function CourseCard({ slug, reason, className }: { slug: string; reason?:
 
         <div className="mt-auto border-t border-line pt-3.5">
           {owned ? (
-            <div>
-              <div className="mb-2 flex items-center justify-between text-xs">
-                <span className="rounded-md bg-success-50 px-2 py-1 font-bold text-success">Enrolled</span>
-                <span className="font-medium text-muted">
-                  {done}/{total} lessons
-                </span>
+            <div className="flex flex-col gap-3">
+              <div>
+                <div className="mb-1.5 flex justify-between text-[13px] font-semibold text-muted">
+                  <span>
+                    {done} of {total} lessons
+                  </span>
+                  <span>{Math.round((done / total) * 100)}%</span>
+                </div>
+                <ProgressBar value={done / total} tone="brand" aria-label={`${course.title} progress`} />
               </div>
-              <ProgressBar value={done / total} tone="brand" />
+              <span className="inline-flex min-h-11 w-full items-center justify-center rounded-full border-[1.5px] border-brand-600 bg-brand-600 px-4 text-sm font-bold text-white transition-colors group-hover:border-brand-800 group-hover:bg-brand-800">
+                {done >= total ? "Review course" : done > 0 ? "Continue learning" : "Start learning"}
+              </span>
             </div>
           ) : (
             <div className="flex flex-wrap items-center gap-2">

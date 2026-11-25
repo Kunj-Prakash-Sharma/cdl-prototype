@@ -6,7 +6,7 @@ paths:
 
 # UI rules
 
-- Tokens only: colours, shadows, fonts come from `src/app/globals.css` (`brand-*`, `sun-*`, `paper`, `ink`, `body`, `muted`, `line`, `line-strong`, `mist`, `success`, `teal`, `shadow-soft|lift|glow|focus`, `font-sans|display`). No raw hex.
+- Tokens only: colours, shadows, fonts come from `src/app/globals.css` (`brand-*`, `sun-*`, `paper`, `ink`, `body`, `muted`, `line`, `line-strong`, `mist`, `success`, `danger`, `teal`, `shadow-soft|lift|glow|focus`, `font-sans|display`). No raw hex.
 - The look follows the V5 design (D91): Outfit headings (`font-display`, weight 400), one brand-coloured accent word, no serif italic in new or ported code.
 - Mobile-first: write unprefixed classes for phone, then scale with `sm:` / `md:` / `lg:`. Verify at 375×667 and desktop.
 - Touch targets ≥ 44px; no hover-only affordances; respect `prefers-reduced-motion`.

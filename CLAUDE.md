@@ -1,11 +1,11 @@
-# SELF — Claude instructions
+# TEMPLE — Claude instructions
 
-Phase 1 of SELF: a mobile-first career-discovery + learning site (Mira chat → report → paid courses), built as a **modular monolith** (one Next.js app = pages + API, plus a worker, one repo). "SELF" is a working name: never hardcode it (use `src/config/brand.ts`).
+Phase 1 of TEMPLE: a mobile-first career-discovery + learning site (Mira chat → report → paid courses), built as a **modular monolith** (one Next.js app = pages + API, plus a worker, one repo). The product name is TEMPLE (D93; "SELF" was the working name): never hardcode it (use `src/config/brand.ts`).
 
 @AGENTS.md
 
 ## Read before feature work
-- `docs/decisions.md` — every decision, one numbered list (D1–D61). Higher number wins on conflict.
+- `docs/decisions.md` — every decision, one numbered list (D1–D94). Higher number wins on conflict.
 - `docs/architecture/modules.md` — 5 modules, folder layout, boundary rules.
 - `docs/architecture/integrations.md` — wrapper rules, third-party services, AWS resources, npm dependencies. Update part 2 when you add a vendor, AWS resource or key package.
 - `docs/design/design-system.md` — tokens, patterns, mobile rules.
